@@ -235,11 +235,14 @@ def login():
     }
 
     if request.method == "POST":
-        username = request.form.get("UserName", None).strip()
-        password = request.form.get("Password", None).strip()
+        username = request.form.get("UserName", None)
+        password = request.form.get("Password", None)
         rememberme = "RememberMe" in request.form
 
         if username is not None and password is not None:
+            username = username.strip()
+            password = password.strip()
+            
             object = User.query.filter(
                 func.lower(User.UserName) == func.lower(username)
             ).first()
@@ -403,7 +406,7 @@ def imgrotate():
         error_code = 400
         jsonResult.update(
             {
-                "Message": f"{statictext.ResponseCode[error_code]}: {str(e)}",
+                "Message": f"{statictext.ResponseCode[error_code]}",
                 "Code": error_code,
             }
         )
