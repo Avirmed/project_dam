@@ -187,9 +187,9 @@ cython_debug/
 # /static/data
 
 # migrations/ is committed (schema is versioned; entrypoint runs `flask db upgrade`)
-migrations/__pycache__/
-migrations/versions/__pycache__/
-pgsql_start.bat
-pgsql_stop.bat
+#migrations/__pycache__/
+#migrations/versions/__pycache__/
+#pgsql_start.bat
+#pgsql_stop.bat
 
 .DS_Store

@@ -1,0 +1,3 @@
+@echo off
+title Starting Postgres...
+call "%~dp0pgsql\cmd_initialize.bat"
