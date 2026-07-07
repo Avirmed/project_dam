@@ -184,7 +184,7 @@ cython_debug/
 /logs
 /pgsql
 /python313
-/static/data
+# /static/data
 
 # migrations/ is committed (schema is versioned; entrypoint runs `flask db upgrade`)
 migrations/__pycache__/

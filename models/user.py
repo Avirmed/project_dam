@@ -635,5 +635,6 @@ class User(UserMixin, db.Model):
             try:
                 db.session.add(default_user)
                 db.session.commit()
+                cls.fix_sequence()
             except Exception as e:
                 db.session.rollback()
