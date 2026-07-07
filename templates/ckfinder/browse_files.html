@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="{{ StaticText.APP_LANG }}">
+    <head>
+        <meta charset="UTF-8" />
+        <title>{{ StaticText.CKFinderFields.FileTitle }}</title>
+        <link rel="stylesheet" href="{{ url_for('static', filename='dist/css/bootstrap.min.css') }}">
+        <link rel="stylesheet" href="{{ url_for('static', filename='dist/plugins/tabler-icons/tabler-icons.css') }}">
+        <link rel="stylesheet" href="{{ url_for('static', filename='css/custom.css') }}">
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                background: #f5f5f5;
+                margin: 20px;
+            }
+
+            #upload-form {
+                margin: auto;
+                margin-bottom: 25px;
+                padding: 15px;
+                background: white;
+                border-radius: 8px;
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+                max-width: 500px;
+            }
+
+            #upload-form input[type="file"] {
+                display: inline-block;
+                margin-right: 10px;
+                font-size: 0.8rem;
+            }
+
+            #upload-status {
+                margin-top: 10px;
+                font-size: 12px;
+            }
+
+            .dropdown-toggle::after {
+                display: none;
+            }
+
+            .table-file {
+                font-size: 0.75rem;
+            }
+
+            .table-file th, .table-file td {
+                vertical-align: middle;
+            }
+            
+            .table-file a{
+                text-decoration: none;
+                color: #007bff;
+            }
+
+            .table-file a:hover {
+                text-decoration: underline;
+            }
+
+            .dropdown-menu {
+                min-width: 100px;
+                font-size: 0.8rem;
+            }
+
+            .table-file .dropdown-menu a{
+                text-decoration: none;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <h3>{{ StaticText.CKFinderFields.FileTitle }}</h3>
+
+            <form id="upload-form" enctype="multipart/form-data" method="POST" action="{{ url_for('ckfinder_bp.upload_file') }}">
+                <div class="d-flex justify-content-between align-items-center">
+                    <input type="file" name="upload" required />
+                    <input type="hidden" name="CKEditorFuncNum" value="{{ func_num }}" />
+                    <button class="btn btn-success btn-sm" type="submit">
+                        {{ StaticText.Icon.Save | safe }} {{ StaticText.Upload }}
+                    </button>
+                </div>
+                <div id="upload-status"></div>
+            </form>
+
+            <table class="table table-sm table-bordered table-striped table-hover table-file mt-3">
+                <thead class="table-primary">
+                    <tr>
+                        <th class="text-center" width="2%">№</th>
+                        <th>{{ StaticText.File }}</th>
+                        <th width="120">{{ StaticText.Size }}</th>
+                        <th width="10"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for file, url, size in files_and_urls %}
+                        <tr>
+                            <td class="text-center">{{ loop.index }}.</td>
+                            <td><a href="javascript: selectFile('{{ url }}');">{{ file }}</a></td>
+                            <td>{{ size }}</td>
+                            <td>
+                                <div class="dropdown">
+                                    <button class="btn btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                        {{ StaticText.Icon.VerticalDots | safe }}
+                                    </button>
+                                    <ul class="dropdown-menu">
+                                        <li>
+                                            <a class="dropdown-item" href="{{ url }}" target="_blank">
+                                                {{ StaticText.Icon.Download | safe}}
+                                                {{ StaticText.Download }}
+                                            </a>
+                                        </li>
+                                        <li>
+                                            {# url-аас '/uploads/' хэсгийг салгаж 'files/ID/filename.ext' замыг гаргаж авна #}
+                                            <button class="dropdown-item text-danger" 
+                                                    onclick="deleteImage('{{ url.split('/uploads/')[1] }}', this.closest('tr')); event.stopPropagation();">
+                                                {{ StaticText.Icon.Delete | safe}}
+                                                {{ StaticText.Delete }}
+                                            </button>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <script src="{{ url_for('static', filename='js/libs/jquery-3.7.1.min.js') }}"></script>
+        <script src="{{ url_for('static', filename='dist/js/bootstrap.bundle.min.js') }}"></script>
+        <script src="{{ url_for('static', filename='js/libs/toastr/toastr.min.js') }}"></script>
+
+        <script>
+            const funcNum = {{ func_num | tojson }};
+
+            function selectFile(url) {
+                if (window.opener && window.opener.CKEDITOR) {
+                    window.opener.CKEDITOR.tools.callFunction(funcNum, url);
+                    window.close();
+                } else {
+                    toastr.warning("{{ StaticText.Messages.CKEditorNotFound }}");
+                }
+            }
+
+            function deleteImage(filepath, element) {
+                if (!confirm("{{ StaticText.Messages.DeleteQuestion }}")) return;
+                fetch('{{ url_for("ckfinder_bp.delete_file") }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: 'filepath=' + encodeURIComponent(filepath)
+                }).then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        element.remove();
+                        toastr.success("{{ StaticText.Messages.SuccessDeleted }}");
+                    } else {
+                        toastr.error(data.error || "{{ StaticText.Messages.Error }}");
+                    }
+                }).catch(() => {
+                    toastr.error("{{ StaticText.Messages.NoInternetConnection }}");
+                });
+            }
+
+            document.getElementById('upload-form').addEventListener('submit', function (e) {
+                e.preventDefault();
+                const formData = new FormData(this);
+                const status = document.getElementById('upload-status');
+                status.textContent = "{{  StaticText.Messages.Uploading }}";
+
+                fetch(this.action + '?CKEditorFuncNum=' + formData.get('CKEditorFuncNum'), {
+                    method: 'POST',
+                    body: formData,
+                    credentials: 'same-origin'
+                }).then(response => response.text())
+                .then(data => {
+                    status.textContent = "{{  StaticText.Messages.UploadSuccess }}";
+                    setTimeout(() => window.location.reload(), 1200);
+                }).catch(err => {
+                    status.textContent = "{{  StaticText.Messages.UploadFailed }} " + err;
+                });
+            });
+        </script>
+    </body>
+</html>

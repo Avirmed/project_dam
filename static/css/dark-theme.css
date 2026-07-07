@@ -1,0 +1,333 @@
+[data-theme=dark] body {
+    background-color: var(--app-base-background-color);
+}
+
+[data-theme=dark] #global-loader {
+    background-color: rgba(34, 36, 42, 0.8);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+}
+
+[data-theme=dark] #global-loader .page-loader {
+    border-color: transparent rgb(255 255 255 / 80%);
+}
+
+[data-theme=dark] #global-loader .page-loader::after {
+    border-color: transparent rgb(255 255 255 / 35%);
+}
+
+[data-theme=dark] .modal .btn-close {
+    filter: invert(1) grayscale(100%) brightness(200%);
+}
+
+[data-theme=dark] .header,
+[data-theme=dark] .sidebar,
+[data-theme=dark] .modal-content,
+[data-theme=dark] .dropdown-menu,
+[data-theme=dark] .select2-dropdown,
+[data-theme=dark] .card {
+    background-color: var(--app-base-background-color);
+    border-color: var(--app-base-border-color);
+}
+
+[data-theme=dark] .select2-container--default.select2-container--open.select2-container--below .select2-selection--single {
+    border-color: var(--app-base-border-color);
+}
+
+[data-theme=dark] .select2-results__option {
+    color: color-mix(in srgb, black 10%, var(--app-text-color) 90%);
+}
+
+[data-theme=dark] .form-control[type="color"] {
+    border-color: #E5E7EB;
+    background-color: #ffffff;
+}
+
+[data-theme=dark] label {
+    color: color-mix(in srgb, black 30%, var(--app-text-color) 70%);
+}
+
+[data-theme=dark] .form-control {
+    background-color: var(--app-base-input-background-color);
+    border-color: var(--app-base-border-color);
+}
+
+[data-theme=dark] .table tbody tr td {
+    background-color: var(--app-base-input-background-color);
+    border-color: var(--app-base-border-color);
+    color: var(--app-text-color);
+}
+
+[data-theme=dark] .form-switch .form-check-input:not(:checked) {
+    --bs-form-switch-bg: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='rgba%28255, 255, 255, 0.5%29'/%3e%3c/svg%3e");
+}
+
+[data-theme=dark] .select2-container--default .select2-selection--single {
+    background-color: var(--app-base-input-background-color);
+    border-color: var(--app-base-border-color);
+}
+
+[data-theme=dark] .select2-container--focus .select2-selection--single {
+    background-color: var(--app-base-input-background-highlight-color) !important;
+}
+
+[data-theme=dark] .select2-container--default .select2-results__option--highlighted[aria-selected] {
+    background-color: var(--app-base-input-background-highlight-color);
+    color: #ffffff;
+}
+
+[data-theme=dark] .select2-container--default .select2-results__option--selected {
+    background-color: color-mix(in srgb, black 30%, var(--app-base-input-background-highlight-color) 70%);
+}
+
+[data-theme=dark] .dropdown-menu .dropdown-item:not(.active):hover,
+[data-theme=dark] .dropdown-menu .dropdown-item:not(.active):focus,
+[data-theme=dark] .dropdown-menu .dropdown-item:not(.active):active {
+    background-color: var(--app-base-background-hover-color);
+}
+
+[data-theme=dark] .bg-white {
+    background-color: var(--app-base-background-color) !important;
+}
+
+[data-theme=dark] .sidebar .sidebar-menu>ul>li ul>li.active a.subdrop {
+    background-color: var(--app-base-input-background-highlight-color);
+}
+
+[data-theme=dark] .sidebar .sidebar-menu>ul>li ul>li.active a.subdrop i,
+[data-theme=dark] .sidebar .sidebar-menu>ul>li ul>li.active a.subdrop span {
+    background: transparent;
+    color: var(--app-text-color);
+}
+
+[data-theme=dark] .sidebar .sidebar-menu>ul>li ul>li.active a,
+[data-theme=dark] .sidebar .sidebar-menu>ul>li ul>li.active a i {
+    background-color: var(--app-base-input-background-highlight-color);
+    color: var(--app-text-color);
+}
+
+[data-theme=dark] .sidebar .sidebar-menu>ul>li ul>li:not(.active):hover>a i {
+    color: #6B7280;
+}
+
+[data-theme=dark] .sidebar .sidebar-menu>ul>li ul>li:hover>a {
+    background-color: color-mix(in srgb, black 30%, var(--app-base-input-background-highlight-color) 70%);
+}
+
+[data-theme=dark] .notification-dropdown {
+    border: 1px solid var(--app-base-border-color);
+}
+
+[data-theme=dark] .border-bottom {
+    border-bottom: 1px solid var(--app-base-border-color) !important;
+}
+
+[data-theme=dark] body[app] .sidebar-horizontal.sidebar .sidebar-menu ul.nav-menu>li:hover>a {
+    background-color: color-mix(in srgb, black 30%, var(--app-base-input-background-highlight-color) 70%);
+    border-radius: 5px;
+}
+
+[data-theme=dark] body[app] .sidebar-horizontal.sidebar .sidebar-menu ul.nav-menu>li>a.active {
+    background-color: var(--app-base-input-background-highlight-color);
+    border-radius: 5px;
+}
+
+[data-theme=dark] .nav-tabs.nav-tabs-bottom li a.active,
+[data-theme=dark] .nav-tabs.nav-tabs-bottom li a:hover {
+    border-bottom-color: var(--app-text-color);
+    background: transparent;
+    color: var(--app-text-color);
+}
+
+[data-theme=dark] .nav-tabs.nav-tabs-bottom li a.active {
+    color: #ffffff;
+}
+
+@media (max-width: 767.98px) {
+    .nav-tabs {
+        background-color: transparent;
+        border: none;
+        display: flex;
+        justify-content: center;
+    }
+}
+
+[data-theme=dark] body[app] .tabulator {
+    background-color: var(--app-base-background-color);
+    border-color: var(--app-base-border-color);
+    color: var(--app-text-color);
+}
+
+[data-theme=dark] body[app] .tabulator-header {
+    background-color: var(--app-table-header-color);
+    border-bottom-color: var(--app-base-border-color);
+    color: var(--app-text-color);
+}
+
+[data-theme=dark] body[app] .tabulator-header .tabulator-col {
+    background-color: var(--app-table-header-color);
+    border-right: 1px solid var(--app-base-border-color);
+}
+
+@media (hover: hover) and (pointer: fine) {
+    [data-theme=dark] body[app] .tabulator .tabulator-header .tabulator-col.tabulator-sortable.tabulator-col-sorter-element:hover {
+        background-color: color-mix(in srgb, var(--app-table-header-color) 90%, black);
+    }
+
+    [data-theme=dark] body[app] .tabulator .tabulator-footer .tabulator-page:not(disabled):hover {
+        background: rgba(0, 0, 0, .1);
+        color: #fff;
+        cursor: pointer;
+    }
+
+    [data-theme=dark] body[app] .tabulator-row.tabulator-selectable:hover {
+        color: var(--app-text-color) !important;
+    }
+
+    [data-theme=dark] body[app] .tabulator-row:hover {
+        background-color: color-mix(in srgb, white 10%, var(--app-base-background-color) 90%) !important;
+    }
+}
+
+[data-theme=dark] body[app] .tabulator-tableholder {
+    background-color: color-mix(in srgb, black 10%, var(--app-base-background-color) 90%);
+}
+
+[data-theme=dark] body[app] .tabulator-row {
+    background-color: var(--app-base-background-color);
+    border-bottom-color: var(--app-base-border-color);
+    color: var(--app-text-color);
+}
+
+[data-theme=dark] body[app] .tabulator-row.tabulator-row-even {
+    background-color: color-mix(in srgb, white 5%, var(--app-base-background-color) 95%);
+}
+
+[data-theme=dark] body[app] .tabulator-row.tabulator-group {
+    border: none;
+    border-bottom: 1px solid var(--app-base-border-color);
+}
+
+[data-theme=dark] body[app] .tabulator-row.tabulator-group * {
+    color: var(--app-text-color);
+}
+
+[data-theme=dark] body[app] .tabulator-row.tabulator-selected {
+    background-color: color-mix(in srgb, var(--app-base-color-highlight) 15%, var(--app-base-background-color));
+}
+
+[data-theme=dark] body[app] .tabulator-row .tabulator-cell {
+    border-right: 1px solid var(--app-base-border-color);
+}
+
+[data-theme=dark] body[app] .tabulator-footer {
+    background-color: var(--app-table-header-color);
+    border-top-color: var(--app-base-border-color);
+    color: var(--app-text-color);
+}
+
+[data-theme=dark] body[app] .tabulator-footer .tabulator-page {
+    background-color: var(--app-base-input-background-color);
+    border-color: var(--app-base-border-color);
+    color: var(--app-text-color);
+}
+
+[data-theme=dark] body[app] .tabulator-footer .tabulator-page.active {
+    background: rgba(0, 0, 0, .5);
+    color: #fff;
+}
+
+[data-theme=dark] body[app] .tabulator-footer .tabulator-page:disabled {
+    background-color: transparent;
+    color: var(--app-text-color);
+}
+
+[data-theme=dark] .tabulator-row .tabulator-cell.tabulator-editing {
+    background-color: var(--app-base-input-background-color);
+    border: 1px solid var(--app-base-color-highlight, #6c8ebf);
+    outline: none;
+}
+
+[data-theme=dark] .tabulator-row .tabulator-cell input,
+[data-theme=dark] .tabulator-row .tabulator-cell select,
+[data-theme=dark] .tabulator-row .tabulator-cell textarea {
+    background-color: var(--app-base-input-background-color);
+    color: var(--app-text-color);
+}
+
+[data-theme=dark] .tabulator-row .tabulator-cell input:focus,
+[data-theme=dark] .tabulator-row .tabulator-cell select:focus {
+    background-color: var(--app-base-input-background-highlight-color);
+    outline: none;
+}
+
+[data-theme=dark] body[app] .tabulator-tableholder::-webkit-scrollbar-track {
+    background: var(--app-base-background-color);
+}
+
+[data-theme=dark] body[app] .tabulator-tableholder::-webkit-scrollbar-thumb {
+    background: var(--app-base-border-color);
+}
+
+[data-theme=dark] body[app] .tabulator-tableholder::-webkit-scrollbar-thumb:hover {
+    background: var(--app-base-color-highlight);
+}
+
+[data-theme=dark] body[app] .tabulator-headers .btn,
+[data-theme=dark] body[app] .tabulator-row .btn {
+    color: var(--app-text-color);
+    background-color: transparent;
+    border-color: transparent;
+}
+
+[data-theme=dark] body[app] .tabulator-headers .btn:hover,
+[data-theme=dark] body[app] .tabulator-row .btn:hover,
+[data-theme=dark] body[app] .tabulator-headers .btn:focus,
+[data-theme=dark] body[app] .tabulator-row .btn:focus {
+    background-color: var(--app-base-input-background-highlight-color);
+    border-color: var(--app-base-border-color);
+    color: #ffffff;
+}
+
+[data-theme=dark] #WaterLevelInfo * {
+    color: var(--app-text-color);
+}
+
+[data-theme=dark] .datepicker table {
+    color: color-mix(in srgb, black 30%, var(--app-text-color) 70%);
+}
+
+[data-theme=dark] .datepicker table tr td.day {
+    color: var(--app-text-color);
+}
+
+
+[data-theme=dark] .datepicker table tr th:hover,
+[data-theme=dark] .datepicker table tr th:hover,
+[data-theme=dark] .datepicker table tr td > span:hover,
+[data-theme=dark] .datepicker table tr td:not([colspan]):hover {
+    background-color: color-mix(in srgb, var(--app-base-color-highlight) 15%, var(--app-base-background-color));
+}
+
+[data-theme=dark] .datepicker table tr td.day.today {
+    background-color: var(--app-text-color);
+    color: black;
+}
+
+[data-theme=dark] .datepicker table tr td.day.active {
+    background-color: #286090 !important;
+    color: var(--app-text-color);
+}
+
+[data-theme=dark] .datepicker table tr td.day.old,
+[data-theme=dark] .datepicker table tr td.day.new {
+    color: color-mix(in srgb, black 50%, var(--app-text-color) 50%);
+}
+
+[data-theme=dark] .datepicker-dropdown.datepicker-orient-top:after {
+    border-top-color: var(--app-base-border-color);
+}
+
+[data-theme=dark] .table thead tr th {
+    background-color: var(--app-table-header-color);
+}

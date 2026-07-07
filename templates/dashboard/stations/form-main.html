@@ -1,0 +1,136 @@
+<div class="row flex-lg-row flex-column-reverse">
+    <div class="col-xl-3 col-lg-4 mb-3">
+        <label class="small mb-2" for="ImageSource">{{ StaticText.StationField.ImageSource }}</label>
+        <div class="image-preview form-image">
+            <div class="position-relative">
+                <img class="img-thumbnail Image" src="{{ StaticText.Images.Blank }}" data-href="{{ StaticText.Images.Blank }}" data-gallery="#form">
+                <div class="rotateBtn">
+                    <span data-direction="CCW"><i class="bi bi-arrow-counterclockwise"></i></span>
+                    <span data-direction="CW"><i class="bi bi-arrow-clockwise"></i></span>
+                </div>
+            </div>
+            <div class="checkbox checkbox-danger mx-2 text-nowrap d-none">
+                <input id="deleteimage" name="deleteimage" type="checkbox">
+                <label for="deleteimage" class="text-danger">{{ StaticText.Icon.Delete | safe }}</label>
+            </div>
+        </div>
+        <div class="file-progress-bar">0%</div>
+        <div class="clearfix"></div>
+        <input type="file" class="form-control form-control-sm image-file-choose" id="ImageSource" name="ImageSource" accept="image/jpeg,image/png,image/gif">
+    </div>
+
+    <div class="col-xl-9 col-lg-8">
+        <div class="row">
+            <div class="col-lg-4 mb-3">
+                <label class="small mb-2" for="ProjectID">{{ StaticText.ProjectField.ProjectName }}</label>
+                <select class="selectTwo form-control-sm" id="ProjectID" name="ProjectID" data-url="/api/projects/list?status=1" required>
+                    <option value="" selected>-- {{ StaticText.Choose }} --</option>
+                </select>
+            </div>
+            
+            <div class="col-lg-4 mb-3">
+                <label class="small mb-2" for="RiverBasinID">{{ StaticText.RiverBasinField.WatershedName }}</label>
+                <select class="selectTwo form-control-sm" id="RiverBasinID" name="RiverBasinID" data-url="/api/riverbasins/list?status=1" required>
+                    <option value="" selected>-- {{ StaticText.Choose }} --</option>
+                </select>
+            </div>
+
+            <div class="col-lg-4 mb-3">
+                <label class="small mb-2" for="Region">{{ StaticText.StationField.Region }}</label>
+                <select class="selectTwo form-control-sm" id="Region" name="Region" required>
+                    <option value="" selected>-- {{ StaticText.Choose }} --</option>
+                    {% for key, value in StaticText.Regions.items() %}
+                    <option value="{{ key }}">{{ value }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-lg-4 mb-3">
+                <label class="small mb-2" for="SiteCode">{{ StaticText.StationField.SiteCode }}</label>
+                <input type="text" class="form-control form-control-sm" id="SiteCode" name="SiteCode" required>
+            </div>
+            
+            <div class="col-lg-4 mb-3">
+                <label class="small mb-2" for="SiteName">{{ StaticText.StationField.SiteName }}</label>
+                <input type="text" class="form-control form-control-sm" id="SiteName" name="SiteName" required>
+            </div>
+            
+            <div class="col-lg-4 mb-3">
+                <label class="small mb-2" for="DeviceID">{{ StaticText.StationField.DeviceID }}</label>
+                <input type="text" class="form-control form-control-sm" id="DeviceID" name="DeviceID" required>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-lg-6 mb-3">
+                <label class="small mb-2" for="MeasuredValue">{{ StaticText.StationField.MeasuredValue }}</label>
+                <select class="selectTwo form-control-sm" id="MeasuredValue" name="MeasuredValue" required>
+                    <option value="" selected>-- {{ StaticText.Choose }} --</option>
+                    {% for key, value in StaticText.MeasuredValues.items() %}
+                    <option value="{{ key }}">{{ value }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="col-lg-6 mb-3">
+                <label class="small mb-2" for="RiverBasinID">{{ StaticText.StationField.SiteInstall }}</label>
+                <select class="selectTwo form-control-sm" id="SiteInstall" name="SiteInstall" required>
+                    <option value="" selected>-- {{ StaticText.Choose }} --</option>
+                    {% for key, value in StaticText.SiteInstalls.items() %}
+                    <option value="{{ key }}">{{ value }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-12 mb-3">
+                <div class="form-check form-switch">
+                    <input type="hidden" name="Status" value="0">
+                    <input class="form-check-input" type="checkbox" id="Status" name="Status" value="1">
+                    <label class="small" for="Status">{{ StaticText.StationField.Status }}</label>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12 mb-3">
+        <div id="mapArcGIS" class="border shadow-sm"></div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-4 mb-3">
+        <label class="small mb-2" for="Latitude">{{ StaticText.StationField.Latitude }}</label>
+        <input type="number" class="form-control form-control-sm" id="Latitude" name="Latitude">
+    </div>
+    
+    <div class="col-lg-4 mb-3">
+        <label class="small mb-2" for="Longitude">{{ StaticText.StationField.Longitude }}</label>
+        <input type="number" class="form-control form-control-sm" id="Longitude" name="Longitude">
+    </div>
+
+    <div class="col-lg-4 mb-3">
+        <label class="small mb-2" for="Zoom">{{ StaticText.StationField.Zoom }}</label>
+        <input type="number" class="form-control form-control-sm" id="Zoom" name="Zoom" min="0" max="22">
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12 mb-3">
+        <label class="small mb-2" for="Address">{{ StaticText.StationField.Address }}</label>
+        <textarea class="form-control form-control-sm" id="Address" name="Address" rows="2"></textarea>
+    </div>
+</div>
+
+
+<div class="row">
+    <div class="col-12 mb-3">
+        <label class="small mb-2" for="Remark">{{ StaticText.StationField.Remark }}</label>
+        <textarea class="form-control form-control-sm" id="Remark" name="Remark"></textarea>
+    </div>
+</div>

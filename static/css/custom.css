@@ -1,0 +1,705 @@
+@import url("../js/libs/datepicker/css/bootstrap-datepicker3.standalone.min.css");
+
+@import url("../js/libs/toastr/toastr.min.css");
+@import url("../js/libs/tabulator/css/tabulator.min.css");
+@import url("../js/libs/tabulator/css/tabulator_semanticui.min.css");
+@import url("../js/libs/blueimpGallery/css/blueimp-gallery.min.css");
+
+@import url("bootstrap-icons/font/bootstrap-icons.css");
+@import url("font-awesome/css/font-awesome.min.css");
+@import url("attach-files.css");
+@import url("dark-theme.css");
+
+:root {
+    --app-font-family: 'Roboto', sans-serif;
+    --app-base-color: var(--bs-primary);
+    --app-base-color-light: color-mix(in srgb, white 20%, var(--app-base-color) 80%);
+    --app-base-color-highlight: color-mix(in srgb, white 80%, var(--app-base-color) 20%);
+    --app-text-color: #333;
+
+    --app-base-background-color: #ffffff;
+    --app-base-border-color: #e5e7eb;
+
+    --sidebar-submenu-drop-color: #f5f5f5;
+    --mobile-user-menu-color-dark: #6B7280;
+
+    --app-text-outline-color: rgba(255, 255, 255, 0.5);
+}
+
+[data-theme=dark] {
+    --sidebar-submenu-drop-color: #161818;
+    --app-base-color-highlight: color-mix(in srgb, white 50%, var(--app-base-color) 50%);
+    --app-text-color: #d8dfee;
+
+    --app-base-background-color: #22242a;
+    --app-base-background-hover-color: #2a2c33;
+    --app-base-border-color: #3d3b41;
+
+    --app-table-header-color: color-mix(in srgb, var(--sidebar-submenu-drop-color) 97%, #0d6efd);
+
+    --app-base-input-background-color: #32353d;
+    --app-base-input-background-highlight-color: color-mix(in srgb, white 10%, var(--app-base-input-background-color) 90%);
+}
+
+@media print {
+    body {
+        margin: 0;
+        padding: 0;
+    }
+}
+
+#global-loader {
+    background-color: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+}
+
+::selection {
+    background: var(--app-base-color-highlight);
+    color: inherit;
+}
+
+#loginForm h2 {
+    color: var(--app-base-color) !important;
+}
+
+#loginForm .form-control.is-invalid+span {
+    border-color: var(--bs-form-invalid-border-color);
+}
+
+#loginForm .form-control.is-invalid {
+    background: none;
+}
+
+#loginForm .account-group {
+    position: relative;
+}
+
+#loginForm .account-group .account-icon {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    color: #111827;
+    font-size: 18px;
+}
+
+#loginForm .toggle-password {
+    position: absolute;
+    top: 20px;
+    right: 5px;
+}
+
+#loginForm input[name="UserName"],
+#loginForm input[name="Password"] {
+    padding-right: 35px;
+}
+
+.appLoginForm {
+    line-height: 1.5;
+}
+
+.appLoginForm .form-control.is-invalid+span {
+    border-color: var(--bs-form-invalid-border-color);
+}
+
+.appLoginForm .form-control.is-invalid {
+    background: none;
+}
+
+.appLoginForm .account-group {
+    position: relative;
+}
+
+.appLoginForm .account-group .account-icon {
+    position: absolute;
+    top: 6px;
+    right: 8px;
+    color: #111827;
+    font-size: 18px;
+}
+
+.appLoginForm .toggle-password {
+    position: absolute;
+    top: 15px;
+    right: 3px;
+}
+
+.appLoginForm input[name="UserName"],
+.appLoginForm input[name="Password"] {
+    padding-right: 35px;
+}
+
+.login-page-bg {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+}
+
+.sidebar .sidebar-logo .logo-text {
+    font-weight: bolder;
+    color: var(--app-base-color);
+    font-size: 1.1rem;
+}
+
+body[app-main].menu-horizontal .page-wrapper .content {
+    min-height: calc(100vh - 150px);
+}
+
+body[app] .sidebar-horizontal.sidebar .sidebar-menu ul.nav-menu>li>a.active {
+    background-color: #e8e9ea;
+    border-radius: 5px;
+}
+
+.header .bar-icon span {
+    background-color: var(--app-base-color-light);
+}
+
+.header .mobile-user-menu a {
+    color: var(--app-base-color-light);
+}
+
+body[app] .footer {
+    border-top: 1px solid var(--app-base-border-color);
+}
+
+.sidebar .sidebar-logo .logo-text img {
+    height: 100%;
+    margin-right: 5px;
+    vertical-align: middle;
+}
+
+.sidebar .sidebar-logo .logo-text span {
+    overflow: hidden;
+    text-shadow:
+        -1px -1px 1px var(--app-text-outline-color),
+        1px -1px 1px var(--app-text-outline-color),
+        -1px 1px 1px var(--app-text-outline-color),
+        1px 1px 1px var(--app-text-outline-color);
+}
+
+.menu-horizontal .header .header-left>a {
+    height: 35px;
+}
+
+.menu-horizontal .header .header-left>a img {
+    height: 100%;
+    width: auto;
+    margin-right: 5px;
+    vertical-align: middle;
+}
+
+.menu-horizontal .header .header-left>a span {
+    font-weight: bolder;
+    color: var(--app-base-color);
+    font-size: 1.05rem;
+    text-shadow:
+        -1px -1px 1px var(--app-text-outline-color),
+        1px -1px 1px var(--app-text-outline-color),
+        -1px 1px 1px var(--app-text-outline-color),
+        1px 1px 1px var(--app-text-outline-color);
+}
+
+@media (max-width: 991.98px) {
+
+    .header .header-left>a img {
+        height: 35px;
+        width: auto !important;
+    }
+
+    .header .header-left>a .text {
+        font-weight: bolder;
+        color: var(--app-base-color);
+        font-size: 1.05rem;
+        text-shadow:
+            -1px -1px 1px var(--app-text-outline-color),
+            1px -1px 1px var(--app-text-outline-color),
+            -1px 1px 1px var(--app-text-outline-color),
+            1px 1px 1px var(--app-text-outline-color);
+    }
+}
+
+body.mini-sidebar:not(.expand-menu) .sidebar .sidebar-logo .logo-text span {
+    display: none;
+}
+
+#sidebar-menu>ul>li .submenu .submenu ul {
+    padding-left: 1rem;
+}
+
+#sidebar-menu>ul>li .submenu .submenu a.subdrop {
+    background: var(--sidebar-submenu-drop-color);
+}
+
+[data-theme=dark] .header .mobile-user-menu .dropdown-menu a {
+    color: var(--mobile-user-menu-color-dark);
+}
+
+.nav-list::before {
+    background: none;
+}
+
+body[app] .tabulator {
+    font-size: 12px;
+}
+
+body[app] .tabulator .tabulator-header,
+.tabulator .tabulator-header .tabulator-col {
+    height: 45px !important;
+}
+
+body[app] .tabulator .tabulator-footer .tabulator-page {
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+}
+
+body[app] .tabulator .tabulator-footer .tabulator-page-size {
+    appearance: none;
+}
+
+body[app] .tabulator-row.tabulator-selectable .tabulator-cell:first-child {
+    height: auto !important;
+}
+
+.app-tabulator-table .img-thumbnail {
+    width: 80px;
+    height: 80px;
+    object-fit: cover;
+}
+
+.app-tabulator-table .img-thumbnail[width='70'] {
+    width: 50px;
+    height: 50px;
+    padding: 1px;
+}
+
+.app-tabulator-table .img-thumbnail[width='60'] {
+    width: 40px;
+    height: 40px;
+    padding: 1px;
+}
+
+.app-tabulator-table .img-thumbnail[width='40'] {
+    width: 20px;
+    height: 20px;
+    padding: 1px;
+}
+
+.app-tabulator-table .tabulator-header,
+.app-tabulator-table .tabulator-header-contents,
+.app-tabulator-table .tabulator-col {
+    overflow: visible !important;
+    min-width: 50px !important;
+}
+
+.app-tabulator-table .tabulator-cell {
+    overflow: visible;
+    min-width: 50px !important;
+}
+
+.app-tabulator-table .tabulator-cell input[type='checkbox'] {
+    cursor: pointer;
+}
+
+.app-tabulator-table .tabulator-row:hover {
+    background-color: #ebebeb;
+}
+
+.tabulator-export * {
+    font-size: 12px;
+}
+
+.btn-close.close {
+    background: transparent var(--bs-btn-close-bg) center / 1em auto no-repeat;
+}
+
+.toast-message {
+    font-size: 0.8rem;
+}
+
+.toast-message h1 {
+    font-size: 0.8rem;
+    color: inherit
+}
+
+.toast-message p {
+    line-height: normal;
+    font-size: 0.8rem;
+}
+
+.formBtns {
+    display: flex;
+    justify-content: space-around;
+}
+
+.image-file-choose {
+    max-width: 300px;
+}
+
+.image-preview {
+    display: flex;
+    justify-content: flex-start;
+    align-items: flex-end;
+    margin-bottom: 5px;
+}
+
+@media only screen and (max-width: 300px) {
+    .image-preview {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .image-preview .checkbox {
+        margin-top: 5px;
+    }
+}
+
+.image-preview img {
+    height: 200px;
+    object-fit: cover;
+}
+
+.image-preview.user-image img {
+    width: 200px;
+    min-width: 200px;
+}
+
+.image-preview.area-image img {
+    height: auto;
+    width: 100%;
+}
+
+.file-progress-bar {
+    margin: 10px 0;
+    width: 0;
+    height: 10px;
+    font-size: 8px;
+    border-radius: 4px;
+    overflow: hidden;
+    background-image: linear-gradient(90deg, #d9534f, #29a645);
+    color: #dddddd;
+    transition: width 0.2s;
+    text-align: center;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.rotateBtn {
+    user-select: none;
+    position: absolute;
+    font-size: 0.9rem;
+    top: 10px;
+    right: 10px;
+    padding: 3px 5px 0 5px;
+    background-color: rgba(0, 0, 0, 0.3);
+    color: var(--bs-gray-200);
+    border-radius: 3px;
+    opacity: 0;
+    transition: 0.1s opacity;
+}
+
+img:hover+.rotateBtn,
+a:hover+.rotateBtn,
+.rotateBtn:hover {
+    opacity: 1;
+}
+
+@media (max-width: 767.98px) {
+    .rotateBtn {
+        opacity: 1;
+    }
+}
+
+@media (max-width: 575.98px) {
+    .rotateBtn {
+        top: 0;
+        left: 0;
+        right: 0;
+        width: 100%;
+        font-size: 1.2rem;
+        padding: 8px 10px 2px 10px;
+        display: flex;
+        justify-content: space-between;
+        background-color: rgba(0, 0, 0, 0.25);
+        border-radius: var(--bs-border-radius);
+    }
+
+    .rotateBtn span:hover {
+        transform: none !important;
+    }
+}
+
+img[data-href] {
+    cursor: pointer;
+}
+
+img[src*="data:image"]+.rotateBtn,
+img[src*="images/default/"]+.rotateBtn {
+    display: none;
+}
+
+img[src*="images/default/"] {
+    pointer-events: none;
+}
+
+.rotateBtn span {
+    display: inline-block;
+    cursor: pointer;
+    transition: 0.1s transform;
+}
+
+.rotateBtn span:first-of-type {
+    margin-right: 3px;
+}
+
+.rotateBtn span:hover {
+    transform: scale(1.2);
+}
+
+.rotateBtn.disabled span {
+    cursor: progress;
+}
+
+@media (min-width: 1500px) {
+    .modal-xl {
+        --bs-modal-width: 80%;
+    }
+}
+
+/*
+.bootbox .modal-content {
+    min-height: 500px;
+}
+*/
+
+.tabulator-cell .fa.fa-plus-square,
+.tabulator-cell .fa.fa-minus-square {
+    color: #cccccc;
+}
+
+.app-badge.badge {
+    font-size: 11px;
+    font-weight: 400;
+}
+
+.mw-600 {
+    max-width: 600px;
+}
+
+.description p {
+    font-size: 12px;
+    margin-bottom: 1rem;
+}
+
+.description p:last-child {
+    margin-bottom: 0;
+}
+
+input[readonly] {
+    cursor: default;
+}
+
+#mapArcGIS {
+    height: 400px;
+}
+
+.esri-ui .esri-attribution {
+    display: none;
+}
+
+.table.table-configure thead tr th,
+.table.table-configure tbody tr td {
+    font-size: 12px;
+}
+
+.table-configure thead th {
+    text-align: center;
+    white-space: normal;
+}
+
+.table-configure tbody td {
+    text-align: left;
+}
+
+.table-configure tbody td:first-child,
+.table-configure tbody td:last-child {
+    width: 0.8%;
+    text-align: center;
+}
+
+.form-control-color-input {
+    min-width: 80px;
+}
+
+.select2-container {
+    width: 100% !important;
+    display: block;
+}
+
+.form-control-sm+.select2-container--default .select2-selection--single {
+    height: 30px !important;
+}
+
+.form-control-sm+.select2-container--default .select2-selection--single .select2-selection__rendered {
+    line-height: 26px !important;
+    font-size: 0.75rem;
+}
+
+.form-control-sm+.select2-container--default .select2-selection--single .select2-selection__arrow {
+    height: 28px !important;
+}
+
+.dropdown .dropdown-toggle.show {
+    color: var(--app-base-color);
+}
+
+.dropdown-item:not(.active):hover,
+.dropdown-item:not(.active):focus,
+.dropdown-item:not(.active):active {
+    color: inherit;
+    background-color: var(--app-base-color-highlight);
+}
+
+.appLoginForm>div {
+    min-width: 220px;
+}
+
+.map-filter {
+    top: 20px;
+    transform: scale(0.8);
+    z-index: 100;
+}
+
+#WaterLevelInfo {
+    position: absolute;
+    right: 10px;
+    bottom: 10px;
+    z-index: 100;
+    transform: scale(0.9);
+    transform-origin: bottom right;
+}
+
+@media (max-width: 767.98px) {
+    #WaterLevelInfo {
+        position: static;
+        width: fit-content;
+        margin-left: auto;
+    }
+}
+
+@media (max-width: 575.98px) {
+    body[app] #mapContainer {
+        height: 450px !important;
+    }
+
+    body[app] .map-filter {
+        top: 0px;
+    }
+}
+
+body[app] .esri-view {
+    --esri-view-outline-color: none;
+}
+
+body[app] .esri-popup__main-container * {
+    font-family: var(--app-font-family);
+}
+
+body[app] .esri-view-width-xlarge .esri-popup__main-container,
+body[app] .esri-view-width-large .esri-popup__main-container,
+body[app] .esri-view-width-medium .esri-popup__main-container {
+    width: 300px;
+}
+
+body[app] .esri-view-height-less-than-medium .esri-popup__main-container {
+    max-height: 400px;
+}
+
+body[app] .esri-popup .esri-widget__heading {
+    font-size: 0.9rem;
+}
+
+body[app] .esri-popup .esri-popup__content {
+    font-size: 0.8rem;
+}
+
+body[app] .esri-popup .esri-popup__content * {
+    font-size: inherit;
+}
+
+body[app] .esri-view-width-xsmall .esri-expand--auto .esri-expand__container--expanded {
+    position: absolute;
+    top: auto;
+    bottom: 0;
+    height: fit-content;
+    min-width: 300px;
+    z-index: 200;
+}
+
+@keyframes pulse-animation {
+    0% {
+        transform: scale(0.9);
+        opacity: 0.7;
+    }
+
+    70% {
+        transform: scale(1.1);
+        opacity: 1;
+    }
+
+    100% {
+        transform: scale(0.9);
+        opacity: 0.7;
+    }
+}
+
+.info-color {
+    display: inline-block;
+    animation: pulse-animation 1.5s infinite ease-in-out;
+
+    color: var(--info-color, #969696);
+    filter: drop-shadow(0 0 5px color-mix(in srgb, var(--info-color, #969696), transparent 30%));
+}
+
+.map-loader {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(255, 255, 255, 0.7);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    border-radius: 0.5rem;
+}
+
+.notification-dropdown {
+    max-width: 100%;
+    min-width: 300px !important;
+}
+
+.notification-dropdown .noti-content {
+    height: 200px;
+}
+
+.form-check label {
+    user-select: none;
+}
+
+
+body[app] .input-group-sm>.input-group-text {
+    cursor: pointer;
+}
+
+body[app] .input-group-sm>.btn,
+body[app] .input-group-sm>.form-control,
+body[app] .input-group-sm>.form-select,
+body[app] .input-group-sm>.input-group-text {
+    font-size: 0.8rem;
+    padding: 0.25rem 0.8rem;
+    min-height: 30px;
+    height: 30px;
+}

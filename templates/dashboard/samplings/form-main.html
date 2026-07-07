@@ -1,0 +1,38 @@
+<div class="row">
+    <div class="col-lg-6 mb-3">
+        <label class="small mb-2" for="SamplingID">{{ StaticText.SamplingField.SamplingID }}</label>
+        <input type="text" class="form-control form-control-sm" id="SamplingID" name="SamplingID" required>
+    </div>
+
+    <div class="col-lg-6 mb-3">
+        <label class="small mb-2" for="SamplingName">{{ StaticText.SamplingField.SamplingName }}</label>
+        <input type="text" class="form-control form-control-sm" id="SamplingName" name="SamplingName" required>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-6 mb-3">
+        <label class="small mb-2" for="SamplingDate">{{ StaticText.SamplingField.SamplingDate }}</label>
+        <label class="input-group input-group-sm">
+			<input type="text" class="form-control datepicker" id="SamplingDate" name="SamplingDate" required>
+			<span class="input-group-text"><i class="bi bi-calendar3"></i></span>
+		</label>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12 mb-3">
+        <div class="form-check form-switch">
+            <input type="hidden" name="Status" value="0">
+            <input class="form-check-input" type="checkbox" id="Status" name="Status" value="1">
+            <label class="small" for="Status">{{ StaticText.SamplingField.Status }}</label>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12 mb-3">
+        <label class="small mb-2" for="Remark">{{ StaticText.SamplingField.Remark }}</label>
+        <textarea class="form-control form-control-sm" id="Remark" name="Remark"></textarea>
+    </div>
+</div>

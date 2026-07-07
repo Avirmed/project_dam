@@ -1,0 +1,3 @@
+As I understand that our web server acts as the central hub and the field RTUs/Dataloggers act as clients, the backend API service and destination addresses must be created on backend first. 
+Once finish set up the backend logic and spin up the endpoint (e.g., POST http://gprs.decode.co.th:5000/api/v1/telemetry), P Avi will pass that API address to me so I can target it for integration testing.
+For writing the inbound JSON mapping and payload parser immediately, here is sample, complete Full JSON Payload Sample that our hardware will actually be transmitting in the HTTP request body.

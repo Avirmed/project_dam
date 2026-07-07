@@ -1,0 +1,132 @@
+<div class="form-tmp d-none">
+	<div class="container">
+		<div class="form-processing">
+			<p class="text-center small py-5">{{ StaticText.Icon.Loading | safe }} {{ StaticText.Loading }}</p>
+		</div>
+		<form class="my-2 invisible" autocomplete="off" data-url="/dashboard/users/#">
+			<input type="hidden" name="UserID">
+
+			<div class="row flex-lg-row flex-column-reverse">
+				<div class="col-xl-3 col-lg-4 mb-3">
+					<label class="small mb-2" for="ImageSource">{{ StaticText.UserField.ImageSource }}</label>
+					<div class="image-preview user-image">
+						<div class="position-relative">
+							<img class="img-thumbnail Image" src="{{ StaticText.Images.Profile }}" data-href="{{ StaticText.Images.Profile }}" data-gallery="#form">
+							<div class="rotateBtn">
+								<span data-direction="CCW"><i class="bi bi-arrow-counterclockwise"></i></span>
+								<span data-direction="CW"><i class="bi bi-arrow-clockwise"></i></span>
+							</div>
+						</div>
+						<div class="checkbox checkbox-danger mx-2 text-nowrap d-none">
+							<input id="deleteimage" name="deleteimage" type="checkbox">
+							<label for="deleteimage" class="text-danger">{{ StaticText.Icon.Delete | safe }}</label>
+						</div>
+					</div>
+					<div class="file-progress-bar">0%</div>
+					<div class="clearfix"></div>
+					<input type="file" class="form-control form-control-sm image-file-choose" id="ImageSource" name="ImageSource" accept="image/jpeg,image/png,image/gif">
+				</div>
+				
+				<div class="col-xl-9 col-lg-8">
+					<div class="row">
+						<div class="col-12 mb-3">
+							<label class="small mb-2" for="UserName">{{ StaticText.UserField.UserName }}</label>
+							<input type="text" class="form-control form-control-sm" id="UserName" name="UserName" required>
+						</div>
+					</div>
+
+					<div class="row">
+						<div class="col-lg-6 mb-3">
+							<label class="small mb-2" for="FirstName">{{ StaticText.UserField.FirstName }}</label>
+							<input type="text" class="form-control form-control-sm" id="FirstName" name="FirstName" required>
+						</div>
+						
+						<div class="col-lg-6 mb-3">
+							<label class="small mb-2" for="LastName">{{ StaticText.UserField.LastName }}</label>
+							<input type="text" class="form-control form-control-sm" id="LastName" name="LastName" required>
+						</div>
+					</div>
+					
+					<div class="row">
+						<div class="col-12 mb-3">
+							<label class="small mb-2" for="Email">{{ StaticText.UserField.Email }}</label>
+							<input type="text" class="form-control form-control-sm" id="Email" name="Email" required>
+						</div>
+					</div>
+
+					<div class="row">
+						<div class="col-12 mb-3">
+							<label class="small mb-2" for="UserType">{{ StaticText.UserField.UserType }}</label>
+							<select class="selectTwo form-control-sm" id="UserType" name="UserType" required>
+								<option value="" selected>-- {{ StaticText.Choose }} --</option>
+								{% for key, value in StaticText.UserTypes.items() %}
+								<option value="{{ key }}">{{ value }}</option>
+								{% endfor %}
+							</select>
+						</div>
+					</div>
+
+					<div class="row">
+						<div class="col-md-4 mb-3">
+							<div class="form-check form-switch">
+								<input type="hidden" name="Status" value="0">
+								<input class="form-check-input" type="checkbox" id="Status" name="Status" value="1">
+								<label class="small" for="Status">{{ StaticText.UserField.Status }}</label>
+							</div>
+						</div>
+
+						<div class="col-md-4 mb-3">
+							<div class="form-check form-switch">
+								<input type="hidden" name="MultiLogin" value="0">
+								<input class="form-check-input" type="checkbox" id="MultiLogin" name="MultiLogin" value="1">
+								<label class="small mb-2" for="MultiLogin">{{ StaticText.UserField.MultiLogin }}</label>
+							</div>
+						</div>
+
+						<div class="col-md-4 mb-3">
+							<div class="form-check form-switch">
+								<input type="hidden" name="Theme" value="1">
+								<input class="form-check-input" type="checkbox" id="Theme" name="Theme" value="2">
+								<label class="small mb-2" for="Theme">{{ StaticText.DarkTheme }}</label>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<div class="row flex-lg-row">
+				<div class="col-xl-3 col-lg-4 mb-3">
+					<div class="row">
+						<div class="col-12 mb-3">
+							<label class="small mb-2" for="Password">{{ StaticText.UserField.Password }}</label>
+							<input type="password" class="form-control form-control-sm" id="Password" name="Password">
+						</div>
+					</div>
+
+					<div class="row">
+						<div class="col-12 mb-3">
+							<label class="small mb-2" for="PasswordConfirm">{{ StaticText.UserField.PasswordConfirm }}</label>
+							<input type="password" class="form-control form-control-sm" id="PasswordConfirm" name="PasswordConfirm">
+						</div>
+					</div>
+				</div>
+				
+				<div class="col-xl-9 col-lg-8">
+					<div class="row">
+						<div class="col-12">
+							<label class="small mb-2" for="Remark">{{ StaticText.UserField.Remark }}</label>
+							<textarea class="form-control form-control-sm" id="Remark" name="Remark"></textarea>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<div class="formBtns d-flex px-2 my-3">
+				<div class="d-flex justify-content-center flex-grow-1">
+					<button type="submit" class="btn btn-sm btn-success">{{ StaticText.Icon.Save | safe }} {{ StaticText.Save }}</button>
+				</div>
+				<button type="button" class="btn btn-sm btn-secondary closeBtn ms-auto">{{ StaticText.Close }}</button>
+			</div>
+		</form>
+	</div>
+</div>

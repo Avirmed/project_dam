@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html
+	lang="{{ StaticText.APP_LANG }}"
+	data-sidebar="light"
+	data-layout="horizontal"
+	data-card="bordered"
+	data-width="fluid"
+	data-theme="{{ User.getTheme() if User.is_authenticated else 'light'}}"
+>
+	{% include "modules/headercss.html" %}
+	<body app="{{ StaticText.APP_NAME }}" app-main class="menu-horizontal">
+		<div id="global-loader">
+			<div class="page-loader"></div>
+		</div>
+		<div class="main-wrapper">
+			{% include "modules/header.html" %}
+			{% set app_title, menu_data = Settings.APP_TITLE, StaticText.APP_MENU %}
+			{% include "main/sidebar.html" %}
+			<div class="page-wrapper">
+				<div id="module-container" class="content h-100 d-flex flex-column" data-contentid="{{ contentid or ''}}">
+					{% include "modules/breadcrumb.html" %}
+					{% include "modules/{}/index.html".format(Module) ignore missing %}
+				</div>
+				{% include "main/footer.html" %}
+			</div>
+		</div>
+		{% include "main/users/form.html" %}
+		{% include "main/footerjs.html" %}
+		<script src="{{ url_for('static', filename='js/modules/{}.js'.format(Module), v=time) }}"></script>
+	</body>
+</html>

@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="{{ StaticText.APP_LANG }}" data-theme="{{ User.getTheme() if User.is_authenticated else 'light'}}">
+	{% include "dashboard/headercss.html" %}
+	<body app="{{ StaticText.APP_NAME }}" app-dashboard>
+		<div id="global-loader">
+			<div class="page-loader"></div>
+		</div>
+		<div class="main-wrapper">
+			{% include "dashboard/header.html" %}
+			{% set app_title, menu_data = Settings.APP_DASHBOARD_TITLE, StaticText.APP_DASHBOARD_MENU %}
+			{% include "main/sidebar.html" %}
+			<div class="page-wrapper">
+				<div id="module-container" class="content h-100 d-flex flex-column" data-contentid="{{ contentid or ''}}">
+					{% include "dashboard/breadcrumb.html" %}
+					{% include "dashboard/{}/index.html".format(Module) ignore missing %}
+				</div>
+				{% include "main/footer.html" %}
+			</div>
+		</div>
+		{% include "main/users/form.html" %}
+		{% include "main/footerjs.html" %}
+		<script src="{{ url_for('static', filename='js/dashboard/{}.js'.format(Module), v=time) }}"></script>
+	</body>
+</html>

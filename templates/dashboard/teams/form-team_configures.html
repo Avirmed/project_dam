@@ -1,0 +1,31 @@
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-lg-6">
+            <div class="tabulator-container">
+                <div
+                    id="tableTeamStations"
+                    class="app-tabulator-table-tmp mt-0 mb-4"
+
+                    cfg-ajax-url="/api/stations/tree?status=1"
+                    cfg-index="StationID"
+                    cfg-groupBy="ProjectName,WatershedName"
+                    cfg-minHeight="500"
+                    cfg-numberic
+                ></div>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="tabulator-container">
+                <div
+                    id="tableTeamUsers"
+                    class="app-tabulator-table-tmp mt-0 mb-4"
+
+                    cfg-ajax-url="/api/users/list?status=1"
+                    cfg-index="UserID"
+                    cfg-minHeight="500"
+                    cfg-numberic
+                ></div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,30 @@
+<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0">
+		<meta name="keywords" content="{{ Settings.APP_KEYWORDS }}">
+		<meta name="robots" content="noindex, nofollow">
+		<title>{{ Settings.APP_TITLE }}</title>
+
+		<link rel="shortcut icon" type="image/x-icon" href="{{ StaticText.Images['App-Icon'] }}">
+		<link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='dist/img/apple-touch-icon.png') }}">
+		<link rel="stylesheet" href="{{ url_for('static', filename='dist/css/bootstrap.min.css') }}">
+		<link rel="stylesheet" href="{{ url_for('static', filename='dist/plugins/select2/css/select2.min.css') }}">
+		<link rel="stylesheet" href="{{ url_for('static', filename='dist/plugins/icons/feather/feather.css') }}">
+		<link rel="stylesheet" href="{{ url_for('static', filename='dist/plugins/tabler-icons/tabler-icons.css') }}">
+		<link rel="stylesheet" href="{{ url_for('static', filename='dist/plugins/fontawesome/css/fontawesome.min.css') }}">
+		<link rel="stylesheet" href="{{ url_for('static', filename='dist/plugins/fontawesome/css/all.min.css') }}">
+		<link rel="stylesheet" href="{{ url_for('static', filename='dist/css/bootstrap-datetimepicker.min.css') }}">
+		<link rel="stylesheet" href="{{ url_for('static', filename='dist/plugins/bootstrap-tagsinput/bootstrap-tagsinput.css') }}">
+		<link rel="stylesheet" href="{{ url_for('static', filename='dist/plugins/summernote/summernote-lite.min.css') }}">
+		<link rel="stylesheet" href="{{ url_for('static', filename='dist/plugins/daterangepicker/daterangepicker.css') }}">
+		<link rel="stylesheet" href="{{ url_for('static', filename='dist/plugins/flatpickr/flatpickr.min.css') }}">
+		<link rel="stylesheet" href="{{ url_for('static', filename='dist/plugins/@simonwep/pickr/themes/nano.min.css') }}">
+		<link rel="stylesheet" href="{{ url_for('static', filename='dist/css/style.css') }}">
+		<link rel="stylesheet" href="{{ url_for('static', filename='css/custom.css', v=time) }}">
+		<link rel="stylesheet" href="{{ url_for('static', filename='css/module.css', v=time) }}">
+		<style id="app-style">
+			:root {
+				--app-base-color: {{ Settings.APP_COLOR }};
+			}
+		</style>
+	</head>

@@ -1,0 +1,61 @@
+<div class="me-1 notification_item">
+    <a href="#" class="btn btn-menubar position-relative me-1" id="notification_popup" data-bs-toggle="dropdown" data-bs-auto-close="outside">
+        <i class="ti ti-bell"></i>
+        <span class="notification-status-dot d-none"></span>
+    </a>
+    <div class="dropdown-menu dropdown-menu-end notification-dropdown p-4">
+        <div class="d-flex align-items-center justify-content-between border-bottom p-0 pb-3 mb-3">
+            <h6 class="notification-title">{{ StaticText.Notifications }}</h6>
+            <div class="d-flex align-items-center d-none">
+                <a href="#" class="text-primary fs-15 me-3 lh-1">Mark all as read</a>
+                <div class="dropdown">
+                    <a href="#" class="bg-white dropdown-toggle" data-bs-toggle="dropdown">
+                        <i class="ti ti-calendar-due me-1"></i>Today
+                    </a>
+                    <ul class="dropdown-menu mt-2 p-3">
+                        <li>
+                            <a href="javascript:void(0);" class="dropdown-item rounded-1">
+                                This Week
+                            </a>
+                        </li>
+                        <li>
+                            <a href="javascript:void(0);" class="dropdown-item rounded-1">
+                                Last Week
+                            </a>
+                        </li>
+                        <li>
+                            <a href="javascript:void(0);" class="dropdown-item rounded-1">
+                                Last Month
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <div class="noti-content">
+            <div class="d-flex flex-column">
+                {% for i in range(0) %}
+                <div class="border-bottom mb-3 pb-3">
+                    <a href="#">
+                        <div class="d-flex">
+                            <span class="avatar avatar-lg me-2 flex-shrink-0">
+                                <img src="{{ StaticText.Images.Blank }}">
+                            </span>
+                            <div class="flex-grow-1">
+                                <p class="mb-1">
+                                    <span class="text-dark fw-semibold">Text {{ i + 1 }}</span>
+                                </p>
+                                <span>{{ time | strftime() }}</span>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        <div class="d-flex p-0">
+            <a class="btn btn-sm btn-light w-100 me-2" href="javascript:void(0);" data-close-dropdown>{{ StaticText.Cancel }}</a>
+            <a class="btn btn-sm btn-primary w-100" href="javascript:void(0);" >{{ StaticText.ViewAll }}</a>
+        </div>
+    </div>
+</div>

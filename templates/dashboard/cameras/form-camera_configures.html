@@ -1,0 +1,193 @@
+<div class="app-json-data" data-field="CameraConfigures">
+    <div class="row">
+        <div class="col-12 d-none">
+            <div class="p-2">
+                <div class="form-check form-switch">
+                    <label class="form-check-label">
+                        <input class="form-check-input" type="checkbox" name="status" checked>
+                        {{ StaticText.Status }}
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12">
+            <div class="p-2">
+                <div class="row align-items-start">
+
+                    <div class="col-md-4 mb-2">
+                        <div class="form-group field-basic" data-field="StationID">
+                            <label class="small mb-2" for="StationID">{{ StaticText.CameraField.StationID }}</label>
+                            <select class="selectTwo form-control-sm" id="StationID" name="StationID" data-url="/api/stations/list?status=1">
+                                <option value="" selected>-- {{ StaticText.Choose }} --</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="col-md-4 mb-2">
+                        <div class="form-group field-basic" data-field="CameraType">
+                            <label class="small mb-2" for="CameraType">{{ StaticText.CameraField.CameraType }}</label>
+                            <select class="selectTwo form-control-sm" id="CameraType" name="CameraType">
+                                <option value="" selected>-- {{ StaticText.Choose }} --</option>
+                                {% for key, value in StaticText.CameraTypes.items() %}
+                                <option value="{{ key }}">{{ value }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="col-md-4 mb-2">
+                        <div class="form-group field-basic" data-field="CCTV_NO">
+                            <label class="small mb-2" for="CCTV_NO">{{ StaticText.CameraField.CCTV_NO }}</label>
+                            <input type="number" class="form-control form-control-sm" id="CCTV_NO" name="CCTV_NO" min="1">
+                        </div>
+                    </div>
+
+                    <div class="col-md-4 mb-2">
+                        <div class="form-group field-basic" data-field="CameraSources">
+                            <label class="small mb-2" for="CameraSource">{{ StaticText.CameraField.CameraSource }}</label>
+                            <select class="selectTwo form-control-sm" id="CameraSource" name="CameraSources">
+                                <option value="" selected>-- {{ StaticText.Choose }} --</option>
+                                {% for key, value in StaticText.CameraSources.items() %}
+                                <option value="{{ key }}">{{ value }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="col-md-4 mb-2">
+                        <div class="form-group field-basic" data-field="Resolutions">
+                            <label class="small mb-2" for="Resolution">{{ StaticText.CameraField.Resolution }}</label>
+                            <select class="selectTwo form-control-sm" id="Resolution" name="Resolution">
+                                <option value="" selected>-- {{ StaticText.Choose }} --</option>
+                                {% for key, value in StaticText.Resolutions.items() %}
+                                <option value="{{ key }}">{{ value }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12">
+            <div class="p-2">
+                <div class="row align-items-start">
+
+                    <div class="col-md-4 mb-2">
+                        <div class="form-group field-basic" data-field="RSTP_IP">
+                            <label class="small mb-2" for="RSTP_IP">{{ StaticText.CameraField.RSTP_IP }}</label>
+                            <input type="text" class="form-control form-control-sm" id="RSTP_IP" name="RSTP_IP">
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-4 mb-2">
+                        <div class="form-group field-basic" data-field="TrainedModel">
+                            <label class="small mb-2" for="TrainedModel">{{ StaticText.CameraField.TrainedModel }}</label>
+                            <input type="text" class="form-control form-control-sm" id="TrainedModel" name="TrainedModel">
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12">
+            <div class="p-2">
+                <div class="row align-items-start">
+
+                    <div class="col-md-4 mb-2">
+                        <div class="form-group field-basic" data-field="Port">
+                            <label class="small mb-2" for="Port">{{ StaticText.CameraField.Port }}</label>
+                            <input type="text" class="form-control form-control-sm" id="Port" name="Port">
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-4 mb-2">
+                        <div class="form-group field-basic" data-field="Username">
+                            <label class="small mb-2" for="Username">{{ StaticText.CameraField.Username }}</label>
+                            <input type="text" class="form-control form-control-sm" id="Username" name="Username">
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-4 mb-2">
+                        <div class="form-group field-basic" data-field="Password">
+                            <label class="small mb-2" for="Password">{{ StaticText.CameraField.Password }}</label>
+                            <input type="text" class="form-control form-control-sm" id="Password" name="Password">
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-4 mb-2">
+                        <div class="form-group field-basic" data-field="ChannelsID">
+                            <label class="small mb-2" for="ChannelsID">{{ StaticText.CameraField.ChannelsID }}</label>
+                            <input type="text" class="form-control form-control-sm" id="ChannelsID" name="ChannelsID">
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-4 mb-2">
+                        <div class="form-group field-basic" data-field="FPS">
+                            <label class="small mb-2" for="FPS">{{ StaticText.CameraField.FPS }}</label>
+                            <input type="text" class="form-control form-control-sm" id="FPS" name="FPS">
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12">
+            <div class="p-2">
+                <div class="row align-items-start">
+
+                    <div class="col-md-4 mb-2">
+                        <div class="form-check form-switch field-basic" data-field="Onvif">
+                            <label class="form-check-label">
+                                <input class="form-check-input" type="checkbox" name="Onvif">
+                                {{ StaticText.CameraField.Onvif }}
+                            </label>
+                        </div>
+                    </div>
+                    
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12">
+            <div class="p-2">
+                <div class="row align-items-start">
+
+                    <div class="col-md-3 mb-2">
+                        <div class="form-group field-basic" data-field="Onvif_IP">
+                            <label class="small mb-2" for="Onvif_IP">{{ StaticText.CameraField.Onvif_IP }}</label>
+                            <input type="text" class="form-control form-control-sm" id="Onvif_IP" name="Onvif_IP">
+                        </div>
+                    </div>
+
+                    <div class="col-md-3 mb-2">
+                        <div class="form-group field-basic" data-field="Onvif_Port">
+                            <label class="small mb-2" for="Onvif_Port">{{ StaticText.CameraField.Onvif_Port }}</label>
+                            <input type="text" class="form-control form-control-sm" id="Onvif_Port" name="Onvif_Port">
+                        </div>
+                    </div>
+
+                    <div class="col-md-3 mb-2">
+                        <div class="form-group field-basic" data-field="Onvif_UserName">
+                            <label class="small mb-2" for="Onvif_UserName">{{ StaticText.CameraField.Onvif_UserName }}</label>
+                            <input type="text" class="form-control form-control-sm" id="Onvif_UserName" name="Onvif_UserName">
+                        </div>
+                    </div>
+
+                    <div class="col-md-3 mb-2">
+                        <div class="form-group field-basic" data-field="Onvif_Password">
+                            <label class="small mb-2" for="Onvif_Password">{{ StaticText.CameraField.Onvif_Password }}</label>
+                            <input type="text" class="form-control form-control-sm" id="Onvif_Password" name="Onvif_Password">
+                        </div>
+                    </div>
+                    
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>

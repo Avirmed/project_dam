@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="{{ StaticText.APP_LANG }}" data-color="brightblue">
+	{% include "dashboard/headercss.html" %}
+	<body class="bg-white" app="{{ StaticText.APP_NAME }}" app-login>
+		<div id="global-loader" style="display: none;">
+			<div class="page-loader"></div>
+		</div>
+		<div class="main-wrapper">
+			<div class="container-fuild">
+				<div class="w-100 overflow-hidden position-relative flex-wrap d-block vh-100">
+					<div class="row">
+						<div class="col-lg-6">
+							<div class="d-lg-flex align-items-center justify-content-center d-none flex-wrap vh-100 bg-primary-transparent">
+								<img src="{{ url_for('static', filename='images/waterfall.jpg') }}" alt="Img" class="login-page-bg">
+							</div>
+						</div>
+						<div class="col-lg-6 col-md-12 col-sm-12">
+							<div class="row justify-content-center align-items-center vh-100 overflow-auto flex-wrap ">
+								<div class="col-md-6 mx-auto vh-100">
+									<form id="loginForm" class="vh-100">
+										<div class="vh-100 d-flex flex-column justify-content-between p-4 pb-0">
+											<div class="mx-auto text-center"></div>
+											<div class="">
+												<div class="text-center mb-3">
+													<img src="{{ StaticText.Images['App-Logo'] }}" width="180" class="img-fluid mb-3" alt="Logo">
+													<h2 class="mb-2 text-primary">{{ Settings.APP_DASHBOARD_TITLE }}</h2>
+												</div>
+												<div class="mb-3">
+													<label class="form-label" for="UserName">{{ StaticText.UserField.UserName }}</label>
+													<div class="account-group">
+														<input type="text" class="form-control form-control"
+															id="UserName"
+															name="UserName"
+															data-msg-required="{{ StaticText.Messages.UserNameIsRequired }}"
+															required autofocus
+														>
+														<span class="account-icon ti ti-user"></span>
+													</div>
+												</div>
+												<div class="mb-3">
+													<label class="form-label" for="Password">{{ StaticText.UserField.Password }}</label>
+													<div class="pass-group">
+														<input type="password" class="pass-input form-control"
+															id="Password"
+															name="Password"
+															data-msg-required="{{ StaticText.Messages.UserPasswordIsRequired }}"
+															required data-rule-minlength="6"
+														>
+														<span class="ti toggle-password ti-eye-off"></span>
+													</div>
+												</div>
+												<div class="d-flex align-items-center justify-content-between mb-3">
+													<div class="d-flex align-items-center">
+														<div class="form-check mb-0">
+															<input class="form-check-input" id="remember_me" type="checkbox" name="RememberMe">
+															<label for="remember_me" class="form-check-label small mt-0">{{ StaticText.RememberMe}}</label>
+														</div>
+													</div>
+													<div class="text-end d-none">
+														<a href="javascript:;" class="link-danger">{{ StaticText.ForgotPassword}}</a>
+													</div>
+												</div>
+												<div class="mb-3">
+													<button type="submit" class="btn btn-primary w-100">{{ StaticText.LoginIn }}</button>
+												</div>
+											</div>
+											<div class="mt-5 pb-4 text-center">
+												<p class="mb-0 text-gray-9">{{ Settings.APP_FOOTER}}</p>
+											</div>
+										</div>
+									</form>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+		{% include "main/footerjs.html" %}
+        <script src="{{ url_for('static', filename='js/login.js', v=time) }}"></script>
+	</body>
+</html>

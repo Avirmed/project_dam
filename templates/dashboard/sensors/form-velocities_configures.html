@@ -1,0 +1,61 @@
+<div class="app-json-data" data-field="Velocities">
+    <div class="row">
+        <div class="col-12">
+            <div class="p-2">
+                <div class="form-check form-switch">
+                    <label class="form-check-label">
+                        <input class="form-check-input" type="checkbox" name="status">
+                        <small>{{ StaticText.Status }}</small>
+                    </label>
+                </div>
+            </div>
+        </div>
+        <div class="col-12">
+        {% for settings in StaticText.SensorVelocityConfigures %}
+            <div class="p-2">
+                <div class="row align-items-start">
+                {% for key, field in settings.fields.items() %}
+                    <div class="col-lg-6 mb-2">
+                        <div class="form-group field-basic" data-field="{{ key }}">
+                            {%  if field.select %}
+                            <label class="small mb-2">{{ field.title }}</label>
+                            <select class="selectTwo form-control-sm" name="{{ key }}">
+                                {%  for value, text in field.select.items() %}
+                                <option value="{{ value }}">{{ text }}</option>
+                                {%  endfor %}
+                            </select>
+                            {%  elif field.table %}
+                            <table
+                                class="table table-bordered table-sm table-configure"
+                                data-field="{{ key }}"
+                                data-align="{{ field.align }}"
+                            >
+                                <thead>
+                                    <tr>
+                                        <th class="px-3" width="1%">#</th>
+                                        {% for header in field.headers %}
+                                        <th data-value="{{ field.columns[loop.index0] }}"><div class="text-truncate">{{ header }}</div></th>
+                                        {% endfor %}
+                                        <th class="px-3" width="1%"><span class="addBtn text-success" role="button">{{ StaticText.Icon.Add | safe }}</span></th>
+                                    </tr>
+                                </thead>
+                                <tbody></tbody>
+                            </table>
+                            {%  else %}
+                            <label class="small mb-2">{{ field.title }}</label>
+                            <input
+                                type="text"
+                                name="{{ key }}"
+                                class="form-control form-control-sm" 
+                                placeholder="{{ field.placeholder }}"
+                            >
+                            {%  endif %}
+                        </div>
+                    </div>
+                {% endfor %}
+                </div>
+            </div>
+        {% endfor %}
+        </div>
+    </div>
+</div>

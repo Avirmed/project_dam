@@ -1,0 +1,31 @@
+<div class="form-tmp d-none">
+	<div class="container-fluid">
+		<div class="form-processing">
+			<p class="text-center small py-5">{{ StaticText.Icon.Loading | safe }} {{ StaticText.Loading }}</p>
+		</div>
+		<form class="my-2 invisible" autocomplete="off" data-url="/dashboard/areas/#">
+			<input type="hidden" name="ID">
+			
+			<ul class="nav nav-tabs nav-tabs-bottom mb-4 border-bottom pb-3">
+				{% for key, value in StaticText.AreaFormTab.items() %}
+				<li class="nav-item"><a class="nav-link {{ 'active' if key == 'main' else '' }}" href="#tab-form-{{ key }}" data-bs-toggle="tab">{{ value }}</a></li>
+				{% endfor %}
+			</ul>
+
+			<div class="tab-content container">
+				{% for key, value in StaticText.AreaFormTab.items() %}
+				<div class="tab-pane {{ 'show active' if key == 'main' else '' }}" id="tab-form-{{ key }}">
+					{% include "dashboard/{}/form-{}.html".format(Module, key) ignore missing  %}
+				</div>
+				{% endfor %}
+			</div>
+
+			<div class="formBtns d-flex px-2 my-3">
+				<div class="d-flex justify-content-center flex-grow-1">
+					<button type="submit" class="btn btn-sm btn-success">{{ StaticText.Icon.Save | safe }} {{ StaticText.Save }}</button>
+				</div>
+				<button type="button" class="btn btn-sm btn-secondary closeBtn ms-auto">{{ StaticText.Close }}</button>
+			</div>
+		</form>
+	</div>
+</div>

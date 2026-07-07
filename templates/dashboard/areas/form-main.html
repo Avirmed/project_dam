@@ -1,0 +1,43 @@
+<div class="row">
+    <div class="col-12 mb-3">
+        <label class="small mb-2" for="AreaID">{{ StaticText.AreaField.AreaID }}</label>
+        <input type="text" class="form-control form-control-sm" id="AreaID" name="AreaID" required>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-6 mb-3">
+        <label class="small mb-2" for="AreaRef">{{ StaticText.AreaField.AreaRef }}</label>
+        <select class="selectTwo form-control-sm" id="AreaRef" name="AreaRef" required>
+            <option value="" selected>-- {{ StaticText.Choose }} --</option>
+            {% for key, value in StaticText.AreaRefs.items() %}
+            <option value="{{ key }}">{{ value }}</option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <div class="col-lg-6 mb-3">
+        <label class="small mb-2" for="AreaDate">{{ StaticText.AreaField.AreaDate }}</label>
+        <label class="input-group input-group-sm">
+			<input type="text" class="form-control datepicker" id="AreaDate" name="AreaDate" required>
+			<span class="input-group-text"><i class="bi bi-calendar3"></i></span>
+		</label>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12 mb-3">
+        <div class="form-check form-switch">
+            <input type="hidden" name="Status" value="0">
+            <input class="form-check-input" type="checkbox" id="Status" name="Status" value="1">
+            <label class="small" for="Status">{{ StaticText.AreaField.Status }}</label>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12 mb-3">
+        <label class="small mb-2" for="Remark">{{ StaticText.RiverBasinField.Remark }}</label>
+        <textarea class="form-control form-control-sm" id="Remark" name="Remark"></textarea>
+    </div>
+</div>

@@ -1,0 +1,74 @@
+<div class="d-flex flex-column flex-grow-1 h-100 mb-4 position-relative">
+	<div class="stations-filters map-filter position-absolute w-100">
+		<div class="m-auto {{ '' if User.is_authenticated else 'w-50' }} bg-white rounded-2 shadow-sm px-3 py-2">
+			<div class="row">
+				{% if User.is_authenticated %}
+				<div class="col-md-4">
+					<div class="row align-items-start mb-2 mb-md-0">
+						<div class="col-auto">
+							<label class="col-form-label" for="ProjectIDFilter">{{ StaticText.ProjectField.ProjectName }}</label>
+						</div>
+						<div class="col">
+							<select class="form-control select2" id="ProjectIDFilter" name="ProjectID" data-url="/api/projects/list?status=1">
+								<option value="" selected>-- {{ StaticText.All }} --</option>
+							</select>
+						</div>
+					</div>
+				</div>
+				{% endif %}
+				<div class="{{ 'col-md-4' if User.is_authenticated else 'col-md-6' }}">
+					<div class="row align-items-start mb-2 mb-md-0">
+						<div class="col-auto">
+							<label class="col-form-label" for="RiverBasinIDFilter">{{ StaticText.RiverBasinField.WatershedName }}</label>
+						</div>
+						<div class="col">
+							<select class="form-control select2" id="RiverBasinIDFilter" name="RiverBasinID" data-url="/api/riverbasins/list?status=1">
+								<option value="" selected>-- {{ StaticText.All }} --</option>
+							</select>
+						</div>
+					</div>
+				</div>
+				<div class="{{ 'col-md-4' if User.is_authenticated else 'col-md-6' }}">
+					<div class="row align-items-start">
+						<div class="col-auto">
+                    		<label class="col-form-label" for="RegionFilter">{{ StaticText.StationField.Region }}</label>
+						</div>
+						<div class="col">
+							<select class="form-control select2" id="RegionFilter" name="Region">
+								<option value="" selected>-- {{ StaticText.All }} --</option>
+								{% for key, value in StaticText.Regions.items() %}
+								<option value="{{ key }}">{{ value }}</option>
+								{% endfor %}
+							</select>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+	<div id="mapContainer" class="bg-white border rounded-2 shadow-sm flex-grow-1 h-100"></div>
+	<div class="map-loader d-none">
+		<div class="spinner-border text-secondary" role="status">
+			<span class="visually-hidden">{{ StaticText.Loading }}</span>
+		</div>
+	</div>
+	<div id="WaterLevelInfo" class="bg-white rounded-2 shadow-sm p-2">
+		<h6 class="mb-1">{{ StaticText.WaterLevelInfo }}</h6>
+        <div class="row g-2">
+            {% for key, value in StaticText.WaterLevelTypes.items() %}
+            <div class="col">
+                <div class="rounded text-center d-flex align-items-center justify-content-center flex-column p-2" style="background-color: color-mix(in srgb, {{ value.color if value.color else '#000000' }}, transparent 50%);">
+                    <h6 class="fw-semibold">(0)</h6>
+                    <small>{{ StaticText.Station }}</small>
+                </div>
+                <p class="small text-center m-0">{{ value.text }}</p>
+            </div>
+            {% endfor %}
+        </div>
+	</div>
+</div>
+<style>
+	{% for key, value in StaticText.WaterLevelTypes.items() %}
+	.info-color-{{ key }} {--info-color: {{ value.color }};}
+	{% endfor %}
+</style>

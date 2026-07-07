@@ -1,0 +1,81 @@
+<div class="form-tmp d-none">
+	<div class="container">
+		<div class="form-processing">
+			<p class="text-center small py-5">{{ StaticText.Icon.Loading | safe }} {{ StaticText.Loading }}</p>
+		</div>
+		<form class="my-2 invisible" autocomplete="off" data-url="/dashboard/projects/#">
+			<input type="hidden" name="ProjectID">
+
+			<div class="container">
+				<div class="row flex-lg-row flex-column-reverse">
+					<div class="col-xl-3 col-lg-4 mb-3">
+						<label class="small mb-2" for="ImageSource">{{ StaticText.ProjectField.ImageSource }}</label>
+						<div class="image-preview form-image">
+							<div class="position-relative">
+								<img class="img-thumbnail Image" src="{{ StaticText.Images.Blank }}" data-href="{{ StaticText.Images.Blank }}" data-gallery="#form">
+								<div class="rotateBtn">
+									<span data-direction="CCW"><i class="bi bi-arrow-counterclockwise"></i></span>
+									<span data-direction="CW"><i class="bi bi-arrow-clockwise"></i></span>
+								</div>
+							</div>
+							<div class="checkbox checkbox-danger mx-2 text-nowrap d-none">
+								<input id="deleteimage" name="deleteimage" type="checkbox">
+								<label for="deleteimage" class="text-danger">{{ StaticText.Icon.Delete | safe }}</label>
+							</div>
+						</div>
+						<div class="file-progress-bar">0%</div>
+						<div class="clearfix"></div>
+						<input type="file" class="form-control form-control-sm image-file-choose" id="ImageSource" name="ImageSource" accept="image/jpeg,image/png,image/gif">
+					</div>
+
+					<div class="col-xl-9 col-lg-8">
+						<div class="row">
+			                <div class="col-12 mb-3">
+								<label class="small mb-2" for="ProjectName">{{ StaticText.ProjectField.ProjectName }}</label>
+								<input type="text" class="form-control form-control-sm" id="ProjectName" name="ProjectName" required>
+							</div>
+						</div>
+
+						<div class="row">
+			                <div class="col-12 mb-3">
+								<label class="small mb-2" for="CustomerName">{{ StaticText.ProjectField.CustomerName }}</label>
+								<input type="text" class="form-control form-control-sm" id="CustomerName" name="CustomerName" required>
+							</div>
+						</div>
+
+						<div class="row">
+			                <div class="col-xl-3 col-lg-4 col-md-6 col-12 mb-3">
+								<label class="small mb-2" for="SortOrder">{{ StaticText.ProjectField.SortOrder }}</label>
+								<input type="number" class="form-control form-control-sm" id="SortOrder" name="SortOrder" min="0" step="1" value="1" required>
+							</div>
+						</div>
+
+						<div class="row">
+			                <div class="col-12 mb-3">
+								<div class="form-check form-switch">
+									<input type="hidden" name="Status" value="0">
+									<input class="form-check-input" type="checkbox" id="Status" name="Status" value="1">
+									<label class="small" for="Status">{{ StaticText.ProjectField.Status }}</label>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<div class="row">
+					<div class="col-12 mb-3">
+						<label class="small mb-2" for="Remark">{{ StaticText.ProjectField.Remark }}</label>
+						<textarea class="form-control form-control-sm" id="Remark" name="Remark"></textarea>
+					</div>
+				</div>
+			</div>
+
+			<div class="formBtns d-flex px-2 my-3">
+				<div class="d-flex justify-content-center flex-grow-1">
+					<button type="submit" class="btn btn-sm btn-success">{{ StaticText.Icon.Save | safe }} {{ StaticText.Save }}</button>
+				</div>
+				<button type="button" class="btn btn-sm btn-secondary closeBtn ms-auto">{{ StaticText.Close }}</button>
+			</div>
+		</form>
+	</div>
+</div>

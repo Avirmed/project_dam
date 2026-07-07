@@ -1,0 +1,123 @@
+{% set menu_data = menu_data if menu_data is defined else {} %}
+
+{% macro render_menu(menu_items) %}
+<ul>
+    {% for item in menu_items %}
+    <li class="{{ 'submenu' if item.submenu else '' }}">
+        <a href="{{ 'javascript:void(0);' if item.submenu else item.url }}"
+            class="{{ 'active' if item.url == current_path else '' }}">
+            {{ item.name }}
+            {{ '<span class="menu-arrow inside-submenu"></span>' | safe if item.submenu else '' }}
+        </a>
+        {% if item.submenu %}
+        {{ render_menu(item.submenu) }}
+        {% endif %}
+    </li>
+    {% endfor %}
+</ul>
+{% endmacro %}
+
+{% macro render_horizontal_menu(menu_items, is_sub=False) %}
+<ul class="{{ 'nav-menu' if not is_sub else '' }}">
+    {% for item in menu_items %}
+    <li class="{{ 'submenu' if item.submenu else '' }}">
+        <a href="{{ 'javascript:void(0);' if item.submenu else item.url }}"
+            class="{{ 'active' if item.url == current_path else '' }}">
+            {% if not is_sub and item.icon %}
+            {{ item.icon | safe }}
+            {% endif %}
+            <span>{{ item.name }}</span>
+            {% if item.submenu %}
+            <span class="menu-arrow {{ 'inside-submenu' if is_sub else '' }}"></span>
+            {% endif %}
+        </a>
+        {% if item.submenu %}
+        {{ render_horizontal_menu(item.submenu, is_sub=True) }}
+        {% endif %}
+    </li>
+    {% endfor %}
+</ul>
+{% endmacro %}
+
+<div class="sidebar" id="sidebar">
+    <!-- Logo -->
+    <div class="sidebar-logo">
+        <a href="/dashboard" class="logo-text">
+            <img src="{{ StaticText.Images['Logo'] }}" />
+            <span>{{ app_title }}</span>
+        </a>
+    </div>
+    <div class="sidebar-inner slimscroll">
+        <div id="sidebar-menu" class="sidebar-menu">
+            <ul>
+                {% for key, menu in menu_data.items() %}
+                {% if menu.name %}
+                <li class="menu-title">
+                    <span>{{ menu.name }}</span>
+                </li>
+                {% endif %}
+                {% if menu.submenu %}
+                <li>
+                    <ul>
+                        {% for submenu in menu.submenu %}
+                        {% if User.is_authenticated or loop.first %}
+                        <li class="
+                                {{ 'submenu' if submenu.submenu else '' }}
+                                {{ 'active' if submenu.url == current_path else '' }}
+                            ">
+                            <a href="{{ 'javascript:void(0);' if submenu.submenu else submenu.url }}"
+                                class="{{ 'open' if submenu.submenu and submenu.url == request.path else '' }}">
+                                {{ submenu.icon | safe }}
+                                <span>{{ submenu.name }}</span>
+                                {{ '<span class="menu-arrow"></span>' | safe if submenu.submenu else '' }}
+                            </a>
+                            {% if submenu.submenu %}
+                            {{ render_menu(submenu.submenu) }}
+                            {% endif %}
+                        </li>
+                        {% endif %}
+                        {% endfor %}
+                    </ul>
+                </li>
+                {% endif %}
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+</div>
+
+<div class="sidebar sidebar-horizontal" id="horizontal-menu">
+    <div class="sidebar-menu">
+        <div class="main-menu">
+            <ul class="nav-menu">
+                {% for key, menu in menu_data.items() %}
+                {% if menu.name %}
+                <li class="menu-title">
+                    <span>{{ menu.name }}</span>
+                </li>
+                {% endif %}
+
+                {% if menu.submenu %}
+                {% for submenu in menu.submenu %}
+                {% if User.is_authenticated or loop.first %}
+                <li class="{{ 'submenu' if submenu.submenu else '' }}">
+                    <a href="{{ 'javascript:void(0);' if submenu.submenu else submenu.url }}"
+                        class="{{ 'active' if submenu.url == current_path else '' }}">
+                        {{ submenu.icon | safe }}
+                        <span>{{ submenu.name }}</span>
+                        {% if submenu.submenu %}
+                        <span class="menu-arrow"></span>
+                        {% endif %}
+                    </a>
+                    {% if submenu.submenu %}
+                    {{ render_horizontal_menu(submenu.submenu, is_sub=True) }}
+                    {% endif %}
+                </li>
+                {% endif %}
+                {% endfor %}
+                {% endif %}
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+</div>

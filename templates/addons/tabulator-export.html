@@ -1,0 +1,12 @@
+<div class="d-sm-flex justify-content-between mb-3">
+	<div class="btn-group btn-group-sm tabulator-export mb-3 mb-sm-0">
+		<button type="button" class="btn btn-outline-secondary" data-type="xlsx">{{ StaticText.Export.Excel | safe }}</button>
+		<button type="button" class="btn btn-outline-secondary" data-type="csv">{{ StaticText.Export.CSV | safe }}</button>
+		<button type="button" class="btn btn-outline-secondary" data-type="pdf">{{ StaticText.Export.PDF | safe }}</button>
+		<button type="button" class="btn btn-outline-secondary" data-type="print">{{ StaticText.Export.Print | safe }}</button>
+	</div>
+	<div class="position-relative w-sm-100">
+		<input type="text" class="form-control form-control-sm tabulator-search-input pe-4" placeholder="{{ StaticText.Searching }}" />
+		<i class="ti ti-search tabulator-search-btn position-absolute top-50 end-0 translate-middle-y me-2"></i>
+	</div>
+</div>

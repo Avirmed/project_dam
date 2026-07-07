@@ -1,0 +1,25 @@
+<table id="tableSystemSettings">
+    <thead>
+        <tr>
+            <th 
+                width="25%"
+                tabulator-field="field"
+                tabulator-sorter="string"
+            >{{ StaticText.Field }}</th>
+            <th
+                width="75%"
+                tabulator-field="value"
+                tabulator-editor="input"
+            >{{ StaticText.Value }}</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for setting in Settings %}
+        <tr>
+            <td>{{ setting }}</td>
+            <td>{{ Settings[setting] }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+<p class="text-muted small">Default color: {{ StaticText.APP_COLOR }}</p>
