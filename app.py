@@ -55,7 +55,7 @@ def create_app() -> Flask:
 
     register_handlers(app)
     register_blueprints(app)
-    
+
     os.makedirs(statictext.APP_TMP_PATH, exist_ok=True)
 
     return app

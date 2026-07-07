@@ -1,4 +1,4 @@
-<div class="app-json-data" data-field="WaterConfigures">
+<div class="app-json-data" data-field="SensorConfigures">
     <div class="row">
         <div class="col-12">
             <div class="p-2">
@@ -10,23 +10,61 @@
                 </div>
             </div>
         </div>
-        {% for settings in StaticText.WaterLevelConfigures %}
-        <div class="col-md-6 mb-3">
+        <div class="col-12">
+        {% for settings in StaticText.WaterConfigures %}
             <div class="p-2">
                 <h5 class="mb-3">{{ settings.title }}</h5>
+                <div class="row">
                 {% for key, field in settings.fields.items() %}
-                <div class="form-group field-basic mb-2">
-                    <label class="small mb-2">{{ field.title }}</label>
-                    <input
-                        type="text"
-                        name="{{ key }}"
-                        class="form-control form-control-sm" 
-                        placeholder="{{ field.placeholder }}"
-                    >
-                </div>
+                    <div class="col-md-6 mb-2">
+                        <div class="form-group field-check" data-field="{{ key }}">
+                            <label class="small mb-2">{{ field.title }}</label>
+                            <div class="row align-items-center g-1">
+
+                                <div class="col-auto">
+                                    <div class="form-check form-check mb-0">
+                                        <input class="form-check-input" type="checkbox" name="{{ key }}_check">
+                                    </div>
+                                </div>
+
+                                <div class="col">
+                                    <input
+                                        type="text"
+                                        name="value"
+                                        class="form-control form-control-sm" 
+                                        placeholder="{{ field.placeholder }}"
+                                    >
+                                </div>
+
+                                {% if field.radio %}
+                                <div class="col-auto">
+                                    <div class="d-flex gap-2">
+                                        {% for radio in field.radio %}
+                                        <div class="form-check form-check-inline mb-0 small">
+                                            <input 
+                                                class="form-check-input" 
+                                                type="radio" 
+                                                name="{{ key }}_radio" 
+                                                id="{{ key }}_{{ loop.index }}" 
+                                                value="{{ radio }}"
+                                                {% if loop.first %}checked{% endif %}
+                                            >
+                                            <label class="form-check-label" for="{{ key }}_{{ loop.index }}">
+                                                {{ radio }}
+                                            </label>
+                                        </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                                {% endif %}
+
+                            </div>
+                        </div>
+                    </div>
                 {% endfor %}
+                </div>
             </div>
-        </div>
         {% endfor %}
+        </div>
     </div>
 </div>

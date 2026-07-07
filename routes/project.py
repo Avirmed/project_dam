@@ -306,6 +306,7 @@ def file_upload():
 
 
 @project_bp.route("/imgrotate", methods=["POST"])
+@login_required
 def imgrotate():
     if not current_user.is_authenticated:
         error_code = 401

@@ -242,7 +242,7 @@ def login():
         if username is not None and password is not None:
             username = username.strip()
             password = password.strip()
-            
+
             object = User.query.filter(
                 func.lower(User.UserName) == func.lower(username)
             ).first()

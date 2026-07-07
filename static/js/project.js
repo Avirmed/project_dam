@@ -513,6 +513,10 @@ function updateEditForm(tmpForm, jsonData, updateIMG = false) {
 
         $input.val(v);
 
+        if (k.includes("Color")) {
+            $input.change();
+        }
+
         if ($input.hasClass("datepicker")) {
             $input.datepicker("setDate", v);
         }

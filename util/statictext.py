@@ -149,6 +149,7 @@ StationField = {
     "Latitude": "Latitude",
     "Longitude": "Longitude",
     "Zoom": "Zoom",
+    "StationConfigures": "Station configures",
     "WaterConfigures": "Water configures",
     "SensorConfigures": "Sensor configures",
     "API": "API",
@@ -161,14 +162,13 @@ StationField = {
 
 StationFormTab = {
     "main": "Main",
+    "station_configures": "Station configures",
     "water_configures": "Water configures",
-    "sensor_configures": "Sensor configures",
-    "api": "API",
-    "csv": "Upload CSV FTP",
-    "http": "HTTP",
+    "api": "REST API Server",
+    "ftp": "Upload image FTP",
 }
 
-WaterLevelConfigures = [
+StationConfigures = [
     {
         "title": "ข้อมูลท้องน้ำจุดที่ 1 ( Water Level Point 1)",
         "fields": {
@@ -183,7 +183,7 @@ WaterLevelConfigures = [
             "ZEROGATE_UP": {"title": "ZEROGATE_UP - ศูนย์เสาระดับ", "placeholder": ""},
             "GROUND_LEVEL_WL_UP": {
                 "title": "GROUND_LEVEL_WL_UP -ระดับท้องน้ำ",
-                "placeholder": "Current Water Level – ZeroGate",
+                "placeholder": "" # "Current Water Level – ZeroGate",
             },
             "WARNING_UP": {"title": "WARNING_UP – ระดับน้ำเตือนภัย", "placeholder": ""},
             "CRITICAL_UP": {"title": "CRITICAL_UP – ระดับน้ำวิกฤต", "placeholder": ""},
@@ -206,7 +206,7 @@ WaterLevelConfigures = [
             },
             "GROUND_LEVEL_WL_DOWN": {
                 "title": "GROUND_LEVEL_WL_DOWN -ระดับท้องน้ำ",
-                "placeholder": "Current Water Level – ZeroGate",
+                "placeholder": "" # "Current Water Level – ZeroGate",
             },
             "WARNING_DOWN": {
                 "title": "WARNING_DOWN – ระดับน้ำเตือนภัย",
@@ -220,7 +220,7 @@ WaterLevelConfigures = [
     },
 ]
 
-SensorConfigures = [
+WaterConfigures = [
     {
         "title": "Sensor – เซ็นเซอร์ (Mapping SQL DataSensor TO DataStation)",
         "fields": {
@@ -256,14 +256,14 @@ SensorConfigures = [
                 "placeholder": "",
                 "checkbox": True,
             },
-            "Garbage": {
-                "title": "Garbage - พื้นที่ตะกอน %",
+            "WaterColor": {
+                "title": "Water Color - สีของน้ำ",
                 "max": 100,
                 "placeholder": "",
                 "checkbox": True,
             },
-            "WaterColor": {
-                "title": "Water Color - สีของน้ำ",
+            "Garbage": {
+                "title": "Garbage - พื้นที่ตะกอน %",
                 "max": 100,
                 "placeholder": "",
                 "checkbox": True,
