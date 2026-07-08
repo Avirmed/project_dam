@@ -15,16 +15,23 @@
             <div class="p-2">
                 <div class="row align-items-start">
                 {% for key, field in settings.fields.items() %}
-                    <div class="col-md-6 mb-2">
+                    {%  if field.select %}
+                    <div class="col-md-3 mb-2">
                         <div class="form-group field-basic" data-field="{{ key }}">
-                            {%  if field.select %}
                             <label class="small mb-2">{{ field.title }}</label>
                             <select class="selectTwo form-control-sm" name="{{ key }}">
                                 {%  for value, text in field.select.items() %}
                                 <option value="{{ value }}">{{ text }}</option>
                                 {%  endfor %}
                             </select>
-                            {%  elif field.table %}
+                        </div>
+                    </div>
+                    {%  elif "line" in key %}
+                    <hr class="divder mt-2">
+                    {%  elif field.table %}
+                    <div class="col-md-6 mb-2">
+                        <div class="form-group field-basic" data-field="{{ key }}">
+                        <label class="small mb-2">{{ field.title }}</label>
                             <table
                                 class="table table-bordered table-sm table-configure"
                                 data-field="{{ key }}"
@@ -41,17 +48,34 @@
                                 </thead>
                                 <tbody></tbody>
                             </table>
-                            {%  else %}
+                        </div>
+                    </div>
+                    {%  else %}
+                    <div class="col-md-3 mb-2">
+                        <div class="form-group field-basic" data-field="{{ key }}">
                             <label class="small mb-2">{{ field.title }}</label>
                             <input
+                                {% if field.type %}
+                                type="{{ field.type }}"
+                                {% else %}
                                 type="text"
+                                {% endif %}
+
                                 name="{{ key }}"
                                 class="form-control form-control-sm" 
                                 placeholder="{{ field.placeholder }}"
+
+                                {% if field.min is defined and field.min is not none %}
+                                min="{{ field.min }}"
+                                {% endif %}
+
+                                {% if field.max %}
+                                max="{{ field.max }}"
+                                {% endif %}
                             >
-                            {%  endif %}
                         </div>
                     </div>
+                    {%  endif %}
                 {% endfor %}
                 </div>
             </div>

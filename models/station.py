@@ -69,11 +69,7 @@ class Station(db.Model):
     Longitude = db.Column(db.String(100))
     Zoom = db.Column(db.SmallInteger, default=6)
 
-    WaterConfigures = db.Column(JSONB, nullable=True, default=dict)
-    SensorConfigures = db.Column(JSONB, nullable=True, default=dict)
-    API = db.Column(JSONB, nullable=True, default=dict)
-    CSV = db.Column(JSONB, nullable=True, default=dict)
-    HTTP = db.Column(JSONB, nullable=True, default=dict)
+    Meta = db.Column(JSONB, nullable=True, default=dict)
 
     Status = db.Column(db.SmallInteger, default=1, nullable=False)
     ImageSource = db.Column(db.String(250))

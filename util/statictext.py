@@ -149,12 +149,7 @@ StationField = {
     "Latitude": "Latitude",
     "Longitude": "Longitude",
     "Zoom": "Zoom",
-    "StationConfigures": "Station configures",
-    "WaterConfigures": "Water configures",
-    "SensorConfigures": "Sensor configures",
-    "API": "API",
-    "CSV": "Upload CSV FTP",
-    "HTTP": "HTTP",
+    "Meta": "Meta Data",
     "Status": "Status",
     "ImageSource": "Picture",
     "Remark": "Remark",
@@ -285,19 +280,47 @@ APIMethots = {
     "delete": "DELETE",
 }
 
+API_Protocols = {
+    "http": "HTTP",
+    "https": "HTTPS",
+    "both": "Both (HTTP & HTTPS)",
+}
+
+API_HTTP_Sources = {
+    "custom": "Custom",
+    "ipv4": "Anywhere IPv4 (0.0.0.0/0)",
+    "ipv6": "Anywhere IPv6 (::/0)",
+}
+
+API_Authentications = {
+    "none": "None",
+    "basic": "Basic Auth",
+    "bearer": "Bearer Token",
+    "key": "API Key"
+}
+
 APIConfigures = [
     {
         "fields": {
-            "URL": {"title": "Server URL (Host URL)", "placeholder": ""},
-            "Method": {"title": "Method", "placeholder": "", "select": APIMethots},
-            "HeaderKey": {"title": "Header Key", "placeholder": ""},
-            "Value": {"title": "Value", "placeholder": ""},
+            "Protocol": {"title": "Method", "placeholder": "", "select": API_Protocols},
+            "Port": {"title": "HTTP Port (Listener Port)", "placeholder": "0 – 65,535", "type": "number", "min": 0, "max": 65535},
+            "HTTP_Source": {"title": "Method", "placeholder": "", "select": API_HTTP_Sources},
+            "Authentication": {"title": "Authentication", "placeholder": "", "select": API_Authentications},
+            
+            # "Authentication": {"title": "Authentication", "placeholder": "", "select": API_Authentications},
+            
+            "line-1":"",
+            
+            
+            
+            "line-2":"",
+            
             "Keys": {
-                "title": "Keys",
+                "title": "Inbound Data Mapping",
                 "placeholder": "",
                 "table": True,
-                "headers": ["Key"],
-                "columns": ["key"],
+                "headers": ["Device JSON Key", "Database Column"],
+                "columns": ["key", "field"],
                 "align": "start",
             },
         }
@@ -332,7 +355,7 @@ DirectoryStructures = {
     3: "Save in Child directory",
 }
 
-CSVConfigures = [
+FTPConfigures = [
     {
         "fields": {
             "ServerIPAddress": {"title": "Server IP Address", "placeholder": ""},

@@ -703,3 +703,8 @@ body[app] .input-group-sm>.input-group-text {
     min-height: 30px;
     height: 30px;
 }
+
+hr.divder{
+    border-color: var(--app-base-border-color);
+    opacity: 1;
+}
