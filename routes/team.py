@@ -1,5 +1,4 @@
 import os
-import hashlib
 import shutil
 
 from flask import Blueprint, request, jsonify, abort
@@ -9,7 +8,7 @@ from models import (
     Team,
 )
 
-from util import statictext
+from util import statictext, util
 
 team_bp = Blueprint("team_bp", __name__)
 
@@ -194,9 +193,12 @@ def file_upload():
     lastPart = request.form.get("lastPart", "").lower() in ("1", "true", "yes")
     contentid = request.form.get("contentid", None)
 
-    file_ext = os.path.splitext(file_real_name)[1].lstrip(".")
-    hash_str = hashlib.md5((file_real_name + upload_time).encode()).hexdigest()
-    filename = f"{upload_time}_{hash_str}.{file_ext}"
+    file_ext = util.get_safe_extension(file_real_name)
+    if not file_ext:
+        error_code = 400
+        abort(error_code, description=statictext.ResponseCode[error_code])
+
+    filename = util.build_upload_filename(upload_time, file_real_name, file_ext)
 
     part_file = os.path.join(statictext.APP_TMP_PATH, f"{filename}.part{part}")
     final_file_path = os.path.join(statictext.APP_TMP_PATH, filename)

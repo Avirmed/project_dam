@@ -9,7 +9,7 @@ class FileUploader {
         this.Files = [];
         this.isDone = false;
         this.doneCount = 0;
-        this.ContentID = null;
+        this.targetId = null;
 
         var _FileUploader_ = this;
         var fileCounter = 0;
@@ -75,7 +75,7 @@ class FileUploader {
         formData.append('time', this.Files[fileIndex].time);
         if (this.Files[fileIndex].file.size <= this.Files[fileIndex].end) {
             formData.append('lastPart', true);
-            formData.append('contentid', this.ContentID);
+            formData.append('contentid', this.targetId);
         }
 
         var request = new XMLHttpRequest();

@@ -144,6 +144,50 @@ def getFileTypeIcon(filename, filepath):
     return f'<span class="fileType" data-type="{ext}" data-url="{filepath}" title="{filename}" {extraAttr}>{icon}</span>'
 
 
+# --- Secure chunked-upload helpers (used by the /fileupload routes) ---
+ALLOWED_IMAGE_EXTENSIONS = {"jpg", "jpeg", "png", "gif"}
+
+# Extensions that could be executed or served as code on the server. These are
+# rejected for every upload, even when no whitelist is enforced.
+DANGEROUS_UPLOAD_EXTENSIONS = {
+    "php", "phtml", "php3", "php4", "php5", "php7", "phps", "pht",
+    "asp", "aspx", "jsp", "jspx", "cgi", "pl", "py", "pyc", "pyo", "rb",
+    "sh", "bash", "zsh", "bat", "cmd", "com", "exe", "dll", "msi", "scr",
+    "vbs", "vbe", "js", "mjs", "jse", "ws", "wsf", "jar", "war", "class",
+    "so", "bin", "htaccess", "htpasswd", "ini", "conf", "config",
+    "svg", "svgz", "html", "htm", "xhtml", "shtml", "xml", "swf",
+}
+
+
+def get_safe_extension(filename, allowed=ALLOWED_IMAGE_EXTENSIONS):
+    """Return the lowercased extension if the file is safe to store, else None.
+
+    A file with no extension or a server-dangerous extension (scripts,
+    executables, or files that could be served back as code) is always
+    rejected. When `allowed` is given (defaults to images) the extension must
+    also be in that whitelist; pass allowed=None to accept any non-dangerous
+    file (e.g. for general multi-file uploads).
+    """
+    ext = os.path.splitext(filename or "")[1].lower().lstrip(".")
+    if not ext or ext in DANGEROUS_UPLOAD_EXTENSIONS:
+        return None
+    if allowed is not None and ext not in allowed:
+        return None
+    return ext
+
+
+def build_upload_filename(upload_time, filename, ext):
+    """Build a collision-resistant, traversal-safe upload filename.
+
+    The client-supplied `upload_time` is stripped to [A-Za-z0-9_], so it can
+    never contain path separators or "..", and `ext` must already be validated
+    with get_safe_extension. Result: "<time>_<md5(filename+time)>.<ext>".
+    """
+    safe_time = re.sub(r"[^A-Za-z0-9_]", "", upload_time or "")
+    digest = hashlib.md5(((filename or "") + (upload_time or "")).encode()).hexdigest()
+    return f"{safe_time}_{digest}.{ext}"
+
+
 def extractPrefixedData(array, prefix):
     return [
         {key[len(prefix) : -1]: value} for key, value in array if key.startswith(prefix)

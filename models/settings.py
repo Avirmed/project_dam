@@ -108,41 +108,10 @@ class Settings(db.Model):
         return {setting.Name: setting.Value for setting in settings}
 
     @classmethod
-    def create_default_settings(cls):
-        app_title = cls.query.filter_by(Name="APP_TITLE").first()
-        if not app_title:
-            app_title = cls(Name="APP_TITLE", Value="APP - Title")
-            db.session.add(app_title)
-            db.session.commit()
-
-        app_title = cls.query.filter_by(Name="APP_DASHBOARD_TITLE").first()
-        if not app_title:
-            app_title = cls(Name="APP_DASHBOARD_TITLE", Value="APP - Dashboard title")
-            db.session.add(app_title)
-            db.session.commit()
-
-        app_footer = cls.query.filter_by(Name="APP_FOOTER").first()
-        if not app_footer:
-            app_footer = cls(Name="APP_FOOTER", Value="APP - Footer")
-            db.session.add(app_footer)
-            db.session.commit()
-
-        app_keywords = cls.query.filter_by(Name="APP_KEYWORDS").first()
-        if not app_keywords:
-            app_keywords = cls(Name="APP_KEYWORDS", Value="keywords")
-            db.session.add(app_keywords)
-            db.session.commit()
-
-        app_keywords = cls.query.filter_by(Name="APP_COLOR").first()
-        if not app_keywords:
-            app_keywords = cls(Name="APP_COLOR", Value=statictext.APP_COLOR)
-            db.session.add(app_keywords)
-            db.session.commit()
-
-    @classmethod
     def fix_sequence(cls):
         try:
-            with db.engine.connect() as conn:
+            # begin() commits on exit; connect() would roll the setval back, leaving the sequence unchanged.
+            with db.engine.begin() as conn:
                 conn.execute(text("""
                         SELECT setval(
                             pg_get_serial_sequence('tbl_settings', 'ID'),

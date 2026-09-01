@@ -79,86 +79,7 @@ function loadForm(cid = '') {
                     serializeEditForm($form);
                     fileUploader = new FileUploader("#ImageSource", `/api/${module}/fileupload`, fileUploadDone);
 
-                    let jsonFields = {};
-                    $(".app-json-data").each(function () {
-                        let _this = $(this);
-                        let jsonField = _this.data("field");
-
-
-                        jsonFields[jsonField] = {
-                            'status': false,
-                            'configs': {}
-                        };
-
-                        if (_this.find(`input[name="status"]`).length) {
-                            jsonFields[jsonField]['status'] = _this.find(`input[name="status"]`).is(":checked");
-                            _this.find(`input[name="status"]`).prop('disabled', true);
-                        }
-
-                        _this.find(".field-basic :input").each(function () {
-                            let name = $(this).attr("name");
-                            let value = $(this).val();
-
-                            jsonFields[jsonField]['configs'][name] = (typeof value === 'string') ? value.trim() : (value || '');
-                        });
-
-                        _this.find(".field-check").each(function () {
-                            let fieldGroup = $(this);
-                            let fieldName = fieldGroup.data("field");
-                            let checked = fieldGroup.find(":checkbox").is(":checked");
-                            let text = fieldGroup.find(":text").val();
-                            let radio = null;
-
-                            if (fieldGroup.find(":radio").length) {
-                                fieldGroup.find(":radio").each(function () {
-                                    if ($(this).is(":checked")) {
-                                        radio = $(this).val();
-                                    }
-                                });
-                            }
-
-                            jsonFields[jsonField]['configs'][fieldName] = {
-                                'checked': checked,
-                                'text': text,
-                                'radio': radio
-                            };
-                        });
-
-                        _this.find(".table-configure").each(function () {
-                            let table = $(this);
-                            let fieldName = table.data("field");
-                            let columns = {};
-                            let rowData = [];
-
-                            table.find(`thead th[data-value]`).each(function () {
-                                columns[$(this).index()] = $(this).data("value");
-                            });
-
-                            table.find(`tbody tr`).each(function () {
-                                let rows = $(this).find("td");
-                                let obj = {}
-                                let filled = false;
-
-                                $.each(columns, function (key, value) {
-                                    obj[value] = rows.eq(key).text().trim();
-
-                                    if (rows.eq(key).text().trim() != '') {
-                                        filled = true;
-                                    }
-                                });
-
-                                filled && rowData.push(obj);
-                            });
-
-                            jsonFields[jsonField]['configs'][fieldName] = rowData;
-                        });
-
-                        jsonFields[jsonField] = JSON.stringify(jsonFields[jsonField]);
-                    });
-
-                    options.data = $.extend({}, options.data, jsonFields);
-
-                    $form.find('.app-json-data :input').prop('disabled', true);
+                    options.data = $.extend({}, options.data, serializeJsonData($form));
                 },
                 beforeSubmit: function () {
                     lockFormInputs(moduleForm, true);
@@ -187,7 +108,7 @@ function loadForm(cid = '') {
                     updateEditForm(moduleForm, jsonData.Data, fileUploader.Files.length == 0);
 
                     if (fileUploader.Files.length > 0) {
-                        fileUploader.ContentID = jsonData.Data.StationID;
+                        fileUploader.targetId = jsonData.Data.StationID;
                         fileUploader.upload();
                         return;
                     }

@@ -154,7 +154,7 @@ function loadForm(cid = '') {
                     activeUserForm(moduleForm, jsonData.Data);
 
                     if (fileUploader.Files.length > 0) {
-                        fileUploader.ContentID = jsonData.Data.TeamID;
+                        fileUploader.targetId = jsonData.Data.TeamID;
                         fileUploader.upload();
                         return;
                     }

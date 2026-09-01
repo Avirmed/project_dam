@@ -40,6 +40,13 @@ function isObject(val) {
     return Object.prototype.toString.call(val) === '[object Object]';
 }
 
+function toBool(value) {
+    if (typeof value === "string") {
+        return !["", "0", "false", "off", "no", "null", "undefined"].includes(value.trim().toLowerCase());
+    }
+    return !!value;
+}
+
 function isNumeric(val) {
     return (typeof val === 'number' || (typeof val === 'string' && val.trim() !== '')) && !isNaN(val);
 }
@@ -531,73 +538,90 @@ function updateEditForm(tmpForm, jsonData, updateIMG = false) {
         let configContainer = $(this);
         let jsonField = configContainer.data("field");
 
-        if (jsonField in jsonData) {
-            if (!isJSON(jsonData[jsonField])) {
+        if (!(jsonField in jsonData)) {
+            return;
+        }
+
+        let jsonFields = jsonData[jsonField];
+
+        // Accept both an object and a JSON string; ignore anything else.
+        if (typeof jsonFields === "string") {
+            try {
+                jsonFields = JSON.parse(jsonFields);
+            } catch (e) {
                 return;
             }
-
-            let jsonFields = jsonData[jsonField];
-
-            if ('status' in jsonFields) {
-                configContainer.find(`input[name="status"]`).prop("checked", jsonFields.status);
-            }
-
-            if ('color' in jsonFields) {
-                configContainer.find(`input[name="color"]`).prop("checked", jsonFields.color);
-            }
-
-            if ('configs' in jsonFields) {
-                $.each(jsonFields['configs'], function (key, value) {
-                    if (isObject(value)) {
-                        let groupTag = configContainer.find(`.field-check[data-field="${key}"]`);
-                        if (groupTag.length) {
-                            groupTag.find(":checkbox").prop("checked", value.checked);
-                            groupTag.find(":text").val(value.text);
-
-                            if ('radio' in value && value.radio != null && value.radio !== '') {
-                                groupTag.find(`:radio[value="${value.radio}"]`).prop("checked", true);
-                            }
-                        }
-                    } else if (Array.isArray(value)) {
-                        let configTable = configContainer.find(`.table-configure[data-field="${key}"]`);
-                        let configTableHeader = configTable.find("thead");
-                        let configTableBody = configTable.find("tbody");
-                        configTableBody.empty();
-
-                        let columns = [];
-                        configTableHeader.find("th[data-value]").each(function () {
-                            columns.push($(this).data("value"));
-                        });
-
-                        $.each(value, function (i, rowData) {
-                            let tmpRow = $(`<tr/>`);
-
-                            tmpRow.append(`<td class="drag-btn">${i + 1}</td>`);
-
-                            $.each(columns, function (idx, colKey) {
-                                let cellValue = rowData[colKey] !== undefined ? rowData[colKey] : "";
-                                tmpRow.append(`<td contenteditable="true" class="text-${configTable.data("align")}">${cellValue}</td>`);
-                            });
-
-                            tmpRow.append(`<td><span class="deleteBtn" role="button">${LOCAL_VARIABLES.StaticText.Icon['-']}</span></td>`);
-
-                            configTableBody.append(tmpRow);
-                        });
-                    } else {
-                        configContainer.find(`:input[name="${key}"]`).val(value);
-
-                        if (configContainer.find(`:input[name="${key}"]`).hasClass("selectTwo") || configContainer.find(`:input[name="${key}"]`).is("select")) {
-                            configContainer.find(`:input[name="${key}"]`).attr("data-selectid", value);
-                            configContainer.find(`:input[name="${key}"]`).trigger("change");
-                        }
-
-                        if (configContainer.find(`:input[name="${key}"]`).is(":checkbox")) {
-                            configContainer.find(`:input[name="${key}"]`).prop("checked", !!value);
-                        }
-                    }
-                });
-            }
         }
+        if (!jsonFields || typeof jsonFields !== "object") {
+            return;
+        }
+
+        if ("status" in jsonFields) {
+            configContainer.find(`input[name="status"]`).prop("checked", !!jsonFields.status);
+        }
+
+        if ("color" in jsonFields) {
+            configContainer.find(`input[name="color"]`).prop("checked", !!jsonFields.color);
+        }
+
+        let configs = jsonFields.configs;
+        if (!configs || typeof configs !== "object") {
+            return;
+        }
+
+        $.each(configs, function (key, value) {
+            if (isObject(value)) {
+                let groupTag = configContainer.find(`.field-check[data-field="${key}"]`);
+                if (groupTag.length) {
+                    groupTag.find(":checkbox").prop("checked", !!value.checked);
+                    groupTag.find(":text").val(value.text != null ? value.text : "");
+
+                    if (value.radio != null && value.radio !== '') {
+                        groupTag.find(`:radio[value="${value.radio}"]`).prop("checked", true);
+                    }
+                }
+            } else if (Array.isArray(value)) {
+                let configTable = configContainer.find(`.table-configure[data-field="${key}"]`);
+                let configTableBody = configTable.find("tbody");
+                configTableBody.empty();
+
+                let columns = [];
+                configTable.find("thead th[data-value]").each(function () {
+                    columns.push($(this).data("value"));
+                });
+
+                $.each(value, function (i, rowData) {
+                    let tmpRow = $(`<tr/>`);
+
+                    tmpRow.append(`<td class="drag-btn">${i + 1}</td>`);
+
+                    $.each(columns, function (idx, colKey) {
+                        let cellValue = (rowData && rowData[colKey] != null) ? rowData[colKey] : "";
+                        tmpRow.append(`<td contenteditable="true" class="text-${configTable.data("align")}">${cellValue}</td>`);
+                    });
+
+                    tmpRow.append(`<td><span class="deleteBtn" role="button">${LOCAL_VARIABLES.StaticText.Icon['-']}</span></td>`);
+
+                    configTableBody.append(tmpRow);
+                });
+            } else {
+                let field = configContainer.find(`:input[name="${key}"]`);
+                if (!field.length) {
+                    return;
+                }
+
+                if (field.is(":checkbox")) {
+                    field.prop("checked", toBool(value));
+                } else {
+                    field.val(value != null ? value : "");
+
+                    if (field.hasClass("selectTwo") || field.is("select")) {
+                        field.attr("data-selectid", value);
+                        field.trigger("change");
+                    }
+                }
+            }
+        });
     });
 }
 
@@ -618,6 +642,111 @@ function serializeEditForm(form) {
     for (let instance in CKEDITOR.instances) {
         CKEDITOR.instances[instance].updateElement();
     }
+}
+
+// Collect every `.app-json-data` block in `form` into a map of
+// { <data-field>: JSON.stringify({ status, color?, configs }) } and disable the
+// raw inputs so ajaxForm submits only these JSON strings. Shared by all module
+// forms; supports status/color switches, .field-basic inputs (text/select and
+// checkboxes), .field-check groups (checkbox/text/radio) and .table-configure
+// tables. Each behaviour is gated by presence, so a form only emits what it has.
+function serializeJsonData(form) {
+    let jsonFields = {};
+
+    form.find(".app-json-data").each(function () {
+        let container = $(this);
+        let jsonField = container.data("field");
+        if (!jsonField) {
+            return;
+        }
+
+        let data = { status: false, configs: {} };
+
+        let statusInput = container.find(`input[name="status"]`);
+        if (statusInput.length) {
+            data.status = statusInput.is(":checked");
+        }
+
+        let colorInput = container.find(`input[name="color"]`);
+        if (colorInput.length) {
+            data.color = colorInput.is(":checked");
+        }
+
+        container.find(".field-basic :input").each(function () {
+            let input = $(this);
+            let name = input.attr("name");
+            if (!name) {
+                return;
+            }
+
+            if (input.is(":checkbox")) {
+                data.configs[name] = input.is(":checked");
+            } else {
+                let value = input.val();
+                data.configs[name] = (typeof value === "string") ? value.trim() : (value != null ? value : "");
+            }
+        });
+
+        container.find(".field-check").each(function () {
+            let group = $(this);
+            let fieldName = group.data("field");
+            if (!fieldName) {
+                return;
+            }
+
+            let radio = null;
+            group.find(":radio:checked").each(function () {
+                radio = $(this).val();
+            });
+
+            data.configs[fieldName] = {
+                checked: group.find(":checkbox").is(":checked"),
+                text: group.find(":text").val(),
+                radio: radio,
+            };
+        });
+
+        container.find(".table-configure").each(function () {
+            let table = $(this);
+            let fieldName = table.data("field");
+            if (!fieldName) {
+                return;
+            }
+
+            let columns = {};
+            table.find(`thead th[data-value]`).each(function () {
+                columns[$(this).index()] = $(this).data("value");
+            });
+
+            let rowData = [];
+            table.find(`tbody tr`).each(function () {
+                let cells = $(this).find("td");
+                let obj = {};
+                let filled = false;
+
+                $.each(columns, function (index, colKey) {
+                    let text = cells.eq(index).text().trim();
+                    obj[colKey] = text;
+                    if (text !== "") {
+                        filled = true;
+                    }
+                });
+
+                if (filled) {
+                    rowData.push(obj);
+                }
+            });
+
+            data.configs[fieldName] = rowData;
+        });
+
+        jsonFields[jsonField] = JSON.stringify(data);
+    });
+
+    // Disable the raw inputs so ajaxForm submits only the JSON strings above.
+    form.find(".app-json-data :input").prop("disabled", true);
+
+    return jsonFields;
 }
 
 function initTabulators() {

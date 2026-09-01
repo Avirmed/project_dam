@@ -7,7 +7,7 @@ title 🛑 Stopping Postgres...
 cls
 echo ==========================================
 echo    🔌 SHUTTING DOWN POSTGRES 🔌
-=========================================
+echo ==========================================
 echo.
 echo [⏳] Action: Attempting to stop server safely...
 

@@ -1,0 +1,11 @@
+{
+    "model": "Settings",
+    "unique_by": "Name",
+    "records": [
+        { "Name": "APP_TITLE", "Value": "APP - Title" },
+        { "Name": "APP_DASHBOARD_TITLE", "Value": "APP - Dashboard title" },
+        { "Name": "APP_FOOTER", "Value": "APP - Footer" },
+        { "Name": "APP_KEYWORDS", "Value": "keywords" },
+        { "Name": "APP_COLOR", "Value": "#0d6efd" }
+    ]
+}

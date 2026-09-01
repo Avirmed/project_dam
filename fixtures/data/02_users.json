@@ -1,0 +1,13 @@
+{
+    "model": "User",
+    "unique_by": "UserName",
+    "records": [
+        {
+            "UserID": 1,
+            "UserName": "admin",
+            "Password": "qweqwe",
+            "UserType": 1,
+            "Email": "admin@example.com"
+        }
+    ]
+}

@@ -1,0 +1,70 @@
+{#
+    Reusable configure-field renderer (shared across every module form).
+    Renders the INNER content of a `.field-basic` wrapper (the wrapper + grid column
+    stays in each form so per-form layout is preserved).
+
+    Switches on `field.type`; when omitted it is inferred for backward compatibility
+    (a `select` key -> select, a `table` key -> table, otherwise text).
+
+    Supported types: text (default), number, password, select, table, divider.
+
+    Import with context so `StaticText` is available:
+        {% from "dashboard/main/config_field.html" import render_field with context %}
+#}
+{% macro render_field(key, field) -%}
+{%- set ftype = field.type or ('select' if field.select else ('table' if field.table else 'text')) -%}
+{%- if ftype == 'divider' -%}
+    <hr class="my-2">
+{%- elif ftype == 'select' -%}
+    <label class="small mb-2">{{ field.title }}</label>
+    <select class="selectTwo form-control-sm" name="{{ key }}">
+        {% for value, text in (field.select or field.options).items() %}
+        <option value="{{ value }}">{{ text }}</option>
+        {% endfor %}
+    </select>
+{%- elif ftype == 'table' -%}
+    <table
+        class="table table-bordered table-sm table-configure"
+        data-field="{{ key }}"
+        data-align="{{ field.align }}"
+    >
+        <thead>
+            <tr>
+                <th class="px-3" width="1%">#</th>
+                {% for header in field.headers %}
+                <th data-value="{{ field.columns[loop.index0] }}"><div class="text-truncate">{{ header }}</div></th>
+                {% endfor %}
+                <th class="px-3" width="1%"><span class="addBtn text-success" role="button">{{ StaticText.Icon.Add | safe }}</span></th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+{%- elif ftype == 'number' -%}
+    <label class="small mb-2">{{ field.title }}</label>
+    <input
+        type="number"
+        name="{{ key }}"
+        class="form-control form-control-sm"
+        {% if 'min' in field %}min="{{ field.min }}"{% endif %}
+        {% if 'max' in field %}max="{{ field.max }}"{% endif %}
+        placeholder="{{ field.placeholder }}"
+    >
+{%- elif ftype == 'password' -%}
+    <label class="small mb-2">{{ field.title }}</label>
+    <input
+        type="password"
+        name="{{ key }}"
+        class="form-control form-control-sm"
+        placeholder="{{ field.placeholder }}"
+        autocomplete="new-password"
+    >
+{%- else -%}
+    <label class="small mb-2">{{ field.title }}</label>
+    <input
+        type="text"
+        name="{{ key }}"
+        class="form-control form-control-sm"
+        placeholder="{{ field.placeholder }}"
+    >
+{%- endif -%}
+{%- endmacro %}

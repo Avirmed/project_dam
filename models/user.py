@@ -605,7 +605,8 @@ class User(UserMixin, db.Model):
     @classmethod
     def fix_sequence(cls):
         try:
-            with db.engine.connect() as conn:
+            # begin() commits on exit; connect() would roll the setval back, leaving the sequence unchanged.
+            with db.engine.begin() as conn:
                 conn.execute(text("""
                         SELECT setval(
                             pg_get_serial_sequence('tbl_user', 'UserID'),
@@ -618,23 +619,3 @@ class User(UserMixin, db.Model):
     @classmethod
     def load_user(cls, user_id):
         return cls.query.get(int(user_id))
-
-    @classmethod
-    def create_default_user(cls):
-        user = cls.query.filter_by(UserName="admin").first()
-
-        if not user:
-            default_user = cls(
-                UserID=1,
-                UserName="admin",
-                Password="qweqwe",
-                UserType=1,
-                Email="admin@example.com",
-            )
-
-            try:
-                db.session.add(default_user)
-                db.session.commit()
-                cls.fix_sequence()
-            except Exception as e:
-                db.session.rollback()

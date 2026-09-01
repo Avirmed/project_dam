@@ -121,7 +121,7 @@ function loadForm(cid = '') {
                     updateEditForm(moduleForm, jsonData.Data, fileUploader.Files.length == 0);
 
                     if (fileUploader.Files.length > 0) {
-                        fileUploader.ContentID = jsonData.Data.UserID;
+                        fileUploader.targetId = jsonData.Data.UserID;
                         fileUploader.upload();
                         return;
                     }

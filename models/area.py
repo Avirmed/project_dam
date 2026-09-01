@@ -363,7 +363,8 @@ class Area(db.Model):
     @classmethod
     def fix_sequence(cls):
         try:
-            with db.engine.connect() as conn:
+            # begin() commits on exit; connect() would roll the setval back, leaving the sequence unchanged.
+            with db.engine.begin() as conn:
                 conn.execute(text("""
                         SELECT setval(
                             pg_get_serial_sequence('tbl_area', 'ID'),

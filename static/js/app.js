@@ -167,7 +167,7 @@ function userSettings() {
                     updateEditForm(userModuleForm, jsonData.Data, userFileUploader.Files.length == 0);
 
                     if (userFileUploader.Files.length > 0) {
-                        userFileUploader.ContentID = jsonData.Data.UserID;
+                        userFileUploader.targetId = jsonData.Data.UserID;
                         userFileUploader.upload();
                         return;
                     }

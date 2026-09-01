@@ -22,11 +22,16 @@ from flask_jwt_extended import JWTManager
 sys.path.append(os.path.dirname(__file__))
 
 from database import db
-from models import User, Settings
+from fixtures.loader import load_fixtures, register_cli
 from urls import register_blueprints
 from util import statictext
 from util.handlers import register_handlers
-from extensions import init_login_manager, CustomJSONProvider, setup_logging
+from extensions import (
+    init_login_manager,
+    CustomJSONProvider,
+    setup_logging,
+    print_startup_banner,
+)
 import logging
 
 os.environ["APP_KEY"] = statictext.APP_KEY
@@ -55,6 +60,7 @@ def create_app() -> Flask:
 
     register_handlers(app)
     register_blueprints(app)
+    register_cli(app)
 
     os.makedirs(statictext.APP_TMP_PATH, exist_ok=True)
 
@@ -73,17 +79,17 @@ def run_startup_checks(app: Flask) -> None:
             print("Action: Start PostgreSQL server and check your settings.")
             sys.exit(1)
 
-        User.create_default_user()
-        Settings.create_default_settings()
+        load_fixtures()
 
 
 if __name__ == "__main__":
-    run_startup_checks(app)
+    if not APP_DEBUG or os.environ.get("WERKZEUG_RUN_MAIN") == "true":
+        print_startup_banner(statictext.APP_NAME, APP_PORT, APP_DEBUG)
+        run_startup_checks(app)
 
     if APP_DEBUG:
         app.run(host="0.0.0.0", port=APP_PORT, debug=True, use_reloader=True)
     else:
-        print(f"Starting production server on http://0.0.0.0:{APP_PORT}")
         http_server = WSGIServer(
             ("0.0.0.0", APP_PORT),
             app,

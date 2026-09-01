@@ -309,11 +309,11 @@ APIConfigures = [
             
             # "Authentication": {"title": "Authentication", "placeholder": "", "select": API_Authentications},
             
-            "line-1":"",
+            "divider-1":"",
             
             
             
-            "line-2":"",
+            "divider-2":"",
             
             "Keys": {
                 "title": "Inbound Data Mapping",
@@ -360,7 +360,7 @@ FTPConfigures = [
         "fields": {
             "ServerIPAddress": {"title": "Server IP Address", "placeholder": ""},
             "Username": {"title": "Username", "placeholder": ""},
-            "Password": {"title": "Password", "placeholder": ""},
+            "Password": {"title": "Password", "placeholder": "", "type": "password"},
             "ConnectionModes": {
                 "title": "Connection Mode",
                 "placeholder": "",
@@ -648,7 +648,7 @@ UploadConfigures = [
             "Port": {"title": "Port", "placeholder": ""},
             "Timeout": {"title": "Timeout", "placeholder": ""},
             "Username": {"title": "Username", "placeholder": ""},
-            "Password": {"title": "Password", "placeholder": ""},
+            "Password": {"title": "Password", "placeholder": "", "type": "password"},
             "TransferType": {
                 "title": "Transfer Type",
                 "placeholder": "",
