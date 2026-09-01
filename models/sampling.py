@@ -30,7 +30,7 @@ class Sampling(db.Model):
     SamplingName = db.Column(db.String(250), nullable=False)
     SamplingDate = db.Column(db.Date)
 
-    SamplingConfigures = db.Column(JSONB, nullable=True, default=dict)
+    Meta = db.Column(JSONB, nullable=True, default=dict)
 
     Status = db.Column(db.SmallInteger, default=1, nullable=False)
     Remark = db.Column(db.Text)

@@ -29,8 +29,7 @@ class Camera(db.Model):
     CameraID = db.Column(db.String(100), nullable=False)
     CameraName = db.Column(db.String(250), nullable=False)
 
-    CameraConfigures = db.Column(JSONB, nullable=True, default=dict)
-    UploadConfigures = db.Column(JSONB, nullable=True, default=dict)
+    Meta = db.Column(JSONB, nullable=True, default=dict)
 
     Status = db.Column(db.SmallInteger, default=1, nullable=False)
     Remark = db.Column(db.Text)

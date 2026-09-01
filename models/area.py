@@ -29,7 +29,7 @@ class Area(db.Model):
     AreaRef = db.Column(db.String(100), nullable=False)
     AreaDate = db.Column(db.Date)
 
-    Configures = db.Column(JSONB, nullable=True, default=dict)
+    Meta = db.Column(JSONB, nullable=True, default=dict)
 
     Status = db.Column(db.SmallInteger, default=1, nullable=False)
     Remark = db.Column(db.Text)

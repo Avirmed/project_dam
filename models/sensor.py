@@ -30,12 +30,7 @@ class Sensor(db.Model):
     SensorName = db.Column(db.String(250), nullable=False)
     SensorType = db.Column(db.String(100), nullable=False)
 
-    WaterLevels = db.Column(JSONB, nullable=True, default=dict)
-    Velocities = db.Column(JSONB, nullable=True, default=dict)
-    Flow = db.Column(JSONB, nullable=True, default=dict)
-    Direction = db.Column(JSONB, nullable=True, default=dict)
-    Garbage = db.Column(JSONB, nullable=True, default=dict)
-    RainLevel = db.Column(JSONB, nullable=True, default=dict)
+    Meta = db.Column(JSONB, nullable=True, default=dict)
 
     Status = db.Column(db.SmallInteger, default=1, nullable=False)
     Remark = db.Column(db.Text)

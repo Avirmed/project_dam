@@ -534,15 +534,29 @@ function updateEditForm(tmpForm, jsonData, updateIMG = false) {
         }
     });
 
+    // Config blocks are stored under jsonData.Meta; fall back to top-level for
+    // records that predate the Meta consolidation.
+    let metaSource = jsonData.Meta;
+    if (typeof metaSource === "string") {
+        try {
+            metaSource = JSON.parse(metaSource);
+        } catch (e) {
+            metaSource = null;
+        }
+    }
+    if (!metaSource || typeof metaSource !== "object") {
+        metaSource = jsonData;
+    }
+
     tmpForm.find(".app-json-data").each(function () {
         let configContainer = $(this);
         let jsonField = configContainer.data("field");
 
-        if (!(jsonField in jsonData)) {
+        if (!(jsonField in metaSource)) {
             return;
         }
 
-        let jsonFields = jsonData[jsonField];
+        let jsonFields = metaSource[jsonField];
 
         // Accept both an object and a JSON string; ignore anything else.
         if (typeof jsonFields === "string") {
@@ -651,7 +665,7 @@ function serializeEditForm(form) {
 // checkboxes), .field-check groups (checkbox/text/radio) and .table-configure
 // tables. Each behaviour is gated by presence, so a form only emits what it has.
 function serializeJsonData(form) {
-    let jsonFields = {};
+    let meta = {};
 
     form.find(".app-json-data").each(function () {
         let container = $(this);
@@ -740,13 +754,15 @@ function serializeJsonData(form) {
             data.configs[fieldName] = rowData;
         });
 
-        jsonFields[jsonField] = JSON.stringify(data);
+        meta[jsonField] = data;
     });
 
-    // Disable the raw inputs so ajaxForm submits only the JSON strings above.
+    // Disable the raw inputs so ajaxForm submits only the single Meta string.
     form.find(".app-json-data :input").prop("disabled", true);
 
-    return jsonFields;
+    // All config blocks are wrapped into one Meta field (a JSONB column shared
+    // by every module), e.g. Meta = { WaterLevels: {...}, Velocities: {...} }.
+    return { Meta: JSON.stringify(meta) };
 }
 
 function initTabulators() {
