@@ -368,14 +368,30 @@ let tmpAxisDataRow = `
     </tr>
 `;
 
+// Build one editable cell for a .table-configure row: a <select> when the header
+// carries data-options (a JSON option map), otherwise a contenteditable cell.
+function configTableCell(th, value, align) {
+    let options = th.data("options");
+    if (options && typeof options === "object") {
+        let html = `<td><select class="form-select form-select-sm"><option value="">-- ${LOCAL_VARIABLES.StaticText.Choose} --</option>`;
+        $.each(options, function (val, text) {
+            let selected = String(val) === String(value) ? " selected" : "";
+            html += `<option value="${val}"${selected}>${text}</option>`;
+        });
+        return html + "</select></td>";
+    }
+    return `<td contenteditable="true" class="text-${align}">${value != null ? value : ""}</td>`;
+}
+
 $(document).on("click", "table.table-configure .addBtn", function (e) {
     let table = $(this).closest("table");
-    let inputFieldNumber = table.find("thead th").length - 2;
     let tmpRow = $(tmpAxisDataRow);
 
-    for (let i = 0; i < inputFieldNumber; i++) {
-        tmpRow.find(".drag-btn").after(`<td contenteditable="true" class="text-${table.data("align")}"></td>`);
-    }
+    let cells = "";
+    table.find("thead th[data-value]").each(function () {
+        cells += configTableCell($(this), "", table.data("align"));
+    });
+    tmpRow.find(".drag-btn").after(cells);
 
     table.find("tbody").append(tmpRow);
 });
@@ -417,6 +433,8 @@ function initForm(form) {
         },
         update: function (event, ui) { }
     });
+
+    applyShowWhen(form);
 }
 
 function updateEditForm(tmpForm, jsonData, updateIMG = false) {
@@ -599,9 +617,9 @@ function updateEditForm(tmpForm, jsonData, updateIMG = false) {
                 let configTableBody = configTable.find("tbody");
                 configTableBody.empty();
 
-                let columns = [];
+                let headers = [];
                 configTable.find("thead th[data-value]").each(function () {
-                    columns.push($(this).data("value"));
+                    headers.push($(this));
                 });
 
                 $.each(value, function (i, rowData) {
@@ -609,9 +627,10 @@ function updateEditForm(tmpForm, jsonData, updateIMG = false) {
 
                     tmpRow.append(`<td class="drag-btn">${i + 1}</td>`);
 
-                    $.each(columns, function (idx, colKey) {
+                    $.each(headers, function (idx, th) {
+                        let colKey = th.data("value");
                         let cellValue = (rowData && rowData[colKey] != null) ? rowData[colKey] : "";
-                        tmpRow.append(`<td contenteditable="true" class="text-${configTable.data("align")}">${cellValue}</td>`);
+                        tmpRow.append(configTableCell(th, cellValue, configTable.data("align")));
                     });
 
                     tmpRow.append(`<td><span class="deleteBtn" role="button">${LOCAL_VARIABLES.StaticText.Icon['-']}</span></td>`);
@@ -633,10 +652,17 @@ function updateEditForm(tmpForm, jsonData, updateIMG = false) {
                         field.attr("data-selectid", value);
                         field.trigger("change");
                     }
+
+                    // file-type config: the hidden input holds the stored filename
+                    if (field.is("input[type='hidden']")) {
+                        field.closest(".field-basic").find(".config-file-name").text(value != null ? value : "");
+                    }
                 }
             }
         });
     });
+
+    applyShowWhen(tmpForm);
 }
 
 function serializeEditForm(form) {
@@ -739,7 +765,9 @@ function serializeJsonData(form) {
                 let filled = false;
 
                 $.each(columns, function (index, colKey) {
-                    let text = cells.eq(index).text().trim();
+                    let cell = cells.eq(index);
+                    let select = cell.find("select");
+                    let text = select.length ? (select.val() || "") : cell.text().trim();
                     obj[colKey] = text;
                     if (text !== "") {
                         filled = true;
@@ -764,6 +792,117 @@ function serializeJsonData(form) {
     // by every module), e.g. Meta = { WaterLevels: {...}, Velocities: {...} }.
     return { Meta: JSON.stringify(meta) };
 }
+
+// Conditional visibility for config fields. An element carrying
+// data-show-when='{"Field": ["a", "b"], ...}' is shown only while EVERY listed
+// field (looked up by name inside the same .app-json-data block, else the form)
+// holds one of its values. Hidden fields keep their values and still serialize;
+// the backend validates only the settings that apply.
+function applyShowWhen(scope) {
+    $(scope).find("[data-show-when]").each(function () {
+        let el = $(this);
+        let rules = el.data("show-when");
+        if (!rules || typeof rules !== "object") {
+            return;
+        }
+
+        let block = el.closest(".app-json-data");
+        let root = block.length ? block : el.closest("form");
+        let visible = true;
+
+        $.each(rules, function (name, values) {
+            let input = root.find(`:input[name="${name}"]`).first();
+            let current = input.length ? input.val() : "";
+            if (!Array.isArray(values)) {
+                values = [values];
+            }
+            if (values.map(String).indexOf(String(current == null ? "" : current)) === -1) {
+                visible = false;
+            }
+        });
+
+        el.toggleClass("d-none", !visible);
+    });
+}
+
+$(document).on("change input", ".app-json-data :input", function () {
+    applyShowWhen($(this).closest(".app-json-data"));
+});
+
+function ajaxFailToast(jqXHR) {
+    if (jqXHR.responseJSON) {
+        toastr.error(jqXHR.responseJSON.Message, jqXHR.responseJSON.Title);
+    } else if (jqXHR.responseText) {
+        toastr.error(jqXHR.responseText);
+    } else {
+        toastr.error(LOCAL_VARIABLES.StaticText.Messages.NoInternetConnection);
+    }
+}
+
+// File-type config fields (e.g. TLS certificates) upload immediately to the
+// route in data-upload; only the returned filename is kept in the hidden input
+// that serializes into Meta. The record must already exist (its ID is read from
+// the form's first hidden "*ID" input).
+$(document).on("change", ".config-file", function () {
+    let input = $(this);
+    let file = this.files && this.files[0];
+    if (!file) {
+        return;
+    }
+
+    let form = input.closest("form");
+    let recordId = form.find("input[type='hidden'][name$='ID']").first().val();
+    if (!recordId) {
+        toastr.warning(LOCAL_VARIABLES.StaticText.Messages.SaveFirstToUpload, LOCAL_VARIABLES.StaticText.Messages.Title);
+        input.val("");
+        return;
+    }
+
+    let target = input.data("target");
+    let data = new FormData();
+    data.append("file", file);
+    data.append("id", recordId);
+    data.append("kind", target);
+
+    $.ajax({
+        url: input.data("upload"),
+        type: "POST",
+        data: data,
+        processData: false,
+        contentType: false,
+        dataType: "json",
+    }).done(function (jsonData) {
+        if (jsonData.Result) {
+            let wrap = input.closest(".field-basic");
+            wrap.find(`input[type='hidden'][name="${target}"]`).val(jsonData.Filename);
+            wrap.find(".config-file-name").text(jsonData.Filename);
+            toastr.success(jsonData.Message, jsonData.Title);
+        } else {
+            toastr.error(jsonData.Message, jsonData.Title);
+        }
+    }).fail(ajaxFailToast).always(function () {
+        input.val("");
+    });
+});
+
+// Generate-type config fields: ask the server for a fresh secret and drop it
+// into the readonly input next to the button (saved with the form).
+$(document).on("click", ".config-generate", function () {
+    let btn = $(this);
+    let target = btn.closest(".input-group").find("input");
+    btn.prop("disabled", true);
+
+    $.post(btn.data("url"), {}, function (jsonData) {
+        if (jsonData.Result) {
+            target.val(jsonData.Token).trigger("change");
+            toastr.info(jsonData.Message, jsonData.Title);
+        } else {
+            toastr.error(jsonData.Message, jsonData.Title);
+        }
+    }, "json").fail(ajaxFailToast).always(function () {
+        btn.prop("disabled", false);
+    });
+});
 
 function initTabulators() {
     $(".app-tabulator-table:not(.init-column)").each(function () {

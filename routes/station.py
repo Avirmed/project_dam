@@ -1,5 +1,6 @@
 import os
 import shutil
+import secrets
 
 from flask import Blueprint, request, jsonify, abort
 from flask_login import current_user, login_required
@@ -525,6 +526,93 @@ def file_upload():
         return jsonify(object.serialize())
 
     return filename, 200
+
+
+@station_bp.route("/token", methods=["POST"])
+@login_required
+def token():
+    """Issue a fresh API token for the REST API Server tab (Bearer / API Key).
+    Generated server-side; the form stores it in Meta.API.configs.Token on save."""
+    return (
+        jsonify(
+            {
+                "Result": True,
+                "Title": statictext.Messages["Title"],
+                "Message": statictext.Messages["TokenGenerated"],
+                "Code": 200,
+                "Token": secrets.token_urlsafe(32),
+            }
+        ),
+        200,
+    )
+
+
+@station_bp.route("/certupload", methods=["POST"])
+@login_required
+def cert_upload():
+    """Store a TLS certificate / private key / CA file for a station under
+    APP_CERT_PATH/<StationID>/<kind>.<ext> (outside static/, never web-served).
+    Only the resulting filename goes back to the form and into Meta."""
+    jsonResult = {
+        "Result": False,
+        "Title": statictext.Messages["Title"],
+        "Message": statictext.Messages["InvalidAccess"],
+        "Code": 400,
+    }
+
+    file = request.files.get("file")
+    station_id = request.form.get("id", "")
+    kind = request.form.get("kind", "")
+
+    if (
+        not file
+        or not str(station_id).isdigit()
+        or kind not in ("SSL_Cert", "SSL_Key", "SSL_CA_Cert")
+    ):
+        jsonResult.update({"Message": statictext.ResponseCode[400], "Code": 400})
+        return jsonify(jsonResult), jsonResult["Code"]
+
+    object = Station.query.get(int(station_id))
+    if not object:
+        jsonResult.update({"Message": statictext.ResponseCode[404], "Code": 404})
+        return jsonify(jsonResult), jsonResult["Code"]
+
+    file_ext = util.get_safe_extension(
+        file.filename, allowed=util.ALLOWED_CERT_EXTENSIONS
+    )
+    if not file_ext:
+        jsonResult.update(
+            {"Message": statictext.Messages["InvalidFileType"], "Code": 422}
+        )
+        return jsonify(jsonResult), jsonResult["Code"]
+
+    # Fixed name per kind: no user-controlled path segments. Any previous file of
+    # the same kind (whatever its extension) is removed first, so exactly one
+    # file per kind ever exists for a station.
+    filename = f"{kind}.{file_ext}"
+    dest_dir = os.path.join(statictext.APP_CERT_PATH, str(object.StationID))
+
+    try:
+        os.makedirs(dest_dir, exist_ok=True)
+        for old in os.listdir(dest_dir):
+            if old.split(".")[0] == kind:
+                os.remove(os.path.join(dest_dir, old))
+        file.save(os.path.join(dest_dir, filename))
+    except Exception as e:
+        jsonResult.update(
+            {"Message": f"{statictext.ResponseCode[500]}: {str(e)}", "Code": 500}
+        )
+        return jsonify(jsonResult), jsonResult["Code"]
+
+    jsonResult.update(
+        {
+            "Result": True,
+            "Message": statictext.Messages["CertUploaded"],
+            "Code": 200,
+            "Filename": filename,
+        }
+    )
+    return jsonify(jsonResult), jsonResult["Code"]
 
 
 @station_bp.route("/imgrotate", methods=["POST"])

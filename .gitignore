@@ -196,3 +196,6 @@ cython_debug/
 
 # Office temporary / lock files (~$Document.docx, ~$Book.xlsx, ...)
 ~$*
+
+# Station TLS certificates / private keys (uploaded via the dashboard)
+/certs

@@ -1,4 +1,4 @@
-__all__ = ['area', 'camera', 'csvlogger', 'filetransfer', 'http', 'httplog', 'project', 'riverbasin', 'sampling', 'sensor', 'settings', 'station', 'team', 'user']
+__all__ = ['area', 'camera', 'csvlogger', 'filetransfer', 'http', 'httplog', 'project', 'riverbasin', 'sampling', 'sensor', 'settings', 'station', 'stationdata', 'team', 'user']
 
 from .area import *
 from .camera import *
@@ -12,5 +12,6 @@ from .sampling import *
 from .sensor import *
 from .settings import *
 from .station import *
+from .stationdata import *
 from .team import *
 from .user import *

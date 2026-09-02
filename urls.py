@@ -25,6 +25,8 @@ def register_blueprints(app):
         http_bp,
         csvlogger_bp,
         httplog_bp,
+        stationdata_bp,
+        inbound_bp,
     )
 
     @app.route("/", defaults={"module": "main", "cid": None})
@@ -69,6 +71,10 @@ def register_blueprints(app):
         (http_bp, "/http"),
         (csvlogger_bp, "/csvlogger"),
         (httplog_bp, "/httplog"),
+        (stationdata_bp, "/stationdata"),
+        # Device-facing REST API server: POST /api/inbound/<DeviceID> (no login;
+        # gated by each station's own API settings).
+        (inbound_bp, "/inbound"),
     ]
 
     for bp, prefix in api_list:

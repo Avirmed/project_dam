@@ -8,6 +8,9 @@ APP_LANG = "en"
 APP_DIRECTORY = os.path.dirname(os.path.dirname(__file__))
 APP_STATIC_PATH = os.path.join(APP_DIRECTORY, "static")
 APP_TMP_PATH = os.path.join(APP_DIRECTORY, "tmp")
+# Station TLS certificates / private keys live outside static/ so they are never
+# web-served. Excluded from the /main/init reflection (filesystem path).
+APP_CERT_PATH = os.path.join(APP_DIRECTORY, "certs")
 APP_KEY = util.generate_key("KEY_", APP_NAME)
 APP_IV = util.generate_key("IV_", APP_NAME)
 APP_COLOR = "#0d6efd"
@@ -50,6 +53,8 @@ Upload = "Upload"
 Back = "Back"
 Clean = "Clean"
 Choose = "Choose"
+Generate = "Generate"
+Browse = "Browse"
 RequiredField = "Required Field"
 
 WebSite = "Website"
@@ -328,21 +333,49 @@ API_Authentications = {
     "key": "API Key",
 }
 
+# APIConfigures - per-station inbound "REST API Server" settings, stored as
+# Station.Meta["API"] = {"status": bool, "configs": {<key>: <value>}}.
+# Per-field attributes understood by dashboard/main/config_field.html + project.js:
+#   type      : text | number | password | select | table | file | generate
+#   show_when : {<other field>: [values]} - shown only while every listed field
+#               holds one of its values (AND). Hidden fields still serialize; the
+#               backend validator only checks fields that apply.
+#   accept    : allowed extensions for type "file". The browser uploads straight to
+#               `upload` (a /api/... route) and only the stored filename is kept in
+#               Meta - certificate / private-key files never enter the JSON column.
+#   generate  : /api/... route returning a fresh secret for a readonly field.
+#   help      : small hint under the input.
+#   column_options : type "table" only, {column: <option map>} renders that column
+#                    as a select instead of free text.
+# Protocol / listener port / SSL describe the reverse proxy in front of the app;
+# the inbound endpoint itself is POST /api/inbound/<DeviceID>.
 APIConfigures = [
     {
         "fields": {
-            "Protocol": {"title": "Protocol", "placeholder": "", "select": API_Protocols},
+            "Protocol": {
+                "title": "Protocol",
+                "placeholder": "",
+                "select": API_Protocols,
+            },
             "Port": {
                 "title": "HTTP Port (Listener Port)",
                 "placeholder": "0 – 65,535",
                 "type": "number",
                 "min": 0,
                 "max": 65535,
+                "show_when": {"Protocol": ["http", "both"]},
             },
             "HTTP_Source": {
                 "title": "HTTP Source",
                 "placeholder": "",
                 "select": API_HTTP_Sources,
+                "show_when": {"Protocol": ["http", "both"]},
+            },
+            "HTTP_Source_Custom": {
+                "title": "HTTP Source (Custom IP / CIDR)",
+                "placeholder": "203.0.113.10, 198.51.100.0/24",
+                "help": "Comma-separated IP addresses or CIDR ranges allowed to call the API.",
+                "show_when": {"Protocol": ["http", "both"], "HTTP_Source": ["custom"]},
             },
             "HTTPS_Port": {
                 "title": "HTTPS Port (Listener Port)",
@@ -350,28 +383,90 @@ APIConfigures = [
                 "type": "number",
                 "min": 0,
                 "max": 65535,
+                "show_when": {"Protocol": ["https", "both"]},
             },
             "HTTPS_Source": {
                 "title": "HTTPS Source",
                 "placeholder": "",
                 "select": API_HTTP_Sources,
+                "show_when": {"Protocol": ["https", "both"]},
+            },
+            "HTTPS_Source_Custom": {
+                "title": "HTTPS Source (Custom IP / CIDR)",
+                "placeholder": "203.0.113.10, 198.51.100.0/24",
+                "help": "Comma-separated IP addresses or CIDR ranges allowed to call the API.",
+                "show_when": {
+                    "Protocol": ["https", "both"],
+                    "HTTPS_Source": ["custom"],
+                },
             },
             "SSL_Mode": {
                 "title": "SSL/TLS Mode",
                 "placeholder": "",
                 "select": API_SSL_Modes,
+                "show_when": {"Protocol": ["https", "both"]},
             },
+            "SSL_Cert": {
+                "title": "SSL Certification File (.crt / .pem)",
+                "type": "file",
+                "accept": ".crt,.pem",
+                "upload": "/api/stations/certupload",
+                "show_when": {
+                    "Protocol": ["https", "both"],
+                    "SSL_Mode": ["one_way", "two_way"],
+                },
+            },
+            "SSL_Key": {
+                "title": "SSL Private Key File (.key)",
+                "type": "file",
+                "accept": ".key,.pem",
+                "upload": "/api/stations/certupload",
+                "show_when": {
+                    "Protocol": ["https", "both"],
+                    "SSL_Mode": ["one_way", "two_way"],
+                },
+            },
+            "SSL_CA_Cert": {
+                "title": "CA Client Root Certificate (.crt / .pem)",
+                "type": "file",
+                "accept": ".crt,.pem",
+                "upload": "/api/stations/certupload",
+                "help": "* Required only for Two-Way mTLS Mode",
+                "show_when": {"Protocol": ["https", "both"], "SSL_Mode": ["two_way"]},
+            },
+            "divider-1": "",
             "Authentication": {
                 "title": "Authentication",
                 "placeholder": "",
                 "select": API_Authentications,
             },
-            # "Authentication": {"title": "Authentication", "placeholder": "", "select": API_Authentications},
-            "divider-1": "",
+            "Auth_Username": {
+                "title": "Username",
+                "placeholder": "",
+                "show_when": {"Authentication": ["basic"]},
+            },
+            "Auth_Password": {
+                "title": "Password",
+                "placeholder": "",
+                "type": "password",
+                "show_when": {"Authentication": ["basic"]},
+            },
+            "API_Key_Header": {
+                "title": "API Key Header Name",
+                "placeholder": "X-API-Key",
+                "show_when": {"Authentication": ["key"]},
+            },
+            "Token": {
+                "title": "Token",
+                "type": "generate",
+                "generate": "/api/stations/token",
+                "help": "Send as 'Authorization: Bearer <token>' or in the API key header.",
+                "show_when": {"Authentication": ["bearer", "key"]},
+            },
             "divider-2": "",
             "Keys": {
                 "title": "Inbound Data Mapping",
-                "placeholder": "",
+                "help": "(Fetch the custom mapping rules (JSONB dictionary) stored for that specific station to database)",
                 "table": True,
                 "headers": ["Device JSON Key", "Database Column"],
                 "columns": ["key", "field"],
@@ -380,6 +475,16 @@ APIConfigures = [
         }
     }
 ]
+
+StationDataField = {
+    "ID": "ID",
+    "StationID": "Station",
+    "DeviceID": "Device ID",
+    "RecordTime": "Record time",
+    "Data": "Mapped data",
+    "Raw": "Raw payload",
+    "CreateDate": "Created Date",
+}
 
 ConnectionModes = {
     "active": "Active Mode",
@@ -509,16 +614,33 @@ SensorWaterLevelConfigures = [
     }
 ]
 
+# Image-analysis detection region shared by the Velocity / Garbage / Rain Level
+# tabs: two corner points (pixels) per row, as on the design (Point 1 x/y, Point 2 x/y).
+SensorPointsTable = {
+    "headers": ["Point 1 x", "Point 1 y", "Point 2 x", "Point 2 y"],
+    "columns": ["p1x", "p1y", "p2x", "p2y"],
+}
+
 SensorVelocityConfigures = [
     {
         "fields": {
-            "Velocity": {
-                "title": "Velocity",
+            "Points": {
+                "title": "Detection points",
                 "placeholder": "",
                 "table": True,
-                "headers": ["Point 1", "Point 1", "Horizontal", "Vertical"],
-                "columns": ["Sampling", "CameraID", "SamplingID"],
-                "align": "center",
+                "headers": SensorPointsTable["headers"],
+                "columns": SensorPointsTable["columns"],
+                "align": "end",
+            },
+            # Level-depending velocity calibration: coefficient (k) and offset
+            # applied when the water level reaches the given level.
+            "CalTable": {
+                "title": "LEVEL DEPENDING VELOCITY CAL. TABLE",
+                "placeholder": "",
+                "table": True,
+                "headers": ["Coefficient (k)", "Level", "Offset"],
+                "columns": ["coefficient", "level", "offset"],
+                "align": "end",
             },
         }
     }
@@ -542,13 +664,13 @@ SensorDirectionConfigures = [
 SensorGarbageConfigures = [
     {
         "fields": {
-            "Garbage": {
-                "title": "Garbage",
+            "Points": {
+                "title": "Detection points",
                 "placeholder": "",
                 "table": True,
-                "headers": ["Point 1", "Point 1", "Horizontal", "Vertical"],
-                "columns": ["Sampling", "CameraID", "SamplingID"],
-                "align": "center",
+                "headers": SensorPointsTable["headers"],
+                "columns": SensorPointsTable["columns"],
+                "align": "end",
             },
         }
     }
@@ -557,13 +679,13 @@ SensorGarbageConfigures = [
 SensorRainLevelConfigures = [
     {
         "fields": {
-            "RainLevel": {
-                "title": "Rain Level",
+            "Points": {
+                "title": "Detection points",
                 "placeholder": "",
                 "table": True,
-                "headers": ["Point 1", "Point 1", "Horizontal", "Vertical"],
-                "columns": ["Sampling", "CameraID", "SamplingID"],
-                "align": "center",
+                "headers": SensorPointsTable["headers"],
+                "columns": SensorPointsTable["columns"],
+                "align": "end",
             },
         }
     }
@@ -772,24 +894,28 @@ HTTP_SourceTypes = {
     "datetime": "Datetime",
 }
 
+HTTP_ContentTypes = {
+    "json": "JSON",
+    "text": "Plain Text",
+}
+
+# HTTPServiceConfigures - outbound HTTP delivery settings per station, stored as
+# Http.Meta["Request"] = {"status": bool, "configs": {...}}. Group 1 = request +
+# parameter mapping, group 2 = "Advanced Settings" (retry / SSL). Credential
+# fields appear per authentication type (show_when); the mapping's Source Type
+# column is a dropdown (HTTP_SourceTypes) and the form previews the resulting
+# payload from the mapping rows.
 HTTPServiceConfigures = [
     {
         "fields": {
             "Method": {"title": "HTTP Method", "placeholder": "", "select": APIMethots},
+            "ContentType": {
+                "title": "Content Type",
+                "placeholder": "",
+                "select": HTTP_ContentTypes,
+            },
             "Timeout": {
                 "title": "Timeout (seconds)",
-                "placeholder": "",
-                "type": "number",
-                "min": 0,
-            },
-            "RetryAttempts": {
-                "title": "Retry Attempts",
-                "placeholder": "",
-                "type": "number",
-                "min": 0,
-            },
-            "RetryDelay": {
-                "title": "Retry Delay (seconds)",
                 "placeholder": "",
                 "type": "number",
                 "min": 0,
@@ -799,16 +925,61 @@ HTTPServiceConfigures = [
                 "placeholder": "",
                 "select": API_Authentications,
             },
+            "Auth_Username": {
+                "title": "Username",
+                "placeholder": "",
+                "show_when": {"Authentication": ["basic"]},
+            },
+            "Auth_Password": {
+                "title": "Password",
+                "placeholder": "",
+                "type": "password",
+                "show_when": {"Authentication": ["basic"]},
+            },
+            "Token": {
+                "title": "Token",
+                "placeholder": "",
+                "help": "Bearer token or API key issued by the remote server.",
+                "show_when": {"Authentication": ["bearer", "key"]},
+            },
+            "API_Key_Header": {
+                "title": "API Key Header Name",
+                "placeholder": "X-API-Key",
+                "show_when": {"Authentication": ["key"]},
+            },
+            "divider-1": "",
             "Mapping": {
                 "title": "Parameter Mapping",
-                "placeholder": "",
+                "help": "Static Value: sent as-is. Sensor Data: the device/sensor key to read. Datetime: format such as yyyymmddHHMM.",
                 "table": True,
-                "headers": ["Source Type", "Parameter Name", "Source Value"],
+                "headers": ["Source Type", "Parameter Name (for API)", "Source Value / Display Name"],
                 "columns": ["source_type", "param", "value"],
+                "column_options": {"source_type": HTTP_SourceTypes},
                 "align": "start",
             },
         }
-    }
+    },
+    {
+        "title": "Advanced Settings",
+        "fields": {
+            "RetryAttempts": {
+                "title": "Retry Attempts",
+                "placeholder": "2",
+                "type": "number",
+                "min": 0,
+            },
+            "RetryDelay": {
+                "title": "Retry Delay (seconds)",
+                "placeholder": "10",
+                "type": "number",
+                "min": 0,
+            },
+            "VerifySSL": {
+                "title": "Verify SSL Certificate",
+                "type": "checkbox",
+            },
+        },
+    },
 ]
 
 HttpField = {
@@ -817,6 +988,7 @@ HttpField = {
     "SiteName": "Site",
     "URL": "Server URL (Host URL)",
     "Request": "Request",
+    "Example": "ตัวอย่าง (Example payload)",
     "Status": "Status",
     "Remark": "Remark",
 }
@@ -962,6 +1134,23 @@ Messages = {
     "Uploading": "Uploading...",
     "UploadSuccess": "File uploaded successfully.",
     "UploadFailed": "An error occurred while uploading.",
+    "SaveFirstToUpload": "Save the record first, then upload files.",
+    "InvalidFileType": "This file type is not allowed.",
+    "TokenGenerated": "A new token has been generated. Save the form to apply it.",
+    "CertUploaded": "Certificate file uploaded successfully.",
+    "ApiConfigInvalid": "REST API settings are invalid.",
+    "ApiPortInvalid": "Listener port must be a number between 0 and 65,535.",
+    "ApiSourceInvalid": "Custom source must be a comma-separated list of IP addresses or CIDR ranges.",
+    "ApiCertRequired": "SSL certificate and private key files are required when SSL/TLS mode is enabled.",
+    "ApiCaRequired": "A CA client root certificate is required for Two-Way (mTLS) mode.",
+    "ApiTokenRequired": "Generate a token for Bearer Token / API Key authentication.",
+    "ApiBasicRequired": "Username and password are required for Basic Auth.",
+    "InboundReceived": "Data received.",
+    "InboundStationNotFound": "No station matches this Device ID.",
+    "InboundDisabled": "The REST API server is disabled for this station.",
+    "InboundUnauthorized": "Authentication failed.",
+    "InboundForbiddenSource": "The request source address is not allowed.",
+    "InboundInvalidPayload": "The request body must be a JSON object.",
 }
 
 Icon = {

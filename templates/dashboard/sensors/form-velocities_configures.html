@@ -18,6 +18,7 @@
                 {% for key, field in settings.fields.items() %}
                     <div class="col-lg-6 mb-2">
                         <div class="form-group field-basic" data-field="{{ key }}">
+                            {% if field.table %}<label class="small mb-2">{{ field.title }}</label>{% endif %}
                             {{ render_field(key, field) }}
                         </div>
                     </div>

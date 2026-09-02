@@ -1,6 +1,7 @@
 import os
 import math
 import time
+import shutil
 import hashlib
 import json
 
@@ -185,14 +186,19 @@ class Station(db.Model):
         if not self.deleteImage():
             return False
 
+        cert_dir = os.path.join(statictext.APP_CERT_PATH, str(self.StationID))
+
         try:
             db.session.delete(self)
             if commit:
                 db.session.commit()
-            return True
         except Exception as e:
             db.session.rollback()
             return False
+
+        # Only after the row is gone: drop the station's TLS certificate folder.
+        shutil.rmtree(cert_dir, ignore_errors=True)
+        return True
 
     ################################ Class methods ################################
 
@@ -256,6 +262,16 @@ class Station(db.Model):
             return jsonResult
 
         params = cls._parse_json_fields(params)
+
+        # REST API Server settings must be coherent before they are stored.
+        meta = params.get("Meta")
+        if isinstance(meta, dict) and "API" in meta:
+            api_error = Util.validate_api_config(meta.get("API"))
+            if api_error:
+                jsonResult.update(
+                    {"Message": statictext.Messages[api_error], "Code": 422}
+                )
+                return jsonResult
 
         params.pop("ImageSource", None)
 

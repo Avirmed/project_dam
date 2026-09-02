@@ -14,6 +14,64 @@ const module = "http";
 let moduleForm = null;
 let submitBtn = null;
 
+// Render a Datetime mapping value (e.g. "yyyymmddHHMM") for the preview.
+// Case matters as on the design: mm = month, MM = minutes.
+function formatDateToken(date, format) {
+    let p = (n) => String(n).padStart(2, "0");
+    return (format || "yyyymmddHHMM")
+        .replace("yyyy", date.getFullYear())
+        .replace("yy", String(date.getFullYear()).slice(-2))
+        .replace("mm", p(date.getMonth() + 1))
+        .replace("dd", p(date.getDate()))
+        .replace("HH", p(date.getHours()))
+        .replace("MM", p(date.getMinutes()))
+        .replace("ss", p(date.getSeconds()));
+}
+
+// Preview the outbound payload built from the Parameter Mapping rows:
+// Static Value as-is, Sensor Data shown as <key> placeholder, Datetime rendered
+// with the current time. JSON or key=value pairs depending on Content Type.
+function renderHttpExample(form) {
+    let block = form.find(".app-json-data[data-field='Request']");
+    let pre = block.find(".http-example");
+    if (!pre.length) {
+        return;
+    }
+
+    let contentType = block.find(":input[name='ContentType']").val() || "json";
+    let payload = {};
+
+    // cells: 0 = row number, then source_type | param | value, last = delete
+    block.find(".table-configure[data-field='Mapping'] tbody tr").each(function () {
+        let cells = $(this).find("td");
+        let type = cells.eq(1).find("select").val() || "";
+        let param = cells.eq(2).text().trim();
+        let value = cells.eq(3).text().trim();
+        if (!param) {
+            return;
+        }
+        if (type === "datetime") {
+            payload[param] = formatDateToken(new Date(), value);
+        } else if (type === "sensor") {
+            payload[param] = value ? `<${value}>` : "";
+        } else {
+            payload[param] = value;
+        }
+    });
+
+    if (contentType === "text") {
+        pre.text(Object.keys(payload).map((k) => `${k}=${payload[k]}`).join("&"));
+    } else {
+        pre.text(JSON.stringify(payload));
+    }
+}
+
+$(document).on("input change click", ".app-json-data[data-field='Request']", function () {
+    if (moduleForm) {
+        renderHttpExample(moduleForm);
+    }
+});
+
 function loadForm(cid = '') {
     if (!pagePermission.includes(LOCAL_VARIABLES.Authorization.UserType)) {
         return;
@@ -41,6 +99,7 @@ function loadForm(cid = '') {
 
                     updateEditForm(moduleForm, jsonData);
                     CKEDITOR.replace("Remark");
+                    renderHttpExample(moduleForm);
                 }).fail(function (jqXHR) {
                     if (jqXHR.responseJSON) {
                         toastr.error(jqXHR.responseJSON.Message, jqXHR.responseJSON.Title);
@@ -58,6 +117,7 @@ function loadForm(cid = '') {
                 moduleForm.find(`[type='checkbox'][name='Status']`).prop('checked', true);
 
                 CKEDITOR.replace("Remark");
+                renderHttpExample(moduleForm);
             }
 
             select2Ajax($("#StationID"), "StationID", "SiteName");

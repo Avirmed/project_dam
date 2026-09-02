@@ -4,13 +4,31 @@
         <div class="col-12">
         {% for settings in StaticText.HTTPServiceConfigures %}
             <div class="p-2">
+                {% if settings.title %}
+                <h6 class="small fw-bold mb-3">{{ settings.title }}</h6>
+                {% endif %}
                 <div class="row align-items-start">
                 {% for key, field in settings.fields.items() %}
-                    <div class="{{ 'col-12' if field.table else 'col-lg-4 col-md-6' }} mb-2">
+                    {% if "divider" in key %}
+                    <div class="col-12"><hr class="my-2"></div>
+                    {% elif field.table %}
+                    <div class="col-12 mb-2">
+                        <div class="form-group field-basic" data-field="{{ key }}">
+                            <label class="small mb-2">{{ field.title }}</label>
+                            {{ render_field(key, field) }}
+                        </div>
+                        {# Live preview of the payload built from the mapping rows (http.js) #}
+                        <label class="small mb-2 mt-2">{{ StaticText.HttpField.Example }}</label>
+                        <pre class="http-example small bg-light border rounded p-2 mb-0"></pre>
+                    </div>
+                    {% else %}
+                    {# data-show-when drives conditional visibility (project.js applyShowWhen) #}
+                    <div class="col-lg-4 col-md-6 mb-2"{% if field.show_when %} data-show-when='{{ field.show_when | tojson }}'{% endif %}>
                         <div class="form-group field-basic" data-field="{{ key }}">
                             {{ render_field(key, field) }}
                         </div>
                     </div>
+                    {% endif %}
                 {% endfor %}
                 </div>
             </div>
