@@ -48,20 +48,24 @@ def setup_logging(debug: bool) -> None:
     # quiet (gevent handles access logging with log=None).
     werkzeug_logger.propagate = debug
 
+
 def clear_console():
     try:
-        if os.name == 'nt':
-            os.system('') # Windows терминалын ANSI горимыг нээнэ
+        if os.name == "nt":
+            os.system("")  # Windows терминалын ANSI горимыг нээнэ
         print("\033[2J\033[H", end="")
     except Exception:
-        os.system('cls' if os.name == 'nt' else 'clear')
+        os.system("cls" if os.name == "nt" else "clear")
 
-def print_startup_banner(app_name: str, port: int, debug: bool, host: str = "0.0.0.0") -> None:
+
+def print_startup_banner(
+    app_name: str, port: int, debug: bool, host: str = "0.0.0.0"
+) -> None:
     py = f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}"
     rule = "=" * 60
-    
+
     clear_console()
-    
+
     print(
         "\n".join(
             [

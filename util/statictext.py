@@ -178,7 +178,7 @@ StationConfigures = [
             "ZEROGATE_UP": {"title": "ZEROGATE_UP - ศูนย์เสาระดับ", "placeholder": ""},
             "GROUND_LEVEL_WL_UP": {
                 "title": "GROUND_LEVEL_WL_UP -ระดับท้องน้ำ",
-                "placeholder": "" # "Current Water Level – ZeroGate",
+                "placeholder": "",  # "Current Water Level – ZeroGate",
             },
             "WARNING_UP": {"title": "WARNING_UP – ระดับน้ำเตือนภัย", "placeholder": ""},
             "CRITICAL_UP": {"title": "CRITICAL_UP – ระดับน้ำวิกฤต", "placeholder": ""},
@@ -201,7 +201,7 @@ StationConfigures = [
             },
             "GROUND_LEVEL_WL_DOWN": {
                 "title": "GROUND_LEVEL_WL_DOWN -ระดับท้องน้ำ",
-                "placeholder": "" # "Current Water Level – ZeroGate",
+                "placeholder": "",  # "Current Water Level – ZeroGate",
             },
             "WARNING_DOWN": {
                 "title": "WARNING_DOWN – ระดับน้ำเตือนภัย",
@@ -296,25 +296,33 @@ API_Authentications = {
     "none": "None",
     "basic": "Basic Auth",
     "bearer": "Bearer Token",
-    "key": "API Key"
+    "key": "API Key",
 }
 
 APIConfigures = [
     {
         "fields": {
             "Protocol": {"title": "Method", "placeholder": "", "select": API_Protocols},
-            "Port": {"title": "HTTP Port (Listener Port)", "placeholder": "0 – 65,535", "type": "number", "min": 0, "max": 65535},
-            "HTTP_Source": {"title": "Method", "placeholder": "", "select": API_HTTP_Sources},
-            "Authentication": {"title": "Authentication", "placeholder": "", "select": API_Authentications},
-            
+            "Port": {
+                "title": "HTTP Port (Listener Port)",
+                "placeholder": "0 – 65,535",
+                "type": "number",
+                "min": 0,
+                "max": 65535,
+            },
+            "HTTP_Source": {
+                "title": "Method",
+                "placeholder": "",
+                "select": API_HTTP_Sources,
+            },
+            "Authentication": {
+                "title": "Authentication",
+                "placeholder": "",
+                "select": API_Authentications,
+            },
             # "Authentication": {"title": "Authentication", "placeholder": "", "select": API_Authentications},
-            
-            "divider-1":"",
-            
-            
-            
-            "divider-2":"",
-            
+            "divider-1": "",
+            "divider-2": "",
             "Keys": {
                 "title": "Inbound Data Mapping",
                 "placeholder": "",
