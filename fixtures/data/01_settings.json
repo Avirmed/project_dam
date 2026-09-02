@@ -8,8 +8,6 @@
         { "Name": "APP_KEYWORDS", "Value": "keywords" },
         { "Name": "APP_COLOR", "Value": "#0d6efd" },
         { "Name": "DATA_TIMEOUT_MINUTES", "Value": "15" },
-        { "Name": "WORKER_ENABLED", "Value": "1" },
-        { "Name": "EVENT_WATCH_FOLDER", "Value": "security_in" },
-        { "Name": "IMAGE_OUT_FOLDER", "Value": "images_out" }
+        { "Name": "WORKER_ENABLED", "Value": "1" }
     ]
 }

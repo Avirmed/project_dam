@@ -1,3 +1,4 @@
+import os
 import math
 from datetime import datetime, timedelta
 
@@ -19,6 +20,11 @@ class EventLog(db.Model):
     """
 
     __tablename__ = "tbl_eventlog"
+
+    # Event images: stored under drfFilePath/<yyyymm>/, served from filePath
+    # (same pattern as Station.drfFilePath / filePath).
+    drfFilePath = os.path.join(statictext.APP_STATIC_PATH, "data", "events")
+    filePath = "/static/data/events"
 
     STATUS_PENDING = 0
     STATUS_APPROVE = 1
@@ -79,7 +85,7 @@ class EventLog(db.Model):
             else None
         )
         data["Image"] = (
-            f"{statictext.EVENT_IMAGE_URL}/{self.ImageSource}"
+            f"{self.filePath}/{self.ImageSource}"
             if self.ImageSource
             else statictext.Images["Blank"]
         )

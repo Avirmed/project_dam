@@ -11,15 +11,6 @@ APP_TMP_PATH = os.path.join(APP_DIRECTORY, "tmp")
 # Station TLS certificates / private keys live outside static/ so they are never
 # web-served. Excluded from the /main/init reflection (filesystem path).
 APP_CERT_PATH = os.path.join(APP_DIRECTORY, "certs")
-# Security camera event images (served) and the incoming watch folder name
-# (a folder name under tmp/, overridable by the EVENT_WATCH_FOLDER setting).
-EVENT_IMAGE_PATH = os.path.join(APP_STATIC_PATH, "data", "events")
-EVENT_IMAGE_URL = "/static/data/events"
-EVENT_WATCH_FOLDER = "security_in"
-# Outgoing camera images: tmp/<IMAGE_OUT_FOLDER>/<CameraID>/ is watched by the
-# worker and every new file is sent through the camera's Upload JPG (FTP)
-# settings (design slide 6). Overridable by the IMAGE_OUT_FOLDER setting.
-IMAGE_OUT_FOLDER = "images_out"
 APP_KEY = util.generate_key("KEY_", APP_NAME)
 APP_IV = util.generate_key("IV_", APP_NAME)
 APP_COLOR = "#0d6efd"

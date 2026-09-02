@@ -1,7 +1,7 @@
 """Security camera folder watcher (design slide 10).
 
 CCTVs of Camera Type "Security" drop event snapshots into the watch folder
-(tmp/<EVENT_WATCH_FOLDER>, configurable in Settings). Each file is named
+(Camera.eventWatchPath = tmp/security_in). Each file is named
 <IP>_<channel>_<yyyymmddHHMMSS[mmm]>_<EVENT>.jpg, e.g.
 192.168.1.65_01_20250905115636245_MOTION_DETECTION.jpg.
 
@@ -20,8 +20,7 @@ import uuid
 from datetime import datetime
 
 from database import db
-from models import Camera, EventLog, Settings
-from util import statictext
+from models import Camera, EventLog
 
 logger = logging.getLogger("worker")
 
@@ -33,12 +32,7 @@ MIN_AGE_SECONDS = 2  # skip files that are still being written
 
 
 def watch_folder():
-    name = str(
-        Settings.load_settings().get("EVENT_WATCH_FOLDER")
-        or statictext.EVENT_WATCH_FOLDER
-    ).strip()
-    name = re.sub(r"[\\/:*?\"<>|.]", "_", name) or statictext.EVENT_WATCH_FOLDER
-    path = os.path.join(statictext.APP_TMP_PATH, name)
+    path = Camera.eventWatchPath
     os.makedirs(path, exist_ok=True)
     return path
 
@@ -115,7 +109,7 @@ def process_file(path, ip_index):
     camera, station_id = ip_index.get(info["ip"], (None, None))
 
     subdir = info["time"].strftime("%Y%m")
-    dest_dir = os.path.join(statictext.EVENT_IMAGE_PATH, subdir)
+    dest_dir = os.path.join(EventLog.drfFilePath, subdir)
     os.makedirs(dest_dir, exist_ok=True)
     dest_name = filename
     if os.path.exists(os.path.join(dest_dir, dest_name)):

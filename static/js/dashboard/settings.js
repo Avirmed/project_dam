@@ -16,7 +16,7 @@ let tableSystemSettings = new Tabulator("#tableSystemSettings", {
         resizable: false
     },
     initialSort: [
-        { column: "field", dir: "asc" }
+        { column: "field", dir: "desc" }
     ],
     columns: [
         { title: LOCAL_VARIABLES.StaticText.Field, field: "field", sorter: "string", headerSortStartingDir: "asc" },
@@ -52,12 +52,6 @@ let tableSystemSettings = new Tabulator("#tableSystemSettings", {
             }
         }
     ]
-});
-
-// Rows are imported from the HTML table; enforce the ascending name order once
-// the table is built (initialSort alone is not applied to imported rows).
-tableSystemSettings.on("tableBuilt", function () {
-    tableSystemSettings.setSort("field", "asc");
 });
 
 $(document).on("change", ".form-control-color-input", function (e) {

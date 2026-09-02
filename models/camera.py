@@ -1,3 +1,4 @@
+import os
 import math
 import json
 
@@ -14,6 +15,13 @@ from util import statictext, util as Util
 
 class Camera(db.Model):
     __tablename__ = "tbl_camera"
+
+    # Worker folders (deployment constants, same pattern as Station.drfFilePath):
+    #   eventWatchPath - Security CCTVs drop event snapshots here (services/event_watcher.py)
+    #   imageOutPath   - <imageOutPath>/<CameraID>/ holds images to send via the
+    #                    camera's Upload JPG (FTP) settings (services/image_uploader.py)
+    eventWatchPath = os.path.join(statictext.APP_TMP_PATH, "security_in")
+    imageOutPath = os.path.join(statictext.APP_TMP_PATH, "images_out")
 
     sort = [
         {"column": "CameraID", "field": "CameraID", "dir": "asc"},

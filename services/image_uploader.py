@@ -1,6 +1,6 @@
 """Camera image uploader (design slide 6).
 
-Images that another process saves under tmp/<IMAGE_OUT_FOLDER>/<CameraID>/
+Images that another process saves under Camera.imageOutPath/<CameraID>/
 are sent to the customer's server through the camera's "Upload JPG" (FTP)
 settings; delivered files move to a `sent` sub-folder, failures stay for the
 next run. The outcome is stored on the camera (LastUploadRun / LastUploadResult).
@@ -14,9 +14,8 @@ import time
 from datetime import datetime
 
 from database import db
-from models import Camera, Settings
+from models import Camera
 from services import file_transfer
-from util import statictext
 
 logger = logging.getLogger("worker")
 
@@ -25,11 +24,7 @@ IMAGE_EXT = (".jpg", ".jpeg", ".png")
 
 
 def out_root():
-    name = str(
-        Settings.load_settings().get("IMAGE_OUT_FOLDER") or statictext.IMAGE_OUT_FOLDER
-    ).strip()
-    name = re.sub(r"[\\/:*?\"<>|.]", "_", name) or statictext.IMAGE_OUT_FOLDER
-    path = os.path.join(statictext.APP_TMP_PATH, name)
+    path = Camera.imageOutPath
     os.makedirs(path, exist_ok=True)
     return path
 
