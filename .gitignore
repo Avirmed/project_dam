@@ -193,3 +193,6 @@ cython_debug/
 # pgsql_stop.bat
 
 .DS_Store
+
+# Office temporary / lock files (~$Document.docx, ~$Book.xlsx, ...)
+~$*
