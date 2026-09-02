@@ -31,7 +31,8 @@ _slots = {}  # logger ID -> last interval slot that was written
 
 
 def csv_root():
-    return os.path.join(statictext.APP_TMP_PATH, "csv")
+    # data/csv/<LoggerID>/ - private worker output, never web-served
+    return os.path.join(statictext.APP_DATA_PATH, "csv")
 
 
 def device_name(station):

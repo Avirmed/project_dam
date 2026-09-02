@@ -42,6 +42,17 @@ function renderCameraLinks(form) {
     });
 }
 
+// Latest picture stored by the worker (Camera.snapshot()); hidden until one exists.
+function renderCameraSnapshot(form, jsonData) {
+    let box = form.find(".camera-snapshot");
+    if (!box.length || !jsonData || !jsonData.SnapshotTime) {
+        return;
+    }
+    box.find(".camera-snapshot-img").attr("src", jsonData.SnapshotImage);
+    box.find(".camera-snapshot-time").text(jsonData.SnapshotTime);
+    box.removeClass("d-none");
+}
+
 $(document).on("input change", ".app-json-data[data-field='CameraConfigures'] :input", function () {
     if (moduleForm) {
         renderCameraLinks(moduleForm);
@@ -76,6 +87,7 @@ function loadForm(cid = '') {
                     updateEditForm(moduleForm, jsonData);
                     CKEDITOR.replace("Remark");
                     renderCameraLinks(moduleForm);
+                    renderCameraSnapshot(moduleForm, jsonData);
                 }).fail(function (jqXHR) {
                     if (jqXHR.responseJSON) {
                         toastr.error(jqXHR.responseJSON.Message, jqXHR.responseJSON.Title);

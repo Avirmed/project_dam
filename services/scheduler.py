@@ -74,13 +74,21 @@ def start_worker(app):
         return _thread
 
     # Import jobs here so models are fully loaded first.
-    from services import http_sender, csv_logger, event_watcher, image_uploader, retention
+    from services import (
+        http_sender,
+        csv_logger,
+        event_watcher,
+        image_uploader,
+        snapshot,
+        retention,
+    )
 
     if not JOBS:
         register("http_sender", http_sender.send_pending, 5)
         register("csv_logger", csv_logger.run, 30)
         register("event_watcher", event_watcher.run, 15)
         register("image_uploader", image_uploader.run, 30)
+        register("snapshot", snapshot.run, 30)  # per-camera due-ness inside
         register("retention", retention.run, 3600)
 
     _stop.clear()

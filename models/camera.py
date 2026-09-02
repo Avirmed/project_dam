@@ -20,8 +20,13 @@ class Camera(db.Model):
     #   eventWatchPath - Security CCTVs drop event snapshots here (services/event_watcher.py)
     #   imageOutPath   - <imageOutPath>/<CameraID>/ holds images to send via the
     #                    camera's Upload JPG (FTP) settings (services/image_uploader.py)
-    eventWatchPath = os.path.join(statictext.APP_TMP_PATH, "security_in")
-    imageOutPath = os.path.join(statictext.APP_TMP_PATH, "images_out")
+    # Both live under the private data/ root (not web-served, not tmp/).
+    eventWatchPath = os.path.join(statictext.APP_DATA_PATH, "security_in")
+    imageOutPath = os.path.join(statictext.APP_DATA_PATH, "images_out")
+    # Public: latest picture per camera for the front CCTV page
+    # (services/snapshot.py) - <snapshotPath>/<CameraID>/latest.jpg
+    snapshotPath = os.path.join(statictext.APP_STATIC_PATH, "data", "cameras")
+    snapshotUrl = "/static/data/cameras"
 
     sort = [
         {"column": "CameraID", "field": "CameraID", "dir": "asc"},
@@ -86,12 +91,31 @@ class Camera(db.Model):
             "SnapshotURL": f"http://{auth}{host}:{isapi_port}/ISAPI/Streaming/channels/{channel}/picture",
         }
 
+    def snapshot(self):
+        """Latest stored picture: {SnapshotImage: URL or blank image,
+        SnapshotTime: datetime | None}. Time = file mtime (no DB column)."""
+        from datetime import datetime
+        from services.snapshot import snapshot_file, FILE_NAME
+
+        path = snapshot_file(self)
+        try:
+            taken = datetime.fromtimestamp(os.path.getmtime(path))
+        except OSError:
+            return {"SnapshotImage": statictext.Images["Blank"], "SnapshotTime": None}
+        folder = os.path.basename(os.path.dirname(path))
+        return {
+            # mtime as cache-buster so browsers refresh the picture
+            "SnapshotImage": f"{self.snapshotUrl}/{folder}/{FILE_NAME}?t={int(taken.timestamp())}",
+            "SnapshotTime": taken,
+        }
+
     def serialize(self):
         data = {
             column.name: getattr(self, column.name) for column in self.__table__.columns
         }
 
         data.update(self.build_links())
+        data.update(self.snapshot())
 
         return data
 

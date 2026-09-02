@@ -12,6 +12,9 @@
         { "Name": "DATA_RETENTION_DAYS", "Value": "730" },
         { "Name": "RAW_RETENTION_DAYS", "Value": "90" },
         { "Name": "HTTPLOG_RETENTION_DAYS", "Value": "90" },
-        { "Name": "EVENTLOG_RETENTION_DAYS", "Value": "365" }
+        { "Name": "EVENTLOG_RETENTION_DAYS", "Value": "365" },
+        { "Name": "CSV_RETENTION_DAYS", "Value": "30" },
+        { "Name": "SENT_IMAGE_RETENTION_DAYS", "Value": "7" },
+        { "Name": "SNAPSHOT_INTERVAL_MINUTES", "Value": "5" }
     ]
 }

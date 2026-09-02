@@ -161,6 +161,20 @@
             </div>
         </div>
 
+        {# Latest snapshot stored by the worker (cameras.js renderCameraSnapshot), read-only #}
+        <div class="col-12">
+            <div class="p-2 camera-snapshot d-none">
+                <label class="small mb-2">{{ StaticText.CameraField.SnapshotImage }}</label>
+                <div class="d-flex align-items-start gap-3">
+                    <img class="camera-snapshot-img img-thumbnail" alt="" style="max-width: 320px; max-height: 240px;">
+                    <div>
+                        <small class="text-muted d-block">{{ StaticText.CameraField.SnapshotTime }}: <span class="camera-snapshot-time"></span></small>
+                        <small class="text-muted d-block">{{ StaticText.CameraField.SnapshotHelp }}</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div class="col-12">
             <div class="p-2">
                 <div class="row align-items-start">

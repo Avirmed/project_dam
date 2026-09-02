@@ -1,11 +1,8 @@
-import os
-import time
-
-from flask import request
 from flask import Blueprint, jsonify, request
 
 from models import Settings
 from util import statictext
+from util.auth import require_types, ADMINS
 
 main_bp = Blueprint("main_bp", __name__)
 
@@ -18,6 +15,7 @@ def init():
         "APP_STATIC_PATH",
         "APP_DIRECTORY",
         "APP_TMP_PATH",
+        "APP_DATA_PATH",
         "APP_CERT_PATH",
         "UPLOAD_CK_FOLDER_FILE",
         "UPLOAD_CK_FOLDER_IMAGE",
@@ -38,18 +36,11 @@ def init():
 
 
 @main_bp.route("/cleartmp", methods=["GET", "POST"])
+@require_types(*ADMINS)
 def clear_tmp():
-    expire_time = time.time() - 24 * 60 * 60
-    deleted_files = []
-
-    for file in os.listdir(statictext.APP_TMP_PATH):
-        file_path = os.path.join(statictext.APP_TMP_PATH, file)
-        if os.path.isfile(file_path) and os.path.getmtime(file_path) < expire_time:
-            try:
-                os.remove(file_path)
-                deleted_files.append(file)
-            except Exception as e:
-                print(f"Файл устгах үед алдаа гарлаа: {file_path} -> {e}")
+    """Manual trigger of the tmp/ upload cleanup (the worker's retention job
+    runs the same rule daily)."""
+    from services.retention import purge_tmp_uploads
 
     response_code = 200
     return (
@@ -57,7 +48,7 @@ def clear_tmp():
             {
                 "message": statictext.ResponseCode[response_code],
                 "status": response_code,
-                "deleted_files": deleted_files,
+                "deleted_files": purge_tmp_uploads(),
             }
         ),
         response_code,

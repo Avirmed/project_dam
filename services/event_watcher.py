@@ -1,7 +1,7 @@
 """Security camera folder watcher (design slide 10).
 
 CCTVs of Camera Type "Security" drop event snapshots into the watch folder
-(Camera.eventWatchPath = tmp/security_in). Each file is named
+(Camera.eventWatchPath = data/security_in). Each file is named
 <IP>_<channel>_<yyyymmddHHMMSS[mmm]>_<EVENT>.jpg, e.g.
 192.168.1.65_01_20250905115636245_MOTION_DETECTION.jpg.
 

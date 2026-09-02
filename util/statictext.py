@@ -7,7 +7,12 @@ APP_NAME = "DAM"
 APP_LANG = "en"
 APP_DIRECTORY = os.path.dirname(os.path.dirname(__file__))
 APP_STATIC_PATH = os.path.join(APP_DIRECTORY, "static")
+# tmp/ is reserved for chunked front-end uploads (*.partN, assembled files);
+# /main/cleartmp drops leftovers older than 24 h.
 APP_TMP_PATH = os.path.join(APP_DIRECTORY, "tmp")
+# Private worker data (csv/, security_in/, images_out/): outside static/ so it is
+# never web-served; git-ignored. Public worker output goes under static/data/.
+APP_DATA_PATH = os.path.join(APP_DIRECTORY, "data")
 # Station TLS certificates / private keys live outside static/ so they are never
 # web-served. Excluded from the /main/init reflection (filesystem path).
 APP_CERT_PATH = os.path.join(APP_DIRECTORY, "certs")
@@ -510,6 +515,12 @@ DATA_RETENTION_DAYS = 730  # tbl_station_data rows
 RAW_RETENTION_DAYS = 90  # raw device payload inside those rows
 HTTPLOG_RETENTION_DAYS = 90  # delivered / failed HTTP logs
 EVENTLOG_RETENTION_DAYS = 365  # security events + images
+CSV_RETENTION_DAYS = 30  # CSV Logger files under data/csv (already sent by FTP)
+SENT_IMAGE_RETENTION_DAYS = 7  # delivered camera images under data/images_out/*/sent
+
+# Camera snapshot refresh for the front CCTV page (services/snapshot.py);
+# fallback when the SNAPSHOT_INTERVAL_MINUTES row is missing, 0 = off.
+SNAPSHOT_INTERVAL_MINUTES = 5
 
 # Fallback when the DATA_TIMEOUT_MINUTES row is missing from Settings: a station
 # whose latest payload is older than this is shown as "No connection".
@@ -831,6 +842,9 @@ CameraField = {
     "rtsp://user:pass@ip:port/Streaming/Channels/<ID> and http://user:pass@ip:isapi_port/ISAPI/Streaming/channels/<ID>/picture",
     "LastUploadRun": "Last upload",
     "LastUploadResult": "Last upload result",
+    "SnapshotImage": "Latest snapshot",
+    "SnapshotTime": "Snapshot taken at",
+    "SnapshotHelp": "Refreshed by the worker every SNAPSHOT_INTERVAL_MINUTES from the ISAPI snapshot link; shown on the front CCTV page.",
     "Onvif": "Onvif (ONVIF Profile G Specification )",
     "Onvif_IP": "Onvif IP",
     "Onvif_Port": "Port",

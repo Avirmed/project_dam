@@ -199,3 +199,10 @@ cython_debug/
 
 # Station TLS certificates / private keys (uploaded via the dashboard)
 /certs
+
+# Runtime folders: chunked front-end uploads (tmp/) and private worker data
+# (data/csv, data/security_in, data/images_out) - never committed
+/tmp
+/data
+# Worker-generated public pictures (front CCTV page), refreshed at runtime
+/static/data/cameras
