@@ -7,6 +7,8 @@ from flask_login import current_user, login_required
 
 from models import (
     Station,
+    StationData,
+    Settings,
     Team,
 )
 
@@ -428,9 +430,20 @@ def sites():
 
     jsonResult = Station.list(requestData)
 
-    for object in jsonResult["data"]:
-        object["WaterLevelType"] = 3
-        object["WaterLevelData"] = {}
+    # Live status from each station's newest inbound payload (REST API server);
+    # stations without recent data show as "No connection".
+    timeout_minutes = util.safe_int(
+        Settings.load_settings().get("DATA_TIMEOUT_MINUTES"),
+        statictext.DATA_TIMEOUT_MINUTES,
+    )
+    latest = StationData.latest_by_station(
+        [row["StationID"] for row in jsonResult["data"]]
+    )
+
+    for row in jsonResult["data"]:
+        row["WaterLevelType"], row["WaterLevelData"] = StationData.evaluate_status(
+            row.get("Meta"), latest.get(row["StationID"]), timeout_minutes
+        )
 
     return jsonify(jsonResult)
 

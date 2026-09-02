@@ -19,6 +19,7 @@ def init():
         "APP_DIRECTORY",
         "APP_TMP_PATH",
         "APP_CERT_PATH",
+        "EVENT_IMAGE_PATH",
         "UPLOAD_CK_FOLDER_FILE",
         "UPLOAD_CK_FOLDER_IMAGE",
     }

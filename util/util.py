@@ -451,6 +451,73 @@ def apply_key_mapping(payload, rows):
     return mapped
 
 
+def format_datetime_token(moment, fmt):
+    """Render a datetime with the design's token format (e.g. "yyyymmddHHMM").
+    Case matters: yyyy/yy year, mm month, dd day, HH hours, MM minutes, ss seconds.
+    Mirrors formatDateToken() in static/js/dashboard/http.js."""
+    pattern = (
+        str(fmt or "yyyymmddHHMM")
+        .replace("yyyy", "%Y")
+        .replace("yy", "%y")
+        .replace("mm", "%m")
+        .replace("dd", "%d")
+        .replace("HH", "%H")
+        .replace("MM", "%M")
+        .replace("ss", "%S")
+    )
+    return moment.strftime(pattern)
+
+
+def build_http_payload(mapping, raw, data, moment=None):
+    """Turn an HTTP service's Parameter Mapping rows into the payload dict.
+
+    rows: [{"source_type": static|sensor|datetime, "param": <name>, "value": ...}]
+    static   -> value as-is
+    sensor   -> value is a device key looked up in the raw payload first (dot
+                paths allowed), then in the mapped StationData.Data columns
+    datetime -> value is a token format rendered with `moment` (server time)
+    Blank parameter names are skipped; a missing sensor value becomes "".
+    """
+    moment = moment or __import__("datetime").datetime.now()
+    payload = {}
+    for row in mapping or []:
+        if not isinstance(row, dict):
+            continue
+        param = str(row.get("param") or "").strip()
+        if not param:
+            continue
+        source_type = str(row.get("source_type") or "static").strip()
+        value = row.get("value")
+
+        if source_type == "datetime":
+            payload[param] = format_datetime_token(moment, value)
+        elif source_type == "sensor":
+            key = str(value or "").strip()
+            found = lookup_path(raw or {}, key) if key else None
+            if found is None:
+                found = lookup_path(data or {}, key) if key else None
+            payload[param] = "" if found is None else found
+        else:
+            payload[param] = "" if value is None else value
+    return payload
+
+
+def safe_int(value, default=0):
+    """int(value) for strings / numbers, `default` when blank or invalid."""
+    try:
+        return int(str(value).strip())
+    except (TypeError, ValueError):
+        return default
+
+
+def safe_float(value):
+    """float(value) or None when blank / non-numeric."""
+    try:
+        return float(str(value).strip())
+    except (TypeError, ValueError):
+        return None
+
+
 def extractPrefixedData(array, prefix):
     return [
         {key[len(prefix) : -1]: value} for key, value in array if key.startswith(prefix)

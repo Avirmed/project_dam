@@ -72,6 +72,22 @@ def list():
             "headerSort": True,
         },
         {
+            "title": statictext.CsvLoggerField["LastRun"],
+            "field": "LastRun",
+            "headerHozAlign": "center",
+            "vertAlign": "middle",
+            "headerSort": True,
+        },
+        {
+            "title": statictext.CsvLoggerField["LastResult"],
+            "field": "LastResult",
+            "width": "20%",
+            "formatter": "textarea",
+            "headerHozAlign": "center",
+            "vertAlign": "middle",
+            "headerSort": False,
+        },
+        {
             "title": statictext.CsvLoggerField["Status"],
             "field": "Status",
             "width": 100,

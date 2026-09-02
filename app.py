@@ -23,6 +23,7 @@ sys.path.append(os.path.dirname(__file__))
 
 from database import db
 from fixtures.loader import load_fixtures, register_cli
+from services.scheduler import start_worker
 from urls import register_blueprints
 from util import statictext
 from util.handlers import register_handlers
@@ -86,6 +87,9 @@ if __name__ == "__main__":
     if not APP_DEBUG or os.environ.get("WERKZEUG_RUN_MAIN") == "true":
         print_startup_banner(statictext.APP_NAME, APP_PORT, APP_DEBUG)
         run_startup_checks(app)
+        # Background services (HTTP delivery, CSV/FTP, folder watchers) - one
+        # daemon thread, isolated from request handling; see services/scheduler.py.
+        start_worker(app)
 
     if APP_DEBUG:
         app.run(host="0.0.0.0", port=APP_PORT, debug=True, use_reloader=True)

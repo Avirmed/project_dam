@@ -1,15 +1,13 @@
-import json
-
 from flask import Blueprint, request, jsonify, abort
-from flask_login import login_required
+from flask_login import login_required, current_user
 
 from models import (
-    HttpLog,
+    EventLog,
 )
 
 from util import statictext
 
-httplog_bp = Blueprint("httplog_bp", __name__)
+eventlog_bp = Blueprint("eventlog_bp", __name__)
 
 
 def _request_data():
@@ -28,10 +26,10 @@ def _request_data():
     return requestData
 
 
-@httplog_bp.route("/get/<int:id>")
+@eventlog_bp.route("/get/<int:id>")
 @login_required
 def get(id):
-    object_data = HttpLog.getData(id)
+    object_data = EventLog.getData(id)
     if object_data is None:
         error_code = 404
         abort(error_code, description=statictext.ResponseCode[error_code])
@@ -39,33 +37,39 @@ def get(id):
     return jsonify(object_data)
 
 
-@httplog_bp.route("/counters", methods=["GET", "POST"])
+@eventlog_bp.route("/counters", methods=["GET", "POST"])
 @login_required
 def counters():
-    """Queue / Sent / Failed totals for the current filters (status ignored)."""
-    return jsonify(HttpLog.counters(_request_data()))
+    return jsonify(EventLog.counters(_request_data()))
 
 
-@httplog_bp.route("/list", methods=["GET", "POST"])
+@eventlog_bp.route("/action", methods=["POST"])
+@login_required
+def action():
+    """Approve (Status 1) / reject (Status 2) one event."""
+    jsonResult = EventLog.set_status(_request_data(), current_user.UserID)
+    return jsonify(jsonResult), jsonResult["Code"]
+
+
+@eventlog_bp.route("/list", methods=["GET", "POST"])
 @login_required
 def list():
-    requestData = _request_data()
+    jsonResult = EventLog.list(_request_data())
 
-    jsonResult = HttpLog.list(requestData)
+    approve = statictext.EventLogStatuses[EventLog.STATUS_APPROVE]
+    reject = statictext.EventLogStatuses[EventLog.STATUS_REJECT]
 
-    # Presentation-only fields for the grid: status badge, detail button and a
-    # readable payload string (a dict would show as "[object Object]").
     for row in jsonResult.get("data", []):
-        status = statictext.HttpLogStatuses.get(row.get("Status"), {})
+        status = statictext.EventLogStatuses.get(row.get("Status"), {})
         row["StatusBadge"] = (
             f'<span class="{status.get("class", "")}">{status.get("text", "")}</span>'
         )
-        detail_title = statictext.HttpLogField["Detail"]
         row["control"] = (
-            f'<span class="viewBtn text-primary" role="button" title="{detail_title}">{statictext.Icon["Info"]}</span>'
+            f'<span class="actionBtn text-success d-block" role="button" data-status="{EventLog.STATUS_APPROVE}">'
+            f'{statictext.Icon["CheckFill"]} {approve["text"]}</span>'
+            f'<span class="actionBtn text-danger d-block" role="button" data-status="{EventLog.STATUS_REJECT}">'
+            f'{statictext.Icon["UncheckFill"]} {reject["text"]}</span>'
         )
-        if isinstance(row.get("Content"), (dict, list)):
-            row["Content"] = json.dumps(row["Content"], ensure_ascii=False)
 
     jsonResult["column"] = [
         {
@@ -79,76 +83,52 @@ def list():
             "headerSort": False,
             "resizable": False,
         },
-        {"title": statictext.HttpLogField["ID"], "field": "ID", "visible": False},
+        {"title": statictext.EventLogField["ID"], "field": "ID", "visible": False},
         {
-            "title": statictext.HttpLogField["SiteName"],
-            "field": "SiteName",
+            "title": statictext.EventLogField["StationID"],
+            "field": "SiteCode",
+            "headerHozAlign": "center",
+            "hozAlign": "center",
+            "vertAlign": "middle",
+            "headerSort": False,
+        },
+        {
+            "title": statictext.EventLogField["Image"],
+            "field": "Image",
+            "width": 140,
+            "headerHozAlign": "center",
+            "hozAlign": "center",
+            "vertAlign": "middle",
+            "headerSort": False,
+        },
+        {
+            "title": statictext.EventLogField["WatershedName"],
+            "field": "WatershedName",
             "formatter": "textarea",
             "headerHozAlign": "center",
             "vertAlign": "middle",
             "headerSort": False,
         },
         {
-            "title": statictext.HttpLogField["DeviceID"],
-            "field": "DeviceID",
-            "headerHozAlign": "center",
-            "vertAlign": "middle",
-            "headerSort": True,
-        },
-        {
-            "title": statictext.HttpLogField["Method"],
-            "field": "Method",
-            "width": 80,
-            "headerHozAlign": "center",
-            "hozAlign": "center",
-            "vertAlign": "middle",
-            "headerSort": False,
-        },
-        {
-            "title": statictext.HttpLogField["URL"],
-            "field": "URL",
-            "width": "30%",
-            "formatter": "textarea",
-            "headerHozAlign": "center",
-            "vertAlign": "middle",
-            "headerSort": False,
-        },
-        {
-            "title": statictext.HttpLogField["ResponseCode"],
-            "field": "ResponseCode",
-            "width": 90,
+            "title": statictext.EventLogField["EventTime"],
+            "field": "EventTime",
             "headerHozAlign": "center",
             "hozAlign": "center",
             "vertAlign": "middle",
             "headerSort": True,
         },
         {
-            "title": statictext.HttpLogField["Attempts"],
-            "field": "Attempts",
-            "width": 80,
+            "title": statictext.EventLogField["Event"],
+            "field": "Event",
             "headerHozAlign": "center",
             "hozAlign": "center",
             "vertAlign": "middle",
-            "headerSort": False,
-        },
-        {
-            "title": statictext.HttpLogField["CreateDate"],
-            "field": "CreateDate",
-            "headerHozAlign": "center",
-            "vertAlign": "middle",
             "headerSort": True,
         },
         {
-            "title": statictext.HttpLogField["SentDate"],
-            "field": "SentDate",
-            "headerHozAlign": "center",
-            "vertAlign": "middle",
-            "headerSort": True,
-        },
-        {
-            "title": statictext.HttpLogField["Status"],
+            "title": statictext.EventLogField["Status"],
             "field": "StatusBadge",
-            "width": 120,
+            "width": 110,
             "headerHozAlign": "center",
             "hozAlign": "center",
             "vertAlign": "middle",
@@ -156,10 +136,10 @@ def list():
             "headerSort": False,
         },
         {
-            "title": "",
+            "title": statictext.EventLogField["Action"],
             "field": "control",
-            "width": 50,
-            "hozAlign": "center",
+            "width": 120,
+            "headerHozAlign": "center",
             "vertAlign": "middle",
             "formatter": "html",
             "headerSort": False,

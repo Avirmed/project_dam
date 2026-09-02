@@ -34,6 +34,10 @@ class Camera(db.Model):
     Status = db.Column(db.SmallInteger, default=1, nullable=False)
     Remark = db.Column(db.Text)
 
+    # Outcome of the last image upload run (services/image_uploader.py)
+    LastUploadRun = db.Column(db.DateTime)
+    LastUploadResult = db.Column(db.String(500))
+
     CreateUserID = db.Column(db.Integer)
     CreateDate = db.Column(db.DateTime)
     UpdateUserID = db.Column(db.Integer)
@@ -42,10 +46,44 @@ class Camera(db.Model):
     def __repr__(self):
         return f"<Camera {self.ID}:{self.CameraID}-{self.CameraName}>"
 
+    def configs(self, block="CameraConfigures"):
+        """Config dict of one Meta block ({} when missing)."""
+        data = (self.Meta or {}).get(block) or {}
+        cfg = data.get("configs") if isinstance(data, dict) else None
+        return cfg if isinstance(cfg, dict) else {}
+
+    def build_links(self):
+        """RTSP stream and ISAPI snapshot URLs from the camera settings
+        (design slides 4-5), e.g.
+        rtsp://admin:pass@147.30.93.37:554/Streaming/Channels/101 and
+        http://admin:pass@147.50.93.37:64/ISAPI/Streaming/channels/101/picture.
+        Mirrors renderCameraLinks() in static/js/dashboard/cameras.js."""
+        from urllib.parse import quote
+
+        cfg = self.configs()
+        host = str(cfg.get("RSTP_IP") or "").strip()
+        host = host.split("://")[-1].split("/")[0].split("@")[-1].split(":")[0]
+        if not host:
+            return {"StreamURL": "", "SnapshotURL": ""}
+
+        user = quote(str(cfg.get("Username") or ""), safe="")
+        password = quote(str(cfg.get("Password") or ""), safe="")
+        auth = f"{user}:{password}@" if user else ""
+        channel = str(cfg.get("ChannelsID") or "101").strip() or "101"
+        rtsp_port = Util.safe_int(cfg.get("Port"), 554) or 554
+        isapi_port = Util.safe_int(cfg.get("ISAPI_Port"), 80) or 80
+
+        return {
+            "StreamURL": f"rtsp://{auth}{host}:{rtsp_port}/Streaming/Channels/{channel}",
+            "SnapshotURL": f"http://{auth}{host}:{isapi_port}/ISAPI/Streaming/channels/{channel}/picture",
+        }
+
     def serialize(self):
         data = {
             column.name: getattr(self, column.name) for column in self.__table__.columns
         }
+
+        data.update(self.build_links())
 
         return data
 

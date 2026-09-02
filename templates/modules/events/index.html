@@ -1,0 +1,95 @@
+{# Public "Event Log": security camera events with approve / reject (design slide 10) #}
+<div class="tabulator-container">
+	<div class="tabulator-filters mb-3">
+		<div class="row">
+			<div class="col-xl-3 col-lg-4 col-md-6">
+				<div class="row align-items-center mb-3">
+					<div class="col-auto">
+						<label class="small" for="ProjectIDFilter">{{ StaticText.ProjectField.ProjectName }}</label>
+					</div>
+					<div class="col">
+						<select class="form-control form-control-sm select2" id="ProjectIDFilter" name="ProjectID" data-url="/api/projects/list?status=1">
+							<option value="" selected>-- {{ StaticText.All }} --</option>
+						</select>
+					</div>
+				</div>
+			</div>
+			<div class="col-xl-3 col-lg-4 col-md-6">
+				<div class="row align-items-center mb-3">
+					<div class="col-auto">
+						<label class="small" for="RiverBasinIDFilter">{{ StaticText.RiverBasinField.WatershedName }}</label>
+					</div>
+					<div class="col">
+						<select class="form-control form-control-sm select2" id="RiverBasinIDFilter" name="RiverBasinID" data-url="/api/riverbasins/list?status=1">
+							<option value="" selected>-- {{ StaticText.All }} --</option>
+						</select>
+					</div>
+				</div>
+			</div>
+			<div class="col-xl-3 col-lg-4 col-md-6">
+				<div class="row align-items-center mb-3">
+					<div class="col-auto">
+						<label class="small" for="StatusFilter">{{ StaticText.EventLogField.Status }}</label>
+					</div>
+					<div class="col">
+						<select class="form-control form-control-sm select2" id="StatusFilter" name="Status">
+							<option value="" selected>-- {{ StaticText.All }} --</option>
+							{% for key, value in StaticText.EventLogStatuses.items() %}
+							<option value="{{ key }}">{{ value.text }}</option>
+							{% endfor %}
+						</select>
+					</div>
+				</div>
+			</div>
+		</div>
+		<div class="row">
+			<div class="col-xl-3 col-lg-4 col-md-6">
+				<div class="row align-items-center mb-3">
+					<div class="col-auto">
+						<label class="small" for="DateFromFilter">{{ StaticText.EventLogField.DateFrom }}</label>
+					</div>
+					<div class="col">
+						<input type="text" class="form-control form-control-sm datepicker" id="DateFromFilter" name="DateFrom" autocomplete="off">
+					</div>
+				</div>
+			</div>
+			<div class="col-xl-3 col-lg-4 col-md-6">
+				<div class="row align-items-center mb-3">
+					<div class="col-auto">
+						<label class="small" for="DateToFilter">{{ StaticText.EventLogField.DateTo }}</label>
+					</div>
+					<div class="col">
+						<input type="text" class="form-control form-control-sm datepicker" id="DateToFilter" name="DateTo" autocomplete="off">
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<h4 class="mb-3">{{ StaticText.EventLogField.Title }}</h4>
+
+	{# Approve / Reject totals for the current filters (events.js) #}
+	<div class="row mb-3 eventlog-counters">
+		{% for key, value in StaticText.EventLogStatuses.items() %}
+		<div class="col-md-4 mb-2">
+			<div class="border rounded p-3 text-center">
+				<h5 class="mb-1">{{ value.text }}</h5>
+				<h2 class="mb-0 fw-bold" data-status="{{ key }}">0</h2>
+			</div>
+		</div>
+		{% endfor %}
+	</div>
+
+	{% include "addons/tabulator-export.html" ignore missing %}
+	<div
+		id="eventlogTable"
+		class="app-tabulator-table mt-0 mb-4"
+
+		cfg-ajax-url="/api/eventlog/list"
+		cfg-index="ID"
+		cfg-minHeight="480"
+		cfg-pagination
+		cfg-numberic
+		data-name="eventlog"
+	></div>
+</div>

@@ -27,9 +27,7 @@ class CsvLogger(db.Model):
 
     FileTransferID = db.Column(
         db.Integer,
-        db.ForeignKey(
-            "tbl_filetransfer.ID", onupdate="CASCADE", ondelete="RESTRICT"
-        ),
+        db.ForeignKey("tbl_filetransfer.ID", onupdate="CASCADE", ondelete="RESTRICT"),
         index=True,
         nullable=True,
     )
@@ -39,6 +37,10 @@ class CsvLogger(db.Model):
 
     Status = db.Column(db.SmallInteger, default=1, nullable=False)
     Remark = db.Column(db.Text)
+
+    # Outcome of the last worker run (services/csv_logger.py)
+    LastRun = db.Column(db.DateTime)
+    LastResult = db.Column(db.String(500))
 
     CreateUserID = db.Column(db.Integer)
     CreateDate = db.Column(db.DateTime)

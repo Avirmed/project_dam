@@ -121,6 +121,15 @@ def list():
             "headerSort": False,
         },
         {
+            "title": statictext.CameraField["LastUploadResult"],
+            "field": "LastUploadResult",
+            "width": "18%",
+            "formatter": "textarea",
+            "headerHozAlign": "center",
+            "vertAlign": "middle",
+            "headerSort": False,
+        },
+        {
             "title": statictext.CameraField["Remark"],
             "field": "Remark",
             "width": "20%",

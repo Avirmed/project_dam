@@ -11,6 +11,15 @@ APP_TMP_PATH = os.path.join(APP_DIRECTORY, "tmp")
 # Station TLS certificates / private keys live outside static/ so they are never
 # web-served. Excluded from the /main/init reflection (filesystem path).
 APP_CERT_PATH = os.path.join(APP_DIRECTORY, "certs")
+# Security camera event images (served) and the incoming watch folder name
+# (a folder name under tmp/, overridable by the EVENT_WATCH_FOLDER setting).
+EVENT_IMAGE_PATH = os.path.join(APP_STATIC_PATH, "data", "events")
+EVENT_IMAGE_URL = "/static/data/events"
+EVENT_WATCH_FOLDER = "security_in"
+# Outgoing camera images: tmp/<IMAGE_OUT_FOLDER>/<CameraID>/ is watched by the
+# worker and every new file is sent through the camera's Upload JPG (FTP)
+# settings (design slide 6). Overridable by the IMAGE_OUT_FOLDER setting.
+IMAGE_OUT_FOLDER = "images_out"
 APP_KEY = util.generate_key("KEY_", APP_NAME)
 APP_IV = util.generate_key("IV_", APP_NAME)
 APP_COLOR = "#0d6efd"
@@ -486,6 +495,23 @@ StationDataField = {
     "CreateDate": "Created Date",
 }
 
+# StationDataKeys - the agreed "Database Column" names inside StationData.Data
+# that the public site reads (map status, charts). Inbound Data Mapping rows
+# must map the device keys onto these names for a station to get a live status.
+StationDataKeys = {
+    "WaterLevel": "WL",  # Water Level Point 1 -> compared with WARNING_UP / CRITICAL_UP
+    "WaterLevel2": "WL2",  # Water Level Point 2 -> compared with WARNING_DOWN / CRITICAL_DOWN
+    "Rainfall": "RAIN",
+}
+
+# Settings rows rendered as an on/off switch on the dashboard Settings page
+# (value stored as "1" / "0"); any name ending in _ENABLED is treated the same.
+BooleanSettings = ["WORKER_ENABLED"]
+
+# Fallback when the DATA_TIMEOUT_MINUTES row is missing from Settings: a station
+# whose latest payload is older than this is shown as "No connection".
+DATA_TIMEOUT_MINUTES = 15
+
 ConnectionModes = {
     "active": "Active Mode",
     "passive": "Passive Mode",
@@ -792,6 +818,14 @@ CameraField = {
     "Password": "Password",
     "ChannelsID": "Channels ID",
     "FPS": "FPS",
+    "ISAPI_Port": "ISAPI Port",
+    "Links": "Generated links (RTSP / ISAPI)",
+    "StreamURL": "RTSP stream link",
+    "SnapshotURL": "ISAPI snapshot link",
+    "LinksHelp": "Built from RTSP IP, Port, Username, Password, Channels ID and ISAPI Port: "
+    "rtsp://user:pass@ip:port/Streaming/Channels/<ID> and http://user:pass@ip:isapi_port/ISAPI/Streaming/channels/<ID>/picture",
+    "LastUploadRun": "Last upload",
+    "LastUploadResult": "Last upload result",
     "Onvif": "Onvif (ONVIF Profile G Specification )",
     "Onvif_IP": "Onvif IP",
     "Onvif_Port": "Port",
@@ -952,7 +986,11 @@ HTTPServiceConfigures = [
                 "title": "Parameter Mapping",
                 "help": "Static Value: sent as-is. Sensor Data: the device/sensor key to read. Datetime: format such as yyyymmddHHMM.",
                 "table": True,
-                "headers": ["Source Type", "Parameter Name (for API)", "Source Value / Display Name"],
+                "headers": [
+                    "Source Type",
+                    "Parameter Name (for API)",
+                    "Source Value / Display Name",
+                ],
                 "columns": ["source_type", "param", "value"],
                 "column_options": {"source_type": HTTP_SourceTypes},
                 "align": "start",
@@ -1000,26 +1038,88 @@ HttpFormTab = {
 
 HttpLogField = {
     "ID": "ID",
+    "SiteName": "Site",
     "DeviceID": "device_id",
+    "Method": "Method",
+    "URL": "URL",
+    "Request": "Request body",
     "Content": "content",
+    "ResponseCode": "Response code",
+    "Response": "Response",
+    "Attempts": "Attempts",
+    "NextAttempt": "Next attempt",
+    "SentDate": "Sent",
     "Status": "Status",
     "CreateDate": "Date",
+    "DateFrom": "วันที่ (From)",
+    "DateTo": "ถึงวันที่ (To)",
+    "Total": "ทั้งหมด",
+    "Detail": "Delivery detail",
 }
 
+# Security camera events (design slide 10, public "Event Log" page).
+EventLogField = {
+    "ID": "ID",
+    "Title": "Security - ระบบรักษาความปลอดภัย",
+    "CameraID": "Camera",
+    "StationID": "Station – สถานีโทรมาตร",
+    "Image": "Image",
+    "WatershedName": "River - ลุ่มน้ำ",
+    "EventTime": "Date Time",
+    "Event": "Event – เหตุการณ์",
+    "IP": "IP address",
+    "Channel": "Channel",
+    "Status": "Status",
+    "Action": "Action",
+    "Remark": "Remark",
+    "DateFrom": "Since Date",
+    "DateTo": "To Date",
+    "Total": "ทั้งหมด",
+}
+
+EventLogStatuses = {
+    0: {"text": "Pending", "class": "app-badge badge text-bg-secondary"},
+    1: {"text": "Approve", "class": "app-badge badge text-bg-danger"},
+    2: {"text": "Reject", "class": "app-badge badge text-bg-dark"},
+}
+
+# Delivery lifecycle of an outbound HTTP payload (design slide 18).
+HttpLogStatuses = {
+    0: {"text": "Queue", "class": "app-badge badge text-bg-secondary"},
+    1: {"text": "Sent (Success)", "class": "app-badge badge text-bg-success"},
+    2: {"text": "Failed", "class": "app-badge badge text-bg-danger"},
+}
+
+# CSVLoggerConfigures - stored as CsvLogger.Meta["Logger"]; executed by the
+# worker (services/csv_logger.py): one row per LogInterval into a daily CSV
+# that is then uploaded through the logger's File Transfer connection.
 CSVLoggerConfigures = [
     {
         "fields": {
             "LogInterval": {
                 "title": "Log Interval (minutes)",
-                "placeholder": "",
+                "placeholder": "15",
+                "help": "Time taken to save data to a CSV file (minutes); rows are aligned to the clock.",
                 "type": "number",
                 "min": 1,
             },
+            "DeviceNameFirstLine": {
+                "title": "Place Device Name on the first line of CSV Header",
+                "type": "checkbox",
+            },
             "Mapping": {
                 "title": "Parameter Mapping",
-                "placeholder": "",
+                "help": (
+                    "Drag rows to rearrange the column order. Source variable placeholders: "
+                    "%DEVICENAME% device name, %DATETIME% (YYYY-MM-DD HH:MM:SS), %DATE% (YYYY-MM-DD), "
+                    "%DATE_DMY% (DD/MM/YY), %TIME% (HH:MM:SS), %<column>% = value from the station's "
+                    "mapped data, e.g. %WL%, %RAIN%. Any other text is written as-is."
+                ),
                 "table": True,
-                "headers": ["Header Name", "Source Variable"],
+                "headers": [
+                    "Header Name (FILE_HEADER)",
+                    "Source Variable (FILE_FORMAT)",
+                ],
                 "columns": ["header", "source"],
                 "align": "start",
             },
@@ -1032,7 +1132,13 @@ CsvLoggerField = {
     "FileTransferID": "File Transfer",
     "FileTransferHostname": "File Transfer",
     "FilenameFormat": "Filename Format",
+    "FilenameFormatHelp": (
+        "Placeholders: @DEVICENAME (site code), @DATE (YYYY-MM-DD) and date/time codes "
+        "%Y %y %m %d %H %M %S. Example: @DEVICENAME_DataRecovery_%d%m%Y.csv -> TC.04_DataRecovery_12052026.csv"
+    ),
     "Logger": "Logger",
+    "LastRun": "Last run",
+    "LastResult": "Last result",
     "Status": "Status",
     "Remark": "Remark",
 }
@@ -1151,6 +1257,7 @@ Messages = {
     "InboundUnauthorized": "Authentication failed.",
     "InboundForbiddenSource": "The request source address is not allowed.",
     "InboundInvalidPayload": "The request body must be a JSON object.",
+    "EventUpdated": "Event status updated.",
 }
 
 Icon = {

@@ -1,10 +1,11 @@
-__all__ = ['area', 'camera', 'ckfinder', 'csvlogger', 'dashboard', 'filetransfer', 'http', 'httplog', 'inbound', 'main', 'project', 'riverbasin', 'sampling', 'sensor', 'station', 'stationdata', 'team', 'user']
+__all__ = ['area', 'camera', 'ckfinder', 'csvlogger', 'dashboard', 'eventlog', 'filetransfer', 'http', 'httplog', 'inbound', 'main', 'project', 'riverbasin', 'sampling', 'sensor', 'station', 'stationdata', 'team', 'user']
 
 from .area import area_bp
 from .camera import camera_bp
 from .ckfinder import ckfinder_bp
 from .csvlogger import csvlogger_bp
 from .dashboard import dashboard_bp
+from .eventlog import eventlog_bp
 from .filetransfer import filetransfer_bp
 from .http import http_bp
 from .httplog import httplog_bp

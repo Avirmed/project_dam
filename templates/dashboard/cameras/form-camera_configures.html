@@ -132,7 +132,32 @@
                         </div>
                     </div>
 
+                    <div class="col-md-4 mb-2">
+                        <div class="form-group field-basic" data-field="ISAPI_Port">
+                            <label class="small mb-2" for="ISAPI_Port">{{ StaticText.CameraField.ISAPI_Port }}</label>
+                            <input type="number" min="1" max="65535" class="form-control form-control-sm" id="ISAPI_Port" name="ISAPI_Port" placeholder="80">
+                        </div>
+                    </div>
+
                 </div>
+            </div>
+        </div>
+
+        {# Generated links: read-only preview (cameras.js renderCameraLinks), not serialized into Meta #}
+        <div class="col-12">
+            <div class="p-2">
+                <label class="small mb-2">{{ StaticText.CameraField.Links }}</label>
+                <div class="row align-items-start">
+                    <div class="col-md-6 mb-2">
+                        <small class="text-muted">{{ StaticText.CameraField.StreamURL }}</small>
+                        <input type="text" class="form-control form-control-sm camera-link" data-link="StreamURL" readonly>
+                    </div>
+                    <div class="col-md-6 mb-2">
+                        <small class="text-muted">{{ StaticText.CameraField.SnapshotURL }}</small>
+                        <input type="text" class="form-control form-control-sm camera-link" data-link="SnapshotURL" readonly>
+                    </div>
+                </div>
+                <small class="text-muted d-block">{{ StaticText.CameraField.LinksHelp }}</small>
             </div>
         </div>
 

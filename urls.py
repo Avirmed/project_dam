@@ -27,6 +27,7 @@ def register_blueprints(app):
         httplog_bp,
         stationdata_bp,
         inbound_bp,
+        eventlog_bp,
     )
 
     @app.route("/", defaults={"module": "main", "cid": None})
@@ -75,6 +76,7 @@ def register_blueprints(app):
         # Device-facing REST API server: POST /api/inbound/<DeviceID> (no login;
         # gated by each station's own API settings).
         (inbound_bp, "/inbound"),
+        (eventlog_bp, "/eventlog"),
     ]
 
     for bp, prefix in api_list:

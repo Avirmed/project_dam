@@ -14,6 +14,40 @@ const module = "cameras";
 let moduleForm = null;
 let submitBtn = null;
 
+// Live preview of the RTSP stream / ISAPI snapshot links built from the camera
+// settings (mirrors Camera.build_links() on the server).
+function renderCameraLinks(form) {
+    let block = form.find(".app-json-data[data-field='CameraConfigures']");
+    if (!block.length) {
+        return;
+    }
+    let val = (name) => (block.find(`:input[name='${name}']`).val() || "").trim();
+    let host = val("RSTP_IP").split("://").pop().split("/")[0].split("@").pop().split(":")[0];
+    let user = encodeURIComponent(val("Username"));
+    let pass = encodeURIComponent(val("Password"));
+    let auth = user ? `${user}:${pass}@` : "";
+    let channel = val("ChannelsID") || "101";
+    let rtspPort = parseInt(val("Port"), 10) || 554;
+    let isapiPort = parseInt(val("ISAPI_Port"), 10) || 80;
+
+    let links = host
+        ? {
+            StreamURL: `rtsp://${auth}${host}:${rtspPort}/Streaming/Channels/${channel}`,
+            SnapshotURL: `http://${auth}${host}:${isapiPort}/ISAPI/Streaming/channels/${channel}/picture`,
+        }
+        : { StreamURL: "", SnapshotURL: "" };
+
+    block.find(".camera-link").each(function () {
+        $(this).val(links[$(this).data("link")] || "");
+    });
+}
+
+$(document).on("input change", ".app-json-data[data-field='CameraConfigures'] :input", function () {
+    if (moduleForm) {
+        renderCameraLinks(moduleForm);
+    }
+});
+
 function loadForm(cid = '') {
     if (!pagePermission.includes(LOCAL_VARIABLES.Authorization.UserType)) {
         return;
@@ -41,6 +75,7 @@ function loadForm(cid = '') {
 
                     updateEditForm(moduleForm, jsonData);
                     CKEDITOR.replace("Remark");
+                    renderCameraLinks(moduleForm);
                 }).fail(function (jqXHR) {
                     if (jqXHR.responseJSON) {
                         toastr.error(jqXHR.responseJSON.Message, jqXHR.responseJSON.Title);
@@ -59,6 +94,7 @@ function loadForm(cid = '') {
                 moduleForm.find(`[type='checkbox'][name='Status']`).prop('checked', true);
 
                 CKEDITOR.replace("Remark");
+                renderCameraLinks(moduleForm);
             }
 
             select2Ajax($("#StationID"), "StationID", "SiteName");

@@ -4,21 +4,28 @@ if (!pagePermission.includes(LOCAL_VARIABLES.Authorization.UserType)) {
     noPermission();
 }
 
+// Settings stored as "1" / "0" and shown as a switch (statictext.BooleanSettings,
+// plus the *_ENABLED naming convention so a stale StaticText cache still works).
+function isBooleanSetting(fieldName) {
+    let names = LOCAL_VARIABLES.StaticText.BooleanSettings || [];
+    return names.includes(fieldName) || fieldName.endsWith("_ENABLED");
+}
+
 let tableSystemSettings = new Tabulator("#tableSystemSettings", {
     columnDefaults: {
         resizable: false
     },
     initialSort: [
-        { column: "field", dir: "desc" }
+        { column: "field", dir: "asc" }
     ],
     columns: [
-        { title: LOCAL_VARIABLES.StaticText.Field, field: "field", sorter: "string" },
+        { title: LOCAL_VARIABLES.StaticText.Field, field: "field", sorter: "string", headerSortStartingDir: "asc" },
         {
             title: LOCAL_VARIABLES.StaticText.Value,
             field: "value",
             editable: function (cell) {
                 let fieldName = cell.getData().field || "";
-                return !fieldName.includes("COLOR");
+                return !fieldName.includes("COLOR") && !isBooleanSetting(fieldName);
             },
             formatter: function (cell) {
                 let fieldName = cell.getData().field || "";
@@ -30,14 +37,38 @@ let tableSystemSettings = new Tabulator("#tableSystemSettings", {
                         </div>
                     `;
                 }
+                if (isBooleanSetting(fieldName)) {
+                    let on = !["0", "false", "off", "no", ""].includes(String(cell.getValue() || "").trim().toLowerCase());
+                    return `
+                        <div class="form-check form-switch">
+                            <label class="form-check-label">
+                                <input type="checkbox" class="form-check-input form-control-switch-input" ${on ? "checked" : ""}>
+                                <small>${on ? LOCAL_VARIABLES.StaticText.Yes : LOCAL_VARIABLES.StaticText.No}</small>
+                            </label>
+                        </div>
+                    `;
+                }
                 return cell.getValue();
             }
         }
     ]
 });
 
+// Rows are imported from the HTML table; enforce the ascending name order once
+// the table is built (initialSort alone is not applied to imported rows).
+tableSystemSettings.on("tableBuilt", function () {
+    tableSystemSettings.setSort("field", "asc");
+});
+
 $(document).on("change", ".form-control-color-input", function (e) {
     let newValue = $(this).val();
+    let cell = tableSystemSettings.getRow(this.closest(".tabulator-row")).getCell("value");
+    cell.setValue(newValue);
+});
+
+// Switch -> "1" / "0"; setValue fires cellEdited, which saves the row.
+$(document).on("change", ".form-control-switch-input", function (e) {
+    let newValue = this.checked ? "1" : "0";
     let cell = tableSystemSettings.getRow(this.closest(".tabulator-row")).getCell("value");
     cell.setValue(newValue);
 });

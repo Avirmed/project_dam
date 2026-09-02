@@ -3,15 +3,61 @@
 		<div class="col-xl-3 col-lg-4 col-md-6">
 			<div class="row align-items-center mb-3">
 				<div class="col-auto">
+					<label class="small" for="ProjectIDFilter">{{ StaticText.ProjectField.ProjectName }}</label>
+				</div>
+				<div class="col">
+					<select class="form-control form-control-sm select2" id="ProjectIDFilter" name="ProjectID" data-url="/api/projects/list?status=1">
+						<option value="" selected>-- {{ StaticText.All }} --</option>
+					</select>
+				</div>
+			</div>
+		</div>
+		<div class="col-xl-3 col-lg-4 col-md-6">
+			<div class="row align-items-center mb-3">
+				<div class="col-auto">
+					<label class="small" for="RiverBasinIDFilter">{{ StaticText.RiverBasinField.WatershedName }}</label>
+				</div>
+				<div class="col">
+					<select class="form-control form-control-sm select2" id="RiverBasinIDFilter" name="RiverBasinID" data-url="/api/riverbasins/list?status=1">
+						<option value="" selected>-- {{ StaticText.All }} --</option>
+					</select>
+				</div>
+			</div>
+		</div>
+		<div class="col-xl-3 col-lg-4 col-md-6">
+			<div class="row align-items-center mb-3">
+				<div class="col-auto">
 					<label class="small" for="StatusFilter">{{ StaticText.HttpLogField.Status }}</label>
 				</div>
 				<div class="col">
 					<select class="form-control form-control-sm select2" id="StatusFilter" name="Status">
 						<option value="" selected>-- {{ StaticText.All }} --</option>
-						{% for key, value in StaticText.StatusLabel.items() %}
+						{% for key, value in StaticText.HttpLogStatuses.items() %}
 						<option value="{{ key }}">{{ value.text }}</option>
 						{% endfor %}
 					</select>
+				</div>
+			</div>
+		</div>
+	</div>
+	<div class="row">
+		<div class="col-xl-3 col-lg-4 col-md-6">
+			<div class="row align-items-center mb-3">
+				<div class="col-auto">
+					<label class="small" for="DateFromFilter">{{ StaticText.HttpLogField.DateFrom }}</label>
+				</div>
+				<div class="col">
+					<input type="text" class="form-control form-control-sm datepicker" id="DateFromFilter" name="DateFrom" autocomplete="off">
+				</div>
+			</div>
+		</div>
+		<div class="col-xl-3 col-lg-4 col-md-6">
+			<div class="row align-items-center mb-3">
+				<div class="col-auto">
+					<label class="small" for="DateToFilter">{{ StaticText.HttpLogField.DateTo }}</label>
+				</div>
+				<div class="col">
+					<input type="text" class="form-control form-control-sm datepicker" id="DateToFilter" name="DateTo" autocomplete="off">
 				</div>
 			</div>
 		</div>

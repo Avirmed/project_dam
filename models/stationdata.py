@@ -1,8 +1,9 @@
 import math
-from datetime import datetime
+import logging
+from datetime import datetime, timedelta
 
 from database import db
-from sqlalchemy import text
+from sqlalchemy import text, func
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import contains_eager
 from sqlalchemy.dialects.postgresql import JSONB
@@ -138,6 +139,16 @@ class StationData(db.Model):
             db.session.add(record)
             db.session.commit()
 
+            # New data hit the DB: queue the station's outbound HTTP deliveries
+            # (design slide 3). Delivery itself runs in the background worker.
+            try:
+                from models.httplog import HttpLog
+
+                HttpLog.enqueue_for_station(station, record)
+            except Exception as e:
+                db.session.rollback()
+                logging.getLogger("worker").warning("HttpLog enqueue failed: %s", e)
+
             jsonResult.update(
                 {
                     "Result": True,
@@ -159,6 +170,71 @@ class StationData(db.Model):
             )
 
         return jsonResult
+
+    @classmethod
+    def latest_by_station(cls, station_ids):
+        """Newest payload per station -> {StationID: StationData}. One query:
+        max(RecordTime) per station joined back to the rows."""
+        ids = [i for i in (station_ids or []) if i is not None]
+        if not ids:
+            return {}
+
+        newest = (
+            db.session.query(cls.StationID, func.max(cls.RecordTime).label("maxtime"))
+            .filter(cls.StationID.in_(ids))
+            .group_by(cls.StationID)
+            .subquery()
+        )
+        rows = cls.query.join(
+            newest,
+            (cls.StationID == newest.c.StationID)
+            & (cls.RecordTime == newest.c.maxtime),
+        ).all()
+
+        return {row.StationID: row for row in rows}
+
+    @classmethod
+    def evaluate_status(cls, meta, latest, timeout_minutes):
+        """Public-site status for one station from its newest payload.
+
+        Returns (WaterLevelType, WaterLevelData) where WaterLevelType indexes
+        statictext.WaterLevelTypes: 0 normal, 1 warning, 2 critical, 3 no
+        connection (no payload, or the newest one is older than
+        `timeout_minutes`). Water level values are read from StationData.Data
+        under statictext.StationDataKeys and compared with the station's
+        StationConfigures thresholds (Point 1 -> *_UP, Point 2 -> *_DOWN);
+        the worse of the two points wins.
+        """
+        if latest is None or latest.RecordTime is None:
+            return 3, {}
+
+        age = datetime.now() - latest.RecordTime
+        data = latest.Data if isinstance(latest.Data, dict) else {}
+        water_data = {"RecordTime": latest.RecordTime, "Values": data}
+
+        if age > timedelta(minutes=max(int(timeout_minutes), 1)):
+            return 3, water_data
+
+        cfg = ((meta or {}).get("StationConfigures") or {}).get("configs") or {}
+        keys = statictext.StationDataKeys
+        checks = (
+            (keys["WaterLevel"], "WARNING_UP", "CRITICAL_UP"),
+            (keys["WaterLevel2"], "WARNING_DOWN", "CRITICAL_DOWN"),
+        )
+
+        level = 0
+        for data_key, warning_key, critical_key in checks:
+            value = Util.safe_float(data.get(data_key))
+            if value is None:
+                continue
+            critical = Util.safe_float(cfg.get(critical_key))
+            warning = Util.safe_float(cfg.get(warning_key))
+            if critical is not None and value >= critical:
+                level = max(level, 2)
+            elif warning is not None and value >= warning:
+                level = max(level, 1)
+
+        return level, water_data
 
     @classmethod
     def list(cls, params={}):

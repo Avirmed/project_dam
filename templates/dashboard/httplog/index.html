@@ -1,5 +1,16 @@
 <div class="tabulator-container">
 	{% include "dashboard/{}/filter.html".format(Module) ignore missing %}
+	{# Queue / Sent / Failed totals for the current filters (httplog.js) #}
+	<div class="row mb-3 httplog-counters">
+		{% for key, value in StaticText.HttpLogStatuses.items() %}
+		<div class="col-md-4 mb-2">
+			<div class="border rounded p-2 text-center">
+				<small class="text-muted">{{ value.text }} — {{ StaticText.HttpLogField.Total }}</small>
+				<h5 class="mb-0" data-status="{{ key }}">0</h5>
+			</div>
+		</div>
+		{% endfor %}
+	</div>
 	{% include "addons/tabulator-export.html" ignore missing %}
 	<div
 		id="httplogTable"
