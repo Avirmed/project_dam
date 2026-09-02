@@ -8,7 +8,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import contains_eager
 from sqlalchemy.dialects.postgresql import JSONB
 
-from util import statictext, util as Util
+from util import statictext, util as Util, hydro
 
 
 class StationData(db.Model):
@@ -41,6 +41,11 @@ class StationData(db.Model):
     CreateDate = db.Column(db.DateTime)
 
     station = db.relationship("Station")
+
+    # Time-series access pattern: one station, a time range / its newest row.
+    __table_args__ = (
+        db.Index("ix_tbl_station_data_station_time", "StationID", "RecordTime"),
+    )
 
     def __repr__(self):
         return f"<StationData {self.ID}:{self.DeviceID}>"
@@ -125,6 +130,7 @@ class StationData(db.Model):
             return jsonResult
 
         mapped = Util.apply_key_mapping(payload, cfg.get("Keys"))
+        cls.apply_flow(station, mapped)
         now = datetime.now()
 
         try:
@@ -170,6 +176,36 @@ class StationData(db.Model):
             )
 
         return jsonResult
+
+    @classmethod
+    def apply_flow(cls, station, mapped):
+        """Discharge from the station's Flow sensor (design slide 9):
+        FLOW = Area(WL) * k(WL) * VELOCITY, using the sensor's Profile and
+        FLOW CAL. TABLE. Only fills FLOW when the device did not send one;
+        AREA is stored alongside for traceability. Never raises."""
+        keys = statictext.StationDataKeys
+        if not isinstance(mapped, dict) or mapped.get(keys["Flow"]) not in (None, ""):
+            return False
+        try:
+            sensor = station.flow_sensor()
+            if sensor is None:
+                return False
+            flow_cfg = ((sensor.Meta or {}).get("Flow") or {}).get("configs") or {}
+            result = hydro.compute_flow(
+                flow_cfg.get("Profile"),
+                flow_cfg.get("FlowCalcTable"),
+                mapped.get(keys["WaterLevel"]),
+                mapped.get(keys["Velocity"]),
+            )
+            if result is None:
+                return False
+            flow, area, _k = result
+            mapped[keys["Flow"]] = f"{flow:.4f}"
+            mapped[keys["Area"]] = f"{area:.4f}"
+            return True
+        except Exception as e:  # a bad table must never block the inbound request
+            logging.getLogger("worker").warning("Flow computation skipped: %s", e)
+            return False
 
     @classmethod
     def latest_by_station(cls, station_ids):

@@ -1,3 +1,5 @@
+import json
+
 from flask import Blueprint, request, jsonify, abort
 from flask_login import login_required
 
@@ -5,11 +7,45 @@ from models import (
     Sensor,
 )
 
-from util import statictext
+from util import statictext, hydro
 
 from util.auth import require_types, EDITORS
 
 sensor_bp = Blueprint("sensor_bp", __name__)
+
+
+@sensor_bp.route("/profile", methods=["POST"])
+@require_types(*EDITORS)
+def profile():
+    """Flow tab "Calculate": Profile rows (water level -> wetted area) from the
+    Custom Profile polygon sent by the form; nothing is stored until Save."""
+    data = request.get_json(silent=True) or request.form.to_dict()
+    rows = data.get("CustomProfile")
+    if isinstance(rows, str):
+        try:
+            rows = json.loads(rows)
+        except ValueError:
+            rows = []
+
+    jsonResult = {
+        "Result": False,
+        "Title": statictext.Messages["Title"],
+        "Message": statictext.Messages["ProfileNeedsPoints"],
+        "Code": 422,
+    }
+
+    profile = hydro.build_profile(rows, data.get("AreaRef") or "Level")
+    if profile:
+        jsonResult.update(
+            {
+                "Result": True,
+                "Data": profile,
+                "Message": statictext.Messages["ProfileCalculated"],
+                "Code": 200,
+            }
+        )
+
+    return jsonify(jsonResult), jsonResult["Code"]
 
 
 @sensor_bp.route("/get/<int:id>")

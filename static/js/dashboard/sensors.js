@@ -11,6 +11,95 @@ let formTmp = $(".form-tmp").html();
 $(".form-tmp").remove();
 
 const module = "sensors";
+
+// Flow tab: draw the Custom Profile polygon (numbered survey points) as it is
+// typed. Cells: 0 = row number, 1 = x, 2 = y, last = delete.
+function readProfilePoints(form) {
+    let points = [];
+    form.find(".table-configure[data-field='CustomProfile'] tbody tr").each(function (rowIndex) {
+        let cells = $(this).find("td");
+        // rowIndex travels with the point so a dragged marker writes back to
+        // its own table row even when blank rows are skipped by the chart
+        points.push({ x: cells.eq(1).text().trim(), y: cells.eq(2).text().trim(), row: rowIndex });
+    });
+    return points;
+}
+
+function renderSensorProfile(form) {
+    let block = form.find(".app-json-data[data-field='Flow']");
+    let chart = block.find(".profile-chart")[0];
+    if (!chart || typeof renderProfileChart !== "function") {
+        return;
+    }
+    let pc = (LOCAL_VARIABLES.StaticText && LOCAL_VARIABLES.StaticText.ProfileChart) || {};
+    renderProfileChart(chart, readProfilePoints(form), {
+        ref: block.find(":input[name='AreaRef']").val() || "Level",
+        xTitle: pc.x,
+        yTitle: pc.y,
+        // drag a marker -> update that row's x / y cells, then redraw
+        onChange: function (point, x, y) {
+            if (point) {
+                let cells = block.find(".table-configure[data-field='CustomProfile'] tbody tr").eq(point.row).find("td");
+                cells.eq(1).text(x);
+                cells.eq(2).text(y);
+            }
+            renderSensorProfile(form);
+        },
+    });
+}
+
+// typing in cells, Ref. change, row add / delete and drag-reorder
+$(document).on("input change click sortupdate", ".app-json-data[data-field='Flow']", function () {
+    if (moduleForm) {
+        renderSensorProfile(moduleForm);
+    }
+});
+
+// Replace a .table-configure body with rows [{column: value}] (same cell
+// markup as the generic engine, so editing / sorting / serializing still work).
+function fillConfigTable(table, rows) {
+    let body = table.find("tbody").empty();
+    let headers = [];
+    table.find("thead th[data-value]").each(function () {
+        headers.push($(this));
+    });
+    $.each(rows || [], function (i, row) {
+        let tr = $("<tr/>");
+        tr.append(`<td class="drag-btn">${i + 1}</td>`);
+        $.each(headers, function (_, th) {
+            let value = row[th.data("value")];
+            tr.append(configTableCell(th, value != null ? value : "", table.data("align")));
+        });
+        tr.append(`<td><span class="deleteBtn" role="button">${LOCAL_VARIABLES.StaticText.Icon['-']}</span></td>`);
+        body.append(tr);
+    });
+}
+
+// "Calculate": Profile (water level -> wetted area) from the Custom Profile
+// points; the result only lands in the table - Save stores it.
+$(document).on("click", ".profile-calc", function () {
+    let btn = $(this);
+    let block = moduleForm.find(".app-json-data[data-field='Flow']");
+    let points = readProfilePoints(moduleForm).map(function (p) { return { x: p.x, y: p.y }; });
+
+    btn.prop("disabled", true);
+    $.ajax({
+        url: `/api/${module}/profile`,
+        type: "POST",
+        contentType: "application/json; charset=utf-8",
+        dataType: "json",
+        data: JSON.stringify({ AreaRef: block.find(":input[name='AreaRef']").val() || "Level", CustomProfile: points }),
+    }).done(function (jsonData) {
+        if (jsonData.Result) {
+            fillConfigTable(block.find(".table-configure[data-field='Profile']"), jsonData.Data);
+            toastr.success(jsonData.Message, jsonData.Title);
+        } else {
+            toastr.error(jsonData.Message, jsonData.Title);
+        }
+    }).fail(ajaxFailToast).always(function () {
+        btn.prop("disabled", false);
+    });
+});
 let moduleForm = null;
 let submitBtn = null;
 
@@ -41,6 +130,7 @@ function loadForm(cid = '') {
 
                     updateEditForm(moduleForm, jsonData);
                     CKEDITOR.replace("Remark");
+                    renderSensorProfile(moduleForm);
                 }).fail(function (jqXHR) {
                     if (jqXHR.responseJSON) {
                         toastr.error(jqXHR.responseJSON.Message, jqXHR.responseJSON.Title);
@@ -59,9 +149,9 @@ function loadForm(cid = '') {
                 moduleForm.find(`[type='checkbox'][name='Status']`).prop('checked', true);
 
                 CKEDITOR.replace("Remark");
+                renderSensorProfile(moduleForm);
             }
 
-            select2Ajax($("#AreaID"), "ID", "AreaID");
 
             $(".selectTwo").select2();
             initForm(moduleForm);

@@ -68,6 +68,9 @@ class EventLog(db.Model):
     camera = db.relationship("Camera")
     station = db.relationship("Station")
 
+    # Event Log page: one station / basin over a date range.
+    __table_args__ = (db.Index("ix_tbl_eventlog_station_time", "StationID", "EventTime"),)
+
     def __repr__(self):
         return f"<EventLog {self.ID}:{self.Event}>"
 

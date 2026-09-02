@@ -6,8 +6,8 @@
     Switches on `field.type`; when omitted it is inferred for backward compatibility
     (a `select` key -> select, a `table` key -> table, otherwise text).
 
-    Supported types: text (default), number, password, select, checkbox, table,
-    file, generate, divider.
+    Supported types: text (default), number, password, select, checkbox, date,
+    table, file, generate, divider.
       file     : uploads straight to `field.upload` (handled in project.js) and keeps
                  only the returned filename in a hidden input named `key`.
       generate : readonly input + button that POSTs `field.generate` for a fresh value.
@@ -63,6 +63,15 @@
         <input type="text" name="{{ key }}" class="form-control form-control-sm" readonly>
         <button type="button" class="btn btn-outline-primary config-generate" data-url="{{ field.generate }}">{{ StaticText.Generate }}</button>
     </div>
+{%- elif ftype == 'date' -%}
+    <label class="small mb-2">{{ field.title }}</label>
+    <input
+        type="text"
+        name="{{ key }}"
+        class="form-control form-control-sm datepicker"
+        placeholder="{{ field.placeholder }}"
+        autocomplete="off"
+    >
 {%- elif ftype == 'checkbox' -%}
     <div class="form-check form-switch mt-4">
         <label class="form-check-label">

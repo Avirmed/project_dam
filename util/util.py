@@ -80,10 +80,6 @@ APP_DASHBOARD_MENU = {
                         "name": "Sampling",
                         "url": "/dashboard/samplings",
                     },
-                    {
-                        "name": "Area",
-                        "url": "/dashboard/areas",
-                    },
                 ],
             },
             {

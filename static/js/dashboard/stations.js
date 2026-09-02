@@ -106,7 +106,6 @@ function loadForm(cid = '') {
             select2Ajax($("#ProjectID"), "ProjectID", "ProjectName");
             select2Ajax($("#RiverBasinID"), "RiverBasinID", "WatershedName");
             select2Ajax($("#SamplingID"), "ID", "SamplingName");
-            select2Ajax($("#AreaID"), "ID", "AreaID");
 
             $(".selectTwo").select2();
             initForm(moduleForm);

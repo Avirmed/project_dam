@@ -55,6 +55,7 @@ Clean = "Clean"
 Choose = "Choose"
 Generate = "Generate"
 Browse = "Browse"
+Calculate = "Calculate"
 RequiredField = "Required Field"
 
 WebSite = "Website"
@@ -80,13 +81,15 @@ Field = "Field"
 Value = "Value"
 Notifications = "Notifications"
 
-x_axis = "x-axis"
-y_axis = "y-axis"
 horizontal = "Horizontal"
 vertical = "Vertical"
-water_level_convert = "Water Level (before convert) [m]"
-area_m2 = "Area [m²]"
-coefficient = "Coefficient (k)"
+
+# ProfileChart - axis titles for the surveyed cross-section preview
+# (profilechart.js, Sensor -> Flow tab).
+ProfileChart = {
+    "x": "x-axis [m]",
+    "y": "y-axis [m]",
+}
 
 # DamChart - localized axis titles for the dam cross-section (damchart.js).
 #   x : distance axis title, y : elevation axis title.
@@ -162,7 +165,6 @@ StationField = {
     "Longitude": "Longitude",
     "Zoom": "Zoom",
     "SamplingID": "SamplingID",
-    "AreaID": "AreaID",
     "Meta": "Meta Data",
     "Status": "Status",
     "ImageSource": "Picture",
@@ -493,11 +495,21 @@ StationDataKeys = {
     "WaterLevel": "WL",  # Water Level Point 1 -> compared with WARNING_UP / CRITICAL_UP
     "WaterLevel2": "WL2",  # Water Level Point 2 -> compared with WARNING_DOWN / CRITICAL_DOWN
     "Rainfall": "RAIN",
+    "Velocity": "VELOCITY",  # surface velocity [m/s] from the device / camera
+    "Flow": "FLOW",  # discharge [m³/s]; computed (A·k·v) when the device does not send it
+    "Area": "AREA",  # wetted area [m²] used for the computed FLOW
 }
 
 # Settings rows rendered as an on/off switch on the dashboard Settings page
 # (value stored as "1" / "0"); any name ending in _ENABLED is treated the same.
 BooleanSettings = ["WORKER_ENABLED"]
+
+# Retention defaults (days, 0 = keep forever) used when the Settings rows are
+# missing; applied daily by services/retention.py.
+DATA_RETENTION_DAYS = 730  # tbl_station_data rows
+RAW_RETENTION_DAYS = 90  # raw device payload inside those rows
+HTTPLOG_RETENTION_DAYS = 90  # delivered / failed HTTP logs
+EVENTLOG_RETENTION_DAYS = 365  # security events + images
 
 # Fallback when the DATA_TIMEOUT_MINUTES row is missing from Settings: a station
 # whose latest payload is older than this is shown as "No connection".
@@ -597,11 +609,12 @@ SensorField = {
     "SensorType": "Sensor Type",
     "WaterLevels": "Water Level",
     "Velocities": "Velocity",
-    "Flow": "AreaID",
+    "Flow": "Flow (cross-section)",
     "Direction": "Move",
     "Garbage": "Garbage",
     "Color": "Color",
     "RainLevel": "Rain Level",
+    "ProfileChart": "Cross-section preview",
     "Status": "Status",
     "Remark": "Remark",
 }
@@ -713,56 +726,57 @@ AreaRefs = {
     "Depth": "Depth",
 }
 
-AreaField = {
-    "ID": "ID",
-    "AreaID": "AreaID",
-    "AreaRef": "Ref.",
-    "AreaDate": "วันที่ทำการสำรวจ (Survey Date)",
-    "CustomProfile": "Custom Profile",
-    "Profile": "Profile",
-    "FlowCalcTable": "FLOW CAL. TABLE",
-    "Status": "Status",
-    "Remark": "Remark",
-}
-
-AreaFormTab = {
-    "main": "Main",
-    "configures": "Configures",
-}
-
-AreaConfigures = [
+# SensorFlowConfigures - the Flow tab of a sensor (design rev.22 slide 9), stored
+# as Sensor.Meta["Flow"] = {"status": bool, "configs": {...}}:
+#   AreaRef       - y-axis reference of the surveyed points: Level (elevation, up)
+#                   or Depth (below the reference, down).
+#   AreaDate      - survey date (วันที่ทำการสำรวจ).
+#   CustomProfile - surveyed cross-section polygon, points in order (x across the
+#                   channel [m], y per AreaRef [m]); e.g. the red outline of a culvert.
+#   Profile       - water level -> wetted area [m²]. Filled by the "Calculate"
+#                   button (POST /api/sensors/profile -> util/hydro.py) or typed
+#                   in; saved as entered.
+#   FlowCalcTable - level-depending flow coefficient k = reference velocity /
+#                   measured surface velocity (RTQ-Log "LEVEL DEPENDING FLOW CAL.
+#                   TABLE"), linear interpolation between levels.
+# Flow Q [m³/s] = Area(h) × k(h) × surface velocity - computed on every inbound
+# payload (StationData.apply_flow) for the station whose Water configures
+# "Flow Rate" row points at this sensor (checked + text = SensorID), using the
+# mapped WL and VELOCITY values; stored as FLOW / AREA in StationData.Data.
+SensorFlowConfigures = [
     {
-        "title": AreaField["CustomProfile"],
         "fields": {
+            "AreaRef": {
+                "title": "Ref.",
+                "placeholder": "",
+                "select": AreaRefs,
+                "help": "Level: y = elevation (up). Depth: y = distance below the reference, as read by a downward-looking sensor (depth 0 = water at the reference).",
+            },
+            "AreaDate": {
+                "title": "วันที่ทำการสำรวจ (Survey Date)",
+                "placeholder": "",
+                "type": "date",
+            },
+            "divider-1": "",
             "CustomProfile": {
                 "title": "Custom Profile",
-                "placeholder": "",
+                "help": "Surveyed cross-section points in order: x across the channel [m], y per Ref. [m].",
                 "table": True,
                 "headers": ["x-axis", "y-axis"],
                 "columns": ["x", "y"],
                 "align": "start",
             },
-        },
-    },
-    {
-        "title": AreaField["Profile"],
-        "fields": {
             "Profile": {
                 "title": "Profile",
-                "placeholder": "",
+                "help": "Water level → wetted area. Press Calculate to derive it from the Custom Profile (a row at every surveyed level, extra 0.01 m rows only where the section widens); rows are saved exactly as shown, so a table from survey software can be entered as-is.",
                 "table": True,
                 "headers": ["Water Level (before convert) [m]", "Area [m²]"],
                 "columns": ["WaterLevel", "Area"],
                 "align": "start",
             },
-        },
-    },
-    {
-        "title": AreaField["FlowCalcTable"],
-        "fields": {
             "FlowCalcTable": {
-                "title": "Custom Profile",
-                "placeholder": "",
+                "title": "LEVEL DEPENDING FLOW CAL. TABLE",
+                "help": "Coefficient k = reference velocity / measured surface velocity per water level; interpolated linearly.",
                 "table": True,
                 "headers": ["Water Level (before convert)", "Coefficient (k)"],
                 "columns": ["WaterLevel", "Coefficient"],
@@ -1249,6 +1263,8 @@ Messages = {
     "InboundForbiddenSource": "The request source address is not allowed.",
     "InboundInvalidPayload": "The request body must be a JSON object.",
     "EventUpdated": "Event status updated.",
+    "ProfileCalculated": "Profile table computed from the Custom Profile. Save the sensor to keep it.",
+    "ProfileNeedsPoints": "Enter at least 3 Custom Profile points (x, y) first.",
 }
 
 Icon = {
@@ -1268,6 +1284,7 @@ Icon = {
     "Loading": '<i class="fa fa-circle-o-notch fa-spin"></i>',
     "LoadingCog": '<i class="fa fa-cog fa-spin fa-fw"></i>',
     "DatabaseGear": '<i class="bi bi-database-fill-gear"></i>',
+    "Calculator": '<i class="bi bi-calculator"></i>',
     "Check": '<i class="bi bi-check-circle"></i>',
     "Uncheck": '<i class="bi bi-x-circle"></i>',
     "CheckFill": '<i class="bi bi-check-circle-fill"></i>',

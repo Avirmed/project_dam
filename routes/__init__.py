@@ -1,26 +1,5 @@
-__all__ = [
-    "area",
-    "camera",
-    "ckfinder",
-    "csvlogger",
-    "dashboard",
-    "eventlog",
-    "filetransfer",
-    "http",
-    "httplog",
-    "inbound",
-    "main",
-    "project",
-    "riverbasin",
-    "sampling",
-    "sensor",
-    "station",
-    "stationdata",
-    "team",
-    "user",
-]
+__all__ = ['camera', 'ckfinder', 'csvlogger', 'dashboard', 'eventlog', 'filetransfer', 'http', 'httplog', 'inbound', 'main', 'project', 'riverbasin', 'sampling', 'sensor', 'station', 'stationdata', 'team', 'user']
 
-from .area import area_bp
 from .camera import camera_bp
 from .ckfinder import ckfinder_bp
 from .csvlogger import csvlogger_bp

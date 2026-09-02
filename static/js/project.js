@@ -415,7 +415,14 @@ function initForm(form) {
         }
 
         if (label.length && label.text().trim() !== '') {
-            label.html(`${required}${label.text().trim()}`);
+            if (label.children().length) {
+                // keep icons / buttons inside rich labels, only add the marker
+                if (required && !label.find("small.text-danger").length) {
+                    label.prepend(required);
+                }
+            } else {
+                label.html(`${required}${label.text().trim()}`);
+            }
         }
     });
 

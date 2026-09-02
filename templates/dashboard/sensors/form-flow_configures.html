@@ -1,3 +1,5 @@
+{% from "dashboard/main/config_field.html" import render_field with context %}
+{# Flow tab: surveyed cross-section + derived tables (design rev.22 slide 9) #}
 <div class="app-json-data" data-field="Flow">
     <div class="row">
         <div class="col-12">
@@ -11,18 +13,43 @@
             </div>
         </div>
         <div class="col-12">
+        {% for settings in StaticText.SensorFlowConfigures %}
             <div class="p-2">
                 <div class="row align-items-start">
-                    <div class="col-md-5 mb-2">
-                        <div class="form-group field-basic" data-field="AreaID">
-                            <label class="small mb-2" for="AreaID">{{ StaticText.AreaField.AreaID }}</label>
-                            <select class="selectTwo form-control-sm" id="AreaID" name="AreaID" data-url="/api/areas/list?status=1">
-                                <option value="" selected>-- {{ StaticText.Choose }} --</option>
-                            </select>
+                {% for key, field in settings.fields.items() %}
+                    {% if "divider" in key %}
+                    {# Live preview of the Custom Profile polygon (sensors.js renderSensorProfile) #}
+                    <div class="col-12 mb-2">
+                        <hr class="my-2">
+                        <label class="small mb-2">{{ StaticText.SensorField.ProfileChart }}</label>
+                        <div class="profile-chart w-100"></div>
+                    </div>
+                    {% elif field.table %}
+                    <div class="col-lg-4 col-md-6 mb-2">
+                        <div class="form-group field-basic" data-field="{{ key }}">
+                            {# header row: label + (Profile only) the Calculate button, kept outside
+                               the <label> because initForm() rewrites label text #}
+                            <div class="d-flex align-items-center justify-content-between mb-2">
+                                <label class="small mb-0">{{ field.title }}</label>
+                                {% if key == "Profile" %}
+                                {# icon only, same colour as the label (text-reset), tooltip carries the caption #}
+                                <button type="button" class="btn btn-link btn-sm p-0 lh-1 text-reset text-decoration-none profile-calc" title="{{ StaticText.Calculate }}">{{ StaticText.Icon.Calculator | safe }}</button>
+                                {% endif %}
+                            </div>
+                            {{ render_field(key, field) }}
                         </div>
                     </div>
+                    {% else %}
+                    <div class="col-md-3 mb-2">
+                        <div class="form-group field-basic" data-field="{{ key }}">
+                            {{ render_field(key, field) }}
+                        </div>
+                    </div>
+                    {% endif %}
+                {% endfor %}
                 </div>
             </div>
+        {% endfor %}
         </div>
     </div>
 </div>

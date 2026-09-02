@@ -70,6 +70,9 @@ class HttpLog(db.Model):
     http = db.relationship("Http")
     station = db.relationship("Station")
 
+    # Worker queue scan: Status = Queue AND NextAttempt <= now.
+    __table_args__ = (db.Index("ix_tbl_httplog_status_next", "Status", "NextAttempt"),)
+
     def __repr__(self):
         return f"<HttpLog {self.ID}:{self.DeviceID}:{self.Status}>"
 

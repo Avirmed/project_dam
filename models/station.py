@@ -87,6 +87,24 @@ class Station(db.Model):
     def __repr__(self):
         return f"<Station {self.StationID}:{self.SiteCode}-{self.SiteName}>"
 
+    def flow_sensor(self):
+        """The Flow sensor mapped on the Water configures tab ("Flow Rate" row:
+        checked + text = SensorID code or numeric ID), or None."""
+        from models.sensor import Sensor
+
+        block = (self.Meta or {}).get("WaterConfigures") or {}
+        cfg = block.get("configs") if isinstance(block, dict) else None
+        entry = cfg.get("FlowRate") if isinstance(cfg, dict) else None
+        if not isinstance(entry, dict) or not entry.get("checked"):
+            return None
+        code = str(entry.get("text") or "").strip()
+        if not code:
+            return None
+        sensor = Sensor.query.filter(Sensor.SensorID == code).first()
+        if sensor is None and code.isdigit():
+            sensor = Sensor.query.get(int(code))
+        return sensor
+
     def serialize(self):
         data = {
             column.name: getattr(self, column.name) for column in self.__table__.columns
