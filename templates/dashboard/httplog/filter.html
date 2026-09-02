@@ -1,0 +1,19 @@
+<div class="tabulator-filters mb-4">
+	<div class="row">
+		<div class="col-xl-3 col-lg-4 col-md-6">
+			<div class="row align-items-center mb-3">
+				<div class="col-auto">
+					<label class="small" for="StatusFilter">{{ StaticText.HttpLogField.Status }}</label>
+				</div>
+				<div class="col">
+					<select class="form-control form-control-sm select2" id="StatusFilter" name="Status">
+						<option value="" selected>-- {{ StaticText.All }} --</option>
+						{% for key, value in StaticText.StatusLabel.items() %}
+						<option value="{{ key }}">{{ value.text }}</option>
+						{% endfor %}
+					</select>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>

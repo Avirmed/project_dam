@@ -394,7 +394,7 @@ function initForm(form) {
             return;
         }
 
-        if (parentEl.find("input[required]").length > 0) {
+        if (parentEl.find(":input[required]").length > 0) {
             required = `<small class="text-danger" title="${LOCAL_VARIABLES.StaticText.RequiredField}">*</small> `
         }
 

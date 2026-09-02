@@ -1,0 +1,36 @@
+<div class="tabulator-container">
+	{% include "dashboard/{}/filter.html".format(Module) ignore missing %}
+	{% include "addons/tabulator-export.html" ignore missing %}
+	<div
+		id="filetransferTable"
+		class="app-tabulator-table mt-0 mb-4"
+
+		cfg-ajax-url="/api/filetransfer/list"
+		cfg-index="ID"
+		cfg-minHeight="480"
+		cfg-pagination
+		cfg-numberic
+		cfg-menu
+		cfg-control
+		data-name="filetransfer"
+	></div>
+	<div class="tmp-menu d-none">
+		<div class="dropdown position-static">
+			<button class="btn btn-sm" type="button" data-bs-toggle="dropdown">{{ StaticText.Icon.VerticalDots | safe }}</button>
+			<ul class="dropdown-menu">
+				<li><a class="dropdown-item addBtn" href="javascript:;">{{ StaticText.Icon.AddCircle | safe }} {{ StaticText.Add }}</a></li>
+			</ul>
+		</div>
+	</div>
+	<div class="tmp-control d-none">
+		<div class="dropdown position-static">
+			<button class="btn btn-sm" type="button" data-bs-toggle="dropdown">{{ StaticText.Icon.VerticalDots | safe }}</button>
+			<ul class="dropdown-menu">
+				<li><a class="dropdown-item editBtn" href="javascript:;">{{ StaticText.Icon.Edit | safe }} {{ StaticText.Edit }}</a></li>
+				<li class="dropdown-divider"></li>
+				<li><a class="dropdown-item deleteBtn" href="javascript:;">{{ StaticText.Icon.Delete | safe }} {{ StaticText.Delete }}</a></li>
+			</ul>
+		</div>
+	</div>
+</div>
+{% include "dashboard/{}/form.html".format(Module) ignore missing %}

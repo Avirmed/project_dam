@@ -1,0 +1,30 @@
+<div class="row">
+    <div class="col-lg-6 mb-3">
+        <label class="small mb-2" for="StationID">{{ StaticText.FileTransferField.StationID }}</label>
+        <select class="selectTwo form-control-sm" id="StationID" name="StationID" data-url="/api/stations/list" required>
+            <option value="" selected>-- {{ StaticText.Choose }} --</option>
+        </select>
+    </div>
+
+    <div class="col-lg-6 mb-3">
+        <label class="small mb-2" for="Hostname">{{ StaticText.FileTransferField.Hostname }}</label>
+        <input type="text" class="form-control form-control-sm" id="Hostname" name="Hostname" required>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12 mb-3">
+        <div class="form-check form-switch">
+            <input type="hidden" name="Status" value="0">
+            <input class="form-check-input" type="checkbox" id="Status" name="Status" value="1">
+            <label class="small" for="Status">{{ StaticText.FileTransferField.Status }}</label>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12 mb-3">
+        <label class="small mb-2" for="Remark">{{ StaticText.FileTransferField.Remark }}</label>
+        <textarea class="form-control form-control-sm" id="Remark" name="Remark"></textarea>
+    </div>
+</div>

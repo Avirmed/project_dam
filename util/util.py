@@ -84,6 +84,29 @@ APP_DASHBOARD_MENU = {
                     },
                 ],
             },
+            {
+                "name": "Services",
+                "url": "/dashboard/services",
+                "icon": "<i class='bi bi-hdd-network'></i>",
+                "submenu": [
+                    {
+                        "name": "File Transfer",
+                        "url": "/dashboard/filetransfer",
+                    },
+                    {
+                        "name": "HTTP",
+                        "url": "/dashboard/http",
+                    },
+                    {
+                        "name": "HTTP Logs",
+                        "url": "/dashboard/httplog",
+                    },
+                    {
+                        "name": "CSV Logger",
+                        "url": "/dashboard/csvlogger",
+                    },
+                ],
+            },
         ],
     },
     "settings": {

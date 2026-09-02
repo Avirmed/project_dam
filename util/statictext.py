@@ -83,6 +83,13 @@ water_level_convert = "Water Level (before convert) [m]"
 area_m2 = "Area [m²]"
 coefficient = "Coefficient (k)"
 
+# DamChart - localized axis titles for the dam cross-section (damchart.js).
+#   x : distance axis title, y : elevation axis title.
+DamChart = {
+    "x": "ระยะ (เมตร)",
+    "y": "ระดับ (ม.รทก.)",
+}
+
 
 WaterLevelInfo = "สถานะน้ำท่า"
 Station = "สถานี"
@@ -149,6 +156,8 @@ StationField = {
     "Latitude": "Latitude",
     "Longitude": "Longitude",
     "Zoom": "Zoom",
+    "SamplingID": "SamplingID",
+    "AreaID": "AreaID",
     "Meta": "Meta Data",
     "Status": "Status",
     "ImageSource": "Picture",
@@ -163,6 +172,20 @@ StationFormTab = {
     "ftp": "Upload image FTP",
 }
 
+# StationConfigures - river cross-section reference levels that drive the dam
+# chart. All values are elevations in metres above a common datum (MSL / ม.รทก.).
+# Two "Water Level Points" are captured along the structure:
+#   _UP   = Point 1, upstream of the gate/weir.
+#   _DOWN = Point 2, downstream of the gate/weir.
+# Field meanings (standard hydrology / stage-monitoring terms):
+#   LEFT_BANK_WL    - left bank crest level (ระดับตลิ่งซ้าย): bank-full elevation on the left.
+#   RIGHT_BANK_WL   - right bank crest level (ระดับตลิ่งขวา): bank-full elevation on the right.
+#   ZEROGATE        - staff-gauge zero / datum (ศูนย์เสาระดับ): the reference level (0.00)
+#                     that all stage readings are measured from.
+#   GROUND_LEVEL_WL - riverbed / thalweg level (ระดับท้องน้ำ): the lowest bed elevation.
+#   WARNING         - warning stage (ระดับน้ำเตือนภัย): flood-watch threshold.
+#   CRITICAL        - critical / danger stage (ระดับน้ำวิกฤต): overbank / critical-flood threshold.
+# Expected order: GROUND_LEVEL < ZEROGATE <= WARNING < CRITICAL <= bank crest.
 StationConfigures = [
     {
         "title": "ข้อมูลท้องน้ำจุดที่ 1 ( Water Level Point 1)",
@@ -292,6 +315,12 @@ API_HTTP_Sources = {
     "ipv6": "Anywhere IPv6 (::/0)",
 }
 
+API_SSL_Modes = {
+    "off": "OFF",
+    "one_way": "One-Way SSL (Standard HTTPS – Server Authenticated)",
+    "two_way": "Two-Way SSL (Mutual TLS / mTLS – Highly Secure)",
+}
+
 API_Authentications = {
     "none": "None",
     "basic": "Basic Auth",
@@ -302,7 +331,7 @@ API_Authentications = {
 APIConfigures = [
     {
         "fields": {
-            "Protocol": {"title": "Method", "placeholder": "", "select": API_Protocols},
+            "Protocol": {"title": "Protocol", "placeholder": "", "select": API_Protocols},
             "Port": {
                 "title": "HTTP Port (Listener Port)",
                 "placeholder": "0 – 65,535",
@@ -311,9 +340,26 @@ APIConfigures = [
                 "max": 65535,
             },
             "HTTP_Source": {
-                "title": "Method",
+                "title": "HTTP Source",
                 "placeholder": "",
                 "select": API_HTTP_Sources,
+            },
+            "HTTPS_Port": {
+                "title": "HTTPS Port (Listener Port)",
+                "placeholder": "0 – 65,535",
+                "type": "number",
+                "min": 0,
+                "max": 65535,
+            },
+            "HTTPS_Source": {
+                "title": "HTTPS Source",
+                "placeholder": "",
+                "select": API_HTTP_Sources,
+            },
+            "SSL_Mode": {
+                "title": "SSL/TLS Mode",
+                "placeholder": "",
+                "select": API_SSL_Modes,
             },
             "Authentication": {
                 "title": "Authentication",
@@ -704,6 +750,125 @@ SamplingConfigures = [
         },
     },
 ]
+
+FileTransferField = {
+    "ID": "ID",
+    "StationID": "Site",
+    "SiteName": "Site",
+    "Hostname": "Hostname",
+    "Connection": "Connection",
+    "Status": "Status",
+    "Remark": "Remark",
+}
+
+FileTransferFormTab = {
+    "main": "Main",
+    "configures": "Connection",
+}
+
+HTTP_SourceTypes = {
+    "static": "Static Value",
+    "sensor": "Sensor Data",
+    "datetime": "Datetime",
+}
+
+HTTPServiceConfigures = [
+    {
+        "fields": {
+            "Method": {"title": "HTTP Method", "placeholder": "", "select": APIMethots},
+            "Timeout": {
+                "title": "Timeout (seconds)",
+                "placeholder": "",
+                "type": "number",
+                "min": 0,
+            },
+            "RetryAttempts": {
+                "title": "Retry Attempts",
+                "placeholder": "",
+                "type": "number",
+                "min": 0,
+            },
+            "RetryDelay": {
+                "title": "Retry Delay (seconds)",
+                "placeholder": "",
+                "type": "number",
+                "min": 0,
+            },
+            "Authentication": {
+                "title": "Authentication",
+                "placeholder": "",
+                "select": API_Authentications,
+            },
+            "Mapping": {
+                "title": "Parameter Mapping",
+                "placeholder": "",
+                "table": True,
+                "headers": ["Source Type", "Parameter Name", "Source Value"],
+                "columns": ["source_type", "param", "value"],
+                "align": "start",
+            },
+        }
+    }
+]
+
+HttpField = {
+    "ID": "ID",
+    "StationID": "Site",
+    "SiteName": "Site",
+    "URL": "Server URL (Host URL)",
+    "Request": "Request",
+    "Status": "Status",
+    "Remark": "Remark",
+}
+
+HttpFormTab = {
+    "main": "Main",
+    "configures": "Request",
+}
+
+HttpLogField = {
+    "ID": "ID",
+    "DeviceID": "device_id",
+    "Content": "content",
+    "Status": "Status",
+    "CreateDate": "Date",
+}
+
+CSVLoggerConfigures = [
+    {
+        "fields": {
+            "LogInterval": {
+                "title": "Log Interval (minutes)",
+                "placeholder": "",
+                "type": "number",
+                "min": 1,
+            },
+            "Mapping": {
+                "title": "Parameter Mapping",
+                "placeholder": "",
+                "table": True,
+                "headers": ["Header Name", "Source Variable"],
+                "columns": ["header", "source"],
+                "align": "start",
+            },
+        }
+    }
+]
+
+CsvLoggerField = {
+    "ID": "ID",
+    "FileTransferID": "File Transfer",
+    "FileTransferHostname": "File Transfer",
+    "FilenameFormat": "Filename Format",
+    "Logger": "Logger",
+    "Status": "Status",
+    "Remark": "Remark",
+}
+
+CsvLoggerFormTab = {
+    "main": "Main",
+    "configures": "Logger",
+}
 
 TeamField = {
     "TeamID": "TeamID",

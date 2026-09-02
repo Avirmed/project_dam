@@ -21,6 +21,10 @@ def register_blueprints(app):
         sampling_bp,
         area_bp,
         team_bp,
+        filetransfer_bp,
+        http_bp,
+        csvlogger_bp,
+        httplog_bp,
     )
 
     @app.route("/", defaults={"module": "main", "cid": None})
@@ -61,6 +65,10 @@ def register_blueprints(app):
         (sampling_bp, "/samplings"),
         (area_bp, "/areas"),
         (team_bp, "/teams"),
+        (filetransfer_bp, "/filetransfer"),
+        (http_bp, "/http"),
+        (csvlogger_bp, "/csvlogger"),
+        (httplog_bp, "/httplog"),
     ]
 
     for bp, prefix in api_list:

@@ -1,0 +1,15 @@
+<div class="tabulator-container">
+	{% include "dashboard/{}/filter.html".format(Module) ignore missing %}
+	{% include "addons/tabulator-export.html" ignore missing %}
+	<div
+		id="httplogTable"
+		class="app-tabulator-table mt-0 mb-4"
+
+		cfg-ajax-url="/api/httplog/list"
+		cfg-index="ID"
+		cfg-minHeight="480"
+		cfg-pagination
+		cfg-numberic
+		data-name="httplog"
+	></div>
+</div>

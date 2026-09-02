@@ -15,6 +15,43 @@ let moduleForm = null;
 let submitBtn = null;
 let fileUploader = null;
 
+// StationConfigures field name -> dam-chart vertex/threshold key. "_UP" is the
+// outer point / "_DOWN" the inner point of each bank; the whole cross-section is
+// drawn from all of them at once (no single-point toggle).
+const DAM_FIELD_MAP = {
+    LEFT_BANK_WL_UP: "leftBankOuter", LEFT_BANK_WL_DOWN: "leftBankInner",
+    RIGHT_BANK_WL_UP: "rightBankOuter", RIGHT_BANK_WL_DOWN: "rightBankInner",
+    GROUND_LEVEL_WL_UP: "bedLeft", GROUND_LEVEL_WL_DOWN: "bedRight",
+    WARNING_UP: "warningUp", WARNING_DOWN: "warningDown",
+    CRITICAL_UP: "criticalUp", CRITICAL_DOWN: "criticalDown",
+    ZEROGATE_UP: "zeroUp", ZEROGATE_DOWN: "zeroDown",
+};
+
+// Collect every StationConfigures input into a single cross-section value set.
+function readDamValues(form) {
+    let values = {};
+    form.find(".dam-input").each(function () {
+        let name = $(this).attr("name") || "";
+        let key = DAM_FIELD_MAP[name];
+        if (key) values[key] = $(this).val();
+    });
+    return values;
+}
+
+// Draw the whole cross-section from all bank/bed/threshold values at once.
+function renderStationDam(form) {
+    let values = readDamValues(form);
+    let chart = form.find(".dam-chart")[0];
+    if (chart && typeof renderDamChart === "function") {
+        let dc = (LOCAL_VARIABLES.StaticText && LOCAL_VARIABLES.StaticText.DamChart) || {};
+        renderDamChart(chart, values, { xTitle: dc.x, yTitle: dc.y });
+    }
+}
+
+function initDamCharts(form) {
+    renderStationDam(form);
+}
+
 function loadForm(cid = '') {
     if (!pagePermission.includes(LOCAL_VARIABLES.Authorization.UserType)) {
         return;
@@ -43,6 +80,7 @@ function loadForm(cid = '') {
                     updateEditForm(moduleForm, jsonData, true);
                     CKEDITOR.replace("Remark");
                     initArcGIS("mapArcGIS", moduleForm.find("#Latitude"), moduleForm.find("#Longitude"), moduleForm.find("#Zoom"));
+                    initDamCharts(moduleForm);
                 }).fail(function (jqXHR) {
                     if (jqXHR.responseJSON) {
                         toastr.error(jqXHR.responseJSON.Message, jqXHR.responseJSON.Title);
@@ -62,13 +100,21 @@ function loadForm(cid = '') {
 
                 CKEDITOR.replace("Remark");
                 initArcGIS("mapArcGIS", moduleForm.find("#Latitude"), moduleForm.find("#Longitude"), moduleForm.find("#Zoom"));
+                initDamCharts(moduleForm);
             }
 
             select2Ajax($("#ProjectID"), "ProjectID", "ProjectName");
             select2Ajax($("#RiverBasinID"), "RiverBasinID", "WatershedName");
+            select2Ajax($("#SamplingID"), "ID", "SamplingName");
+            select2Ajax($("#AreaID"), "ID", "AreaID");
 
             $(".selectTwo").select2();
             initForm(moduleForm);
+
+            // Live-update the cross-section whenever any config value changes.
+            moduleForm.on("input", ".dam-input", function () {
+                renderStationDam(moduleForm);
+            });
 
             moduleForm.validate();
             moduleForm.ajaxForm({

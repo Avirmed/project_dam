@@ -1,4 +1,11 @@
 import os
+import sys
+
+# Ensure emoji/UTF-8 output never crashes on a non-UTF-8 console (Windows cp1252).
+try:
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+except Exception:
+    pass
 
 
 def cleanup_files():

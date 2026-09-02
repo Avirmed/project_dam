@@ -10,23 +10,60 @@
                 </div>
             </div>
         </div>
-        {% for settings in StaticText.StationConfigures %}
-        <div class="col-md-6 mb-3">
-            <div class="p-2">
-                <h5 class="mb-3">{{ settings.title }}</h5>
-                {% for key, field in settings.fields.items() %}
-                <div class="form-group field-basic mb-2">
-                    <label class="small mb-2">{{ field.title }}</label>
-                    <input
-                        type="text"
-                        name="{{ key }}"
-                        class="form-control form-control-sm" 
-                        placeholder="{{ field.placeholder }}"
-                    >
+
+        <div class="col-12">
+            <div class="row p-2">
+                <div class="col-md-6 mb-2">
+                    <div class="form-group field-basic" data-field="SamplingID">
+                        <label class="small mb-2">{{ StaticText.StationField.SamplingID }}</label>
+                        <select class="selectTwo form-control-sm" id="SamplingID" name="SamplingID" data-url="/api/samplings/list">
+                            <option value="" selected>-- {{ StaticText.Choose }} --</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-6 mb-2">
+                    <div class="form-group field-basic" data-field="AreaID">
+                        <label class="small mb-2">{{ StaticText.StationField.AreaID }}</label>
+                        <select class="selectTwo form-control-sm" id="AreaID" name="AreaID" data-url="/api/areas/list">
+                            <option value="" selected>-- {{ StaticText.Choose }} --</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Left ~60% : dam cross-section (sticky so it stays visible while scrolling values) -->
+        <div class="col-12 col-lg-7 mb-3">
+            <div class="dam-chart position-lg-sticky" style="top:8px"></div>
+        </div>
+
+        <!-- Right ~40% : numeric configuration values. Point 1 and Point 2 sit
+             side by side (each half) so values are quick to enter; they stack on
+             very small screens. -->
+        <div class="col-12 col-lg-5">
+            <div class="row">
+                {% for settings in StaticText.StationConfigures %}
+                <div class="col-12 col-sm-6">
+                    <div class="p-2">
+                        <h6 class="mb-3 small fw-bold">{{ settings.title }}</h6>
+                        {% for key, field in settings.fields.items() %}
+                        <div class="form-group field-basic mb-2">
+                            <label class="small mb-1">{{ field.title }}</label>
+                            <input
+                                type="number"
+                                step="any"
+                                name="{{ key }}"
+                                class="form-control form-control-sm dam-input"
+                                placeholder="{{ field.placeholder }}"
+                            >
+                        </div>
+                        {% endfor %}
+                    </div>
                 </div>
                 {% endfor %}
             </div>
         </div>
-        {% endfor %}
     </div>
 </div>
