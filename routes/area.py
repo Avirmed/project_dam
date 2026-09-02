@@ -7,6 +7,8 @@ from models import (
 
 from util import statictext
 
+from util.auth import require_types, EDITORS
+
 area_bp = Blueprint("area_bp", __name__)
 
 
@@ -127,7 +129,7 @@ def list():
 
 
 @area_bp.route("/save", methods=["POST"])
-@login_required
+@require_types(*EDITORS)
 def save():
     get_data = request.args.to_dict()
     post_data = (
@@ -141,7 +143,7 @@ def save():
 
 
 @area_bp.route("/delete", methods=["POST"])
-@login_required
+@require_types(*EDITORS)
 def delete():
     get_data = request.args.to_dict()
     post_data = (

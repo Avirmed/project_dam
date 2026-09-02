@@ -12,14 +12,21 @@ from models import (
 
 from util import util, statictext
 
+from util.auth import require_types, deny, ADMIN, ADMINS, MANAGERS
+
 user_bp = Blueprint("user_bp", __name__)
 
 
+def can_manage_user(target_id):
+    """Administrators manage every account; other users only their own profile."""
+    return current_user.UserType == ADMIN or str(target_id) == str(current_user.UserID)
+
+
 @user_bp.route("/<id>", methods=["GET"])
+@login_required
 def get(id):
-    if not current_user.is_authenticated:
-        error_code = 404
-        abort(error_code, description=statictext.ResponseCode[error_code])
+    if not can_manage_user(id):
+        return deny(403)
 
     if not str(id).isdigit():
         error_code = 400
@@ -42,13 +49,22 @@ def save():
     ) or {}
     requestData = {**get_data, **post_data}
 
+    # Non-administrators may only edit their own profile and cannot change
+    # their role or status.
+    if current_user.UserType != ADMIN:
+        if not can_manage_user(requestData.get("UserID")):
+            return deny(403)
+        requestData["UserID"] = current_user.UserID
+        requestData.pop("UserType", None)
+        requestData.pop("Status", None)
+
     jsonResult = User.save(requestData)
 
     return jsonify(jsonResult), jsonResult["Code"]
 
 
 @user_bp.route("/delete", methods=["POST"])
-@login_required
+@require_types(*ADMINS)
 def delete():
     get_data = request.args.to_dict()
     post_data = (
@@ -62,7 +78,7 @@ def delete():
 
 
 @user_bp.route("/list", methods=["GET", "POST"])
-@login_required
+@require_types(*MANAGERS)
 def list():
     get_data = request.args.to_dict()
     post_data = (
@@ -334,6 +350,8 @@ def file_upload():
     part = int(request.form.get("part", 0))
     lastPart = request.form.get("lastPart", "").lower() in ("1", "true", "yes")
     contentid = request.form.get("contentid", None)
+    if not can_manage_user(contentid):
+        return deny(403)
 
     file_ext = util.get_safe_extension(file_real_name)
     if not file_ext:
@@ -403,6 +421,8 @@ def imgrotate():
 
     object_id = requestData.get("UserID")
     direction = requestData.get("direction", None)
+    if not can_manage_user(object_id):
+        return deny(403)
 
     if not object_id:
         error_code = 400

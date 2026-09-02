@@ -7,6 +7,8 @@ from models import (
 
 from util import statictext
 
+from util.auth import require_types, EDITORS
+
 sensor_bp = Blueprint("sensor_bp", __name__)
 
 
@@ -145,7 +147,7 @@ def list():
 
 
 @sensor_bp.route("/save", methods=["POST"])
-@login_required
+@require_types(*EDITORS)
 def save():
     get_data = request.args.to_dict()
     post_data = (
@@ -159,7 +161,7 @@ def save():
 
 
 @sensor_bp.route("/delete", methods=["POST"])
-@login_required
+@require_types(*EDITORS)
 def delete():
     get_data = request.args.to_dict()
     post_data = (

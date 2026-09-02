@@ -7,6 +7,9 @@ from models import (
 
 from util import statictext
 
+from models import Team, FileTransfer
+from util.auth import require_types, EDITORS
+
 csvlogger_bp = Blueprint("csvlogger_bp", __name__)
 
 
@@ -18,7 +21,14 @@ def get(id):
         abort(error_code, description=statictext.ResponseCode[error_code])
 
     object_data = CsvLogger.getData(id)
-    if object_data is None:
+    transfer = (
+        FileTransfer.query.get(object_data.get("FileTransferID"))
+        if object_data and object_data.get("FileTransferID")
+        else None
+    )
+    if object_data is None or not Team.can_access_station(
+        transfer.StationID if transfer else None
+    ):
         error_code = 404
         abort(error_code, description=statictext.ResponseCode[error_code])
 
@@ -39,6 +49,15 @@ def list():
 
     if requestData.get("status"):
         requestData["filters"]["Status"] = requestData.get("status")
+
+    # Station scope reaches the logger through its File Transfer (fail-closed).
+    scope = Team.scope_station_ids()
+    if scope is not None:
+        transfer_ids = [
+            t.ID
+            for t in FileTransfer.query.filter(FileTransfer.StationID.in_(scope)).all()
+        ]
+        requestData["filters"]["FileTransferID"] = transfer_ids or [-1]
 
     jsonResult = CsvLogger.list(requestData)
 
@@ -112,7 +131,7 @@ def list():
 
 
 @csvlogger_bp.route("/save", methods=["POST"])
-@login_required
+@require_types(*EDITORS)
 def save():
     get_data = request.args.to_dict()
     post_data = (
@@ -126,7 +145,7 @@ def save():
 
 
 @csvlogger_bp.route("/delete", methods=["POST"])
-@login_required
+@require_types(*EDITORS)
 def delete():
     get_data = request.args.to_dict()
     post_data = (

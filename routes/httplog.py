@@ -9,6 +9,8 @@ from models import (
 
 from util import statictext
 
+from models import Team
+
 httplog_bp = Blueprint("httplog_bp", __name__)
 
 
@@ -25,6 +27,9 @@ def _request_data():
     if requestData.get("status"):
         requestData["filters"]["Status"] = requestData.get("status")
 
+    # Staff / Guest only see logs of their teams' stations (fail-closed).
+    Team.apply_station_scope(requestData)
+
     return requestData
 
 
@@ -32,7 +37,7 @@ def _request_data():
 @login_required
 def get(id):
     object_data = HttpLog.getData(id)
-    if object_data is None:
+    if object_data is None or not Team.can_access_station(object_data.get("StationID")):
         error_code = 404
         abort(error_code, description=statictext.ResponseCode[error_code])
 

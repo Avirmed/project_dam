@@ -13,6 +13,7 @@ from models import (
 )
 
 from util import statictext, util
+from util.auth import require_types, EDITORS
 
 station_bp = Blueprint("station_bp", __name__)
 
@@ -25,7 +26,7 @@ def get(id):
         abort(error_code, description=statictext.ResponseCode[error_code])
 
     object_data = Station.getData(id)
-    if object_data is None:
+    if object_data is None or not Team.can_access_station(id):
         error_code = 404
         abort(error_code, description=statictext.ResponseCode[error_code])
 
@@ -59,7 +60,7 @@ def getByPost():
 
     object_data = Station.getData(objID, True)
 
-    if object_data is None:
+    if object_data is None or not Team.can_access_station(objID):
         error_code = 404
         jsonResult.update(
             {"Message": f"{statictext.ResponseCode[error_code]}", "Code": error_code}
@@ -86,16 +87,8 @@ def list():
     if requestData.get("status"):
         requestData["filters"]["Status"] = requestData.get("status")
 
-    if current_user.is_authenticated and current_user.UserType in [3, 4]:
-        teamsData = Team.get_user_teams(current_user.UserID)
-
-        StationIDs = []
-        for data in teamsData:
-            for id in data["RiverBasins"]:
-                StationIDs.append(id)
-
-        if len(StationIDs) > 0:
-            requestData["filters"]["StationID"] = StationIDs
+    # Staff / Guest only see their teams' stations (fail-closed without a team).
+    Team.apply_station_scope(requestData)
 
     jsonResult = Station.list(requestData)
 
@@ -198,16 +191,8 @@ def tree():
     if requestData.get("status"):
         requestData["filters"]["Status"] = requestData.get("status")
 
-    if current_user.is_authenticated and current_user.UserType in [3, 4]:
-        teamsData = Team.get_user_teams(current_user.UserID)
-
-        StationIDs = []
-        for data in teamsData:
-            for id in data["RiverBasins"]:
-                StationIDs.append(id)
-
-        if len(StationIDs) > 0:
-            requestData["filters"]["StationID"] = StationIDs
+    # Staff / Guest only see their teams' stations (fail-closed without a team).
+    Team.apply_station_scope(requestData)
 
     jsonResult = Station.list(requestData)
 
@@ -393,13 +378,9 @@ def tree():
         if requestData.get("TeamID"):
             team_data = Team.getData(requestData.get("TeamID"))
 
-            if (
-                team_data
-                and "RiverBasins" in team_data
-                and len(team_data["RiverBasins"]) > 0
-            ):
+            if team_data and "Stations" in team_data and len(team_data["Stations"]) > 0:
                 for data in jsonResult["data"]:
-                    data["checkbox"] = data["StationID"] in team_data["RiverBasins"]
+                    data["checkbox"] = data["StationID"] in team_data["Stations"]
 
     return jsonify(jsonResult)
 
@@ -417,16 +398,8 @@ def sites():
 
     requestData["filters"]["Status"] = 1
 
-    if current_user.is_authenticated and current_user.UserType in [3, 4]:
-        teamsData = Team.get_user_teams(current_user.UserID)
-
-        StationIDs = []
-        for data in teamsData:
-            for id in data["RiverBasins"]:
-                StationIDs.append(id)
-
-        if len(StationIDs) > 0:
-            requestData["filters"]["StationID"] = StationIDs
+    # Staff / Guest only see their teams' stations (fail-closed without a team).
+    Team.apply_station_scope(requestData)
 
     jsonResult = Station.list(requestData)
 
@@ -449,7 +422,7 @@ def sites():
 
 
 @station_bp.route("/save", methods=["POST"])
-@login_required
+@require_types(*EDITORS)
 def save():
     get_data = request.args.to_dict()
     post_data = (
@@ -463,7 +436,7 @@ def save():
 
 
 @station_bp.route("/delete", methods=["POST"])
-@login_required
+@require_types(*EDITORS)
 def delete():
     get_data = request.args.to_dict()
     post_data = (
@@ -477,7 +450,7 @@ def delete():
 
 
 @station_bp.route("/fileupload", methods=["POST"])
-@login_required
+@require_types(*EDITORS)
 def file_upload():
     file = request.files.get("file")
     file_real_name = request.form.get("filename")
@@ -542,7 +515,7 @@ def file_upload():
 
 
 @station_bp.route("/token", methods=["POST"])
-@login_required
+@require_types(*EDITORS)
 def token():
     """Issue a fresh API token for the REST API Server tab (Bearer / API Key).
     Generated server-side; the form stores it in Meta.API.configs.Token on save."""
@@ -561,7 +534,7 @@ def token():
 
 
 @station_bp.route("/certupload", methods=["POST"])
-@login_required
+@require_types(*EDITORS)
 def cert_upload():
     """Store a TLS certificate / private key / CA file for a station under
     APP_CERT_PATH/<StationID>/<kind>.<ext> (outside static/, never web-served).
@@ -629,7 +602,7 @@ def cert_upload():
 
 
 @station_bp.route("/imgrotate", methods=["POST"])
-@login_required
+@require_types(*EDITORS)
 def imgrotate():
     if not current_user.is_authenticated:
         error_code = 401

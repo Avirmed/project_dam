@@ -34,7 +34,7 @@ function activeUserForm($form, jsonData) {
 }
 
 function getCheckStationsAndUsers($form) {
-    let jsonFields = { "RiverBasins": [], "Users": [] };
+    let jsonFields = { "Stations": [], "Users": [] };
 
     let tableTeamStations = Tabulator.findTable(tableTeamStationsID)[0];
     let tableTeamUsers = Tabulator.findTable(tableTeamUsersID)[0];
@@ -43,7 +43,7 @@ function getCheckStationsAndUsers($form) {
 
     tableTeamStations.getData().forEach(function (row) {
         if (row.checkbox === true) {
-            jsonFields["RiverBasins"].push(row.StationID);
+            jsonFields["Stations"].push(row.StationID);
         }
     });
 

@@ -1,10 +1,12 @@
 import time
 
-from flask import Blueprint, render_template, request, redirect, jsonify, abort
+from flask import Blueprint, render_template, request, redirect, jsonify
 from flask_login import login_required, current_user
 
 from models import Settings
 from util import statictext
+
+from util.auth import require_types, ADMINS
 
 dashboard_bp = Blueprint("dashboard_bp", __name__)
 
@@ -40,11 +42,8 @@ def dashboard(module="main", cid=None):
 
 
 @dashboard_bp.route("/settings/save", methods=["POST"])
+@require_types(*ADMINS)
 def save():
-    if not current_user.is_authenticated:
-        error_code = 401
-        abort(error_code, description=statictext.ResponseCode[error_code])
-
     get_data = request.args.to_dict()
     post_data = (
         request.get_json() if request.is_json else request.form.to_dict()

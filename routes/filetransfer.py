@@ -7,6 +7,9 @@ from models import (
 
 from util import statictext
 
+from models import Team
+from util.auth import require_types, EDITORS
+
 filetransfer_bp = Blueprint("filetransfer_bp", __name__)
 
 
@@ -18,7 +21,7 @@ def get(id):
         abort(error_code, description=statictext.ResponseCode[error_code])
 
     object_data = FileTransfer.getData(id)
-    if object_data is None:
+    if object_data is None or not Team.can_access_station(object_data.get("StationID")):
         error_code = 404
         abort(error_code, description=statictext.ResponseCode[error_code])
 
@@ -39,6 +42,8 @@ def list():
 
     if requestData.get("status"):
         requestData["filters"]["Status"] = requestData.get("status")
+
+    Team.apply_station_scope(requestData)
 
     jsonResult = FileTransfer.list(requestData)
 
@@ -96,7 +101,7 @@ def list():
 
 
 @filetransfer_bp.route("/save", methods=["POST"])
-@login_required
+@require_types(*EDITORS)
 def save():
     get_data = request.args.to_dict()
     post_data = (
@@ -110,7 +115,7 @@ def save():
 
 
 @filetransfer_bp.route("/delete", methods=["POST"])
-@login_required
+@require_types(*EDITORS)
 def delete():
     get_data = request.args.to_dict()
     post_data = (

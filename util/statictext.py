@@ -1142,7 +1142,7 @@ CsvLoggerFormTab = {
 TeamField = {
     "TeamID": "TeamID",
     "TeamName": "Team Name",
-    "RiverBasins": "Watersheds",
+    "Stations": "Stations",
     "Users": "Users",
     "Status": "Status",
     "ImageSource": "Picture",

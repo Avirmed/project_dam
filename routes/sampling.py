@@ -7,6 +7,8 @@ from models import (
 
 from util import statictext
 
+from util.auth import require_types, EDITORS
+
 sampling_bp = Blueprint("sampling_bp", __name__)
 
 
@@ -135,7 +137,7 @@ def list():
 
 
 @sampling_bp.route("/save", methods=["POST"])
-@login_required
+@require_types(*EDITORS)
 def save():
     get_data = request.args.to_dict()
     post_data = (
@@ -149,7 +151,7 @@ def save():
 
 
 @sampling_bp.route("/delete", methods=["POST"])
-@login_required
+@require_types(*EDITORS)
 def delete():
     get_data = request.args.to_dict()
     post_data = (

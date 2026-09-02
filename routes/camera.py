@@ -7,6 +7,8 @@ from models import (
 
 from util import statictext
 
+from util.auth import require_types, EDITORS
+
 camera_bp = Blueprint("camera_bp", __name__)
 
 
@@ -144,7 +146,7 @@ def list():
 
 
 @camera_bp.route("/save", methods=["POST"])
-@login_required
+@require_types(*EDITORS)
 def save():
     get_data = request.args.to_dict()
     post_data = (
@@ -158,7 +160,7 @@ def save():
 
 
 @camera_bp.route("/delete", methods=["POST"])
-@login_required
+@require_types(*EDITORS)
 def delete():
     get_data = request.args.to_dict()
     post_data = (

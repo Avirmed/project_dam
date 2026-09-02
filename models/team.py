@@ -38,7 +38,9 @@ class Team(db.Model):
 
     TeamName = db.Column(db.String(250), nullable=False)
 
-    RiverBasins = db.Column(JSONB, nullable=True, default=list)
+    # Station IDs the team may see (renamed from "RiverBasins" - it always held
+    # StationIDs) and the member UserIDs.
+    Stations = db.Column(JSONB, nullable=True, default=list)
     Users = db.Column(JSONB, nullable=True, default=list)
 
     Status = db.Column(db.SmallInteger, default=1, nullable=False)
@@ -482,3 +484,50 @@ class Team(db.Model):
         teams = cls.query.filter(cls.Users.contains([int(user_id)])).all()
 
         return [team.serialize() for team in teams]
+
+    # --------------------------------------------------------- station scope
+    @classmethod
+    def station_ids_for(cls, user_id):
+        """All StationIDs across the user's teams (deduplicated ints)."""
+        ids = []
+        for team in cls.get_user_teams(user_id):
+            for station_id in team.get("Stations") or []:
+                try:
+                    station_id = int(station_id)
+                except (TypeError, ValueError):
+                    continue
+                if station_id not in ids:
+                    ids.append(station_id)
+        return ids
+
+    @classmethod
+    def scope_station_ids(cls):
+        """Station scope of the current user: None = unrestricted (Administrator /
+        Supervisor); otherwise the list of allowed StationIDs, fail-closed
+        ([-1] matches nothing) when a Staff / Guest user has no team."""
+        from flask_login import current_user
+        from util import auth
+
+        if not auth.is_scoped_user():
+            return None
+        return cls.station_ids_for(current_user.UserID) or [-1]
+
+    @classmethod
+    def apply_station_scope(cls, requestData, key="StationID"):
+        """Restrict a list request's filters[key] to the user's station scope."""
+        ids = cls.scope_station_ids()
+        if ids is not None:
+            requestData.setdefault("filters", {})
+            if not isinstance(requestData["filters"], dict):
+                requestData["filters"] = {}
+            requested = requestData["filters"].get(key)
+            if requested not in (None, "", []):
+                wanted = requested if isinstance(requested, list) else [requested]
+                ids = [i for i in ids if str(i) in {str(w) for w in wanted}] or [-1]
+            requestData["filters"][key] = ids
+        return requestData
+
+    @classmethod
+    def can_access_station(cls, station_id):
+        ids = cls.scope_station_ids()
+        return ids is None or (station_id is not None and int(station_id) in ids)

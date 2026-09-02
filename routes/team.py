@@ -10,6 +10,8 @@ from models import (
 
 from util import statictext, util
 
+from util.auth import require_types, MANAGERS
+
 team_bp = Blueprint("team_bp", __name__)
 
 
@@ -29,11 +31,8 @@ def get(id):
 
 
 @team_bp.route("/detail", methods=["POST"])
+@login_required
 def getByPost():
-    if not current_user.is_authenticated:
-        error_code = 401
-        abort(error_code, description=statictext.ResponseCode[error_code])
-
     get_data = request.args.to_dict()
     post_data = (
         request.get_json() if request.is_json else request.form.to_dict()
@@ -71,11 +70,8 @@ def getByPost():
 
 
 @team_bp.route("/list", methods=["GET", "POST"])
+@login_required
 def list():
-    if not current_user.is_authenticated:
-        error_code = 401
-        abort(error_code, description=statictext.ResponseCode[error_code])
-
     get_data = request.args.to_dict()
     post_data = (
         request.get_json() if request.is_json else request.form.to_dict()
@@ -145,11 +141,8 @@ def list():
 
 
 @team_bp.route("/save", methods=["POST"])
+@require_types(*MANAGERS)
 def save():
-    if not current_user.is_authenticated:
-        error_code = 401
-        abort(error_code, description=statictext.ResponseCode[error_code])
-
     get_data = request.args.to_dict()
     post_data = (
         request.get_json() if request.is_json else request.form.to_dict()
@@ -162,11 +155,8 @@ def save():
 
 
 @team_bp.route("/delete", methods=["POST"])
+@require_types(*MANAGERS)
 def delete():
-    if not current_user.is_authenticated:
-        error_code = 401
-        abort(error_code, description=statictext.ResponseCode[error_code])
-
     get_data = request.args.to_dict()
     post_data = (
         request.get_json() if request.is_json else request.form.to_dict()
@@ -179,7 +169,7 @@ def delete():
 
 
 @team_bp.route("/fileupload", methods=["POST"])
-@login_required
+@require_types(*MANAGERS)
 def file_upload():
     file = request.files.get("file")
     file_real_name = request.form.get("filename")
@@ -244,7 +234,7 @@ def file_upload():
 
 
 @team_bp.route("/imgrotate", methods=["POST"])
-@login_required
+@require_types(*MANAGERS)
 def imgrotate():
     if not current_user.is_authenticated:
         error_code = 401

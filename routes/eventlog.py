@@ -7,6 +7,9 @@ from models import (
 
 from util import statictext
 
+from models import Team
+from util.auth import require_types, EDITORS
+
 eventlog_bp = Blueprint("eventlog_bp", __name__)
 
 
@@ -23,6 +26,9 @@ def _request_data():
     if requestData.get("status"):
         requestData["filters"]["Status"] = requestData.get("status")
 
+    # Staff / Guest only see events of their teams' stations (fail-closed).
+    Team.apply_station_scope(requestData)
+
     return requestData
 
 
@@ -30,7 +36,7 @@ def _request_data():
 @login_required
 def get(id):
     object_data = EventLog.getData(id)
-    if object_data is None:
+    if object_data is None or not Team.can_access_station(object_data.get("StationID")):
         error_code = 404
         abort(error_code, description=statictext.ResponseCode[error_code])
 
@@ -44,10 +50,15 @@ def counters():
 
 
 @eventlog_bp.route("/action", methods=["POST"])
-@login_required
+@require_types(*EDITORS)
 def action():
-    """Approve (Status 1) / reject (Status 2) one event."""
-    jsonResult = EventLog.set_status(_request_data(), current_user.UserID)
+    """Approve (Status 1) / reject (Status 2) one event (own stations only)."""
+    requestData = _request_data()
+    event = EventLog.getData(requestData.get("ID"))
+    if event is None or not Team.can_access_station(event.get("StationID")):
+        abort(404, description=statictext.ResponseCode[404])
+
+    jsonResult = EventLog.set_status(requestData, current_user.UserID)
     return jsonify(jsonResult), jsonResult["Code"]
 
 

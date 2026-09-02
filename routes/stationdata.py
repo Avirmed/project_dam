@@ -7,6 +7,8 @@ from models import StationData
 
 from util import statictext
 
+from models import Team
+
 stationdata_bp = Blueprint("stationdata_bp", __name__)
 
 
@@ -14,7 +16,7 @@ stationdata_bp = Blueprint("stationdata_bp", __name__)
 @login_required
 def get(id):
     object_data = StationData.getData(id)
-    if object_data is None:
+    if object_data is None or not Team.can_access_station(object_data.get("StationID")):
         error_code = 404
         abort(error_code, description=statictext.ResponseCode[error_code])
 
@@ -37,6 +39,9 @@ def list():
     for key in ("StationID", "DeviceID"):
         if requestData.get(key):
             requestData["filters"][key] = requestData.get(key)
+
+    # Staff / Guest only see data of their teams' stations (fail-closed).
+    Team.apply_station_scope(requestData)
 
     jsonResult = StationData.list(requestData)
 

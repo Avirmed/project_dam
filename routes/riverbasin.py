@@ -12,6 +12,8 @@ from models import (
 
 from util import statictext, util
 
+from util.auth import require_types, MANAGERS
+
 riverbasin_bp = Blueprint("riverbasin_bp", __name__)
 
 
@@ -31,11 +33,8 @@ def get(id):
 
 
 @riverbasin_bp.route("/detail", methods=["POST"])
+@login_required
 def getByPost():
-    if not current_user.is_authenticated:
-        error_code = 401
-        abort(error_code, description=statictext.ResponseCode[error_code])
-
     get_data = request.args.to_dict()
     post_data = (
         request.get_json() if request.is_json else request.form.to_dict()
@@ -86,22 +85,13 @@ def list():
     if requestData.get("status"):
         requestData["filters"]["Status"] = requestData.get("status")
 
-    if current_user.is_authenticated and current_user.UserType in [3, 4]:
-        teamsData = Team.get_user_teams(current_user.UserID)
-
-        StationIDs = []
-        for data in teamsData:
-            for id in data["RiverBasins"]:
-                StationIDs.append(id)
-
-        stations = Station.query.filter(Station.StationID.in_(StationIDs)).all()
-        RiverBasinIDs = []
-        for station in stations:
-            if station.RiverBasinID not in RiverBasinIDs:
-                RiverBasinIDs.append(station.RiverBasinID)
-
-        if len(RiverBasinIDs) > 0:
-            requestData["filters"]["RiverBasinID"] = RiverBasinIDs
+    # Staff / Guest only see basins of their teams' stations (fail-closed).
+    scope = Team.scope_station_ids()
+    if scope is not None:
+        stations = Station.query.filter(Station.StationID.in_(scope)).all()
+        requestData["filters"]["RiverBasinID"] = sorted(
+            {s.RiverBasinID for s in stations if s.RiverBasinID}
+        ) or [-1]
 
     jsonResult = RiverBasin.list(requestData)
 
@@ -210,11 +200,8 @@ def list():
 
 
 @riverbasin_bp.route("/save", methods=["POST"])
+@require_types(*MANAGERS)
 def save():
-    if not current_user.is_authenticated:
-        error_code = 401
-        abort(error_code, description=statictext.ResponseCode[error_code])
-
     get_data = request.args.to_dict()
     post_data = (
         request.get_json() if request.is_json else request.form.to_dict()
@@ -227,11 +214,8 @@ def save():
 
 
 @riverbasin_bp.route("/delete", methods=["POST"])
+@require_types(*MANAGERS)
 def delete():
-    if not current_user.is_authenticated:
-        error_code = 401
-        abort(error_code, description=statictext.ResponseCode[error_code])
-
     get_data = request.args.to_dict()
     post_data = (
         request.get_json() if request.is_json else request.form.to_dict()
@@ -244,7 +228,7 @@ def delete():
 
 
 @riverbasin_bp.route("/fileupload", methods=["POST"])
-@login_required
+@require_types(*MANAGERS)
 def file_upload():
     file = request.files.get("file")
     file_real_name = request.form.get("filename")
@@ -309,7 +293,7 @@ def file_upload():
 
 
 @riverbasin_bp.route("/imgrotate", methods=["POST"])
-@login_required
+@require_types(*MANAGERS)
 def imgrotate():
     if not current_user.is_authenticated:
         error_code = 401
