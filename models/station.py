@@ -87,6 +87,20 @@ class Station(db.Model):
     def __repr__(self):
         return f"<Station {self.StationID}:{self.SiteCode}-{self.SiteName}>"
 
+    @classmethod
+    def data_folder_for(cls, site_code):
+        """Private RTU Data/<SiteCode> folder of a station (statictext.APP_DATA_PATH);
+        cameras without a station use RTU Data/_unassigned. Not created here."""
+        import re
+
+        code = re.sub(r"[\/:*?\"<>|]", "_", str(site_code or "").strip())
+        return os.path.join(
+            statictext.APP_DATA_PATH, code or statictext.APP_DATA_UNASSIGNED_DIR
+        )
+
+    def data_folder(self):
+        return self.data_folder_for(self.SiteCode)
+
     def flow_sensor(self):
         """The Flow sensor mapped on the Water configures tab ("Flow Rate" row:
         checked + text = SensorID code or numeric ID), or None."""
@@ -246,6 +260,7 @@ class Station(db.Model):
                     ),
                     "CCTV_NO": cfg.get("CCTV_NO"),
                     "SnapshotImage": snap["SnapshotImage"],
+                    "SnapshotStill": snap["SnapshotStill"],
                     "SnapshotTime": snap["SnapshotTime"],
                 }
             )

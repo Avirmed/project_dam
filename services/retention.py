@@ -7,9 +7,9 @@ Runs once per day (first worker tick of the day). Limits come from Settings
                             older than N days while keeping the mapped Data
   HTTPLOG_RETENTION_DAYS  - delete delivered / failed HttpLog rows older than N days
   EVENTLOG_RETENTION_DAYS - delete EventLog rows (and their image files) older than N days
-File rules (private worker folders under data/, see statictext.APP_DATA_PATH):
-  CSV_RETENTION_DAYS      - CSV Logger files (data/csv/<logger>/) older than N days
-  SENT_IMAGE_RETENTION_DAYS - delivered camera images (data/images_out/<cam>/sent/)
+File rules (private worker folders under RTU Data/, see statictext.APP_DATA_PATH):
+  CSV_RETENTION_DAYS      - CSV Logger files (RTU Data/<SiteCode>/csv/) older than N days
+  SENT_IMAGE_RETENTION_DAYS - delivered camera images (RTU Data/<SiteCode>/<CameraID>/images_out/sent/)
   tmp/ leftovers of chunked uploads older than TMP_UPLOAD_MAX_AGE_HOURS (fixed)
 Deletes run in batches so the tables are never locked for long.
 """
@@ -20,7 +20,7 @@ import time
 from datetime import date, datetime, timedelta
 
 from database import db
-from models import Camera, EventLog, HttpLog, Settings, StationData
+from models import EventLog, HttpLog, Settings, StationData
 from services import csv_logger
 from util import statictext, util as Util
 
@@ -145,11 +145,15 @@ def purge_files(root, max_age_seconds, recursive=True, only_dir=None):
 
 
 def purge_csv_files(days):
-    return purge_files(csv_logger.csv_root(), days * 86400)
+    # every RTU Data/<SiteCode>/csv/ tree
+    return purge_files(
+        statictext.APP_DATA_PATH, days * 86400, only_dir=csv_logger.CSV_DIR
+    )
 
 
 def purge_sent_images(days):
-    return purge_files(Camera.imageOutPath, days * 86400, only_dir="sent")
+    # every RTU Data/<SiteCode>/<CameraID>/images_out/sent/ folder
+    return purge_files(statictext.APP_DATA_PATH, days * 86400, only_dir="sent")
 
 
 def purge_tmp_uploads(hours=TMP_UPLOAD_MAX_AGE_HOURS):

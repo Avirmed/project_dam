@@ -10,7 +10,9 @@
     color, table, file, generate, divider.
       color    : native colour picker, value kept as #rrggbb (`default` = initial colour, #ffffff).
       file     : uploads straight to `field.upload` (handled in project.js) and keeps
-                 only the returned filename in a hidden input named `key`.
+                 only the returned filename in a hidden input named `key`. With
+                 `field.remove` (a /api/... route) a remove button appears next to the
+                 stored file name and POSTs {id, kind} to it (project.js).
       generate : readonly input + button that POSTs `field.generate` for a fresh value.
       table    : `field.column_options[<column>]` renders that column as a select.
     `field.help` adds a small hint under any input.
@@ -57,7 +59,18 @@
         data-upload="{{ field.upload }}"
         accept="{{ field.accept }}"
     >
-    <small class="text-muted config-file-name d-block mt-1"></small>
+    <small class="text-muted d-block mt-1">
+        <span class="config-file-name"></span>
+        {%- if field.remove %}
+        <span
+            class="config-file-remove text-danger ms-2 d-none"
+            role="button"
+            data-target="{{ key }}"
+            data-url="{{ field.remove }}"
+            title="{{ field.remove_title or StaticText.Delete }}"
+        >{{ StaticText.Icon.Delete | safe }}</span>
+        {%- endif %}
+    </small>
 {%- elif ftype == 'generate' -%}
     <label class="small mb-2">{{ field.title }}</label>
     <div class="input-group input-group-sm">
@@ -88,6 +101,7 @@
         class="form-control form-control-sm"
         {% if 'min' in field %}min="{{ field.min }}"{% endif %}
         {% if 'max' in field %}max="{{ field.max }}"{% endif %}
+        {% if 'step' in field %}step="{{ field.step }}"{% endif %}
         placeholder="{{ field.placeholder }}"
     >
 {%- elif ftype == 'color' -%}

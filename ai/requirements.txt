@@ -1,0 +1,16 @@
+# Packages installed into the bundled python313 for ai/ (the only agreed
+# exception to "never modify python313"). Web-app packages are not listed.
+#
+#   python313\python.exe -m pip install torch==2.11.0 torchvision==0.26.0 --index-url https://download.pytorch.org/whl/cu128
+#   python313\python.exe -m pip install -r ai\requirements.txt
+#
+# CPU-only machines: install the same torch / torchvision versions without the
+# --index-url (ai/detect.py picks CUDA only when it is available).
+ultralytics==8.4.138
+scipy==1.18.1
+pandas==3.0.5
+seaborn==0.13.2
+setuptools==77.0.1
+tqdm==4.70.0
+# already present in python313 and required as well:
+# numpy==2.2.6, opencv-python==4.11.0.86, pillow==11.2.1, requests==2.32.3

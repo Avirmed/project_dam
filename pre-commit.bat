@@ -15,11 +15,11 @@ if exist "python313\Scripts\flake8.exe" (
 )
 
 echo Running Black Formatter...
-"%BLACK_EXE%" . --exclude "(pgsql|python313|dist)"
+"%BLACK_EXE%" . --exclude "(pgsql|python313|dist|ai/yolov5)"
 
 echo.
 echo Running Flake8 Linter...
-"%FLAKE8_EXE%" . --exclude=pgsql,python313,dist --max-line-length=150 --extend-ignore=E203
+"%FLAKE8_EXE%" . --exclude=pgsql,python313,dist,yolov5 --max-line-length=150 --extend-ignore=E203
 
 echo.
 @REM pause

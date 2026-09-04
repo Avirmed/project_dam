@@ -2,20 +2,77 @@
     "model": "Settings",
     "unique_by": "Name",
     "records": [
-        { "Name": "APP_TITLE", "Value": "APP - Title" },
-        { "Name": "APP_DASHBOARD_TITLE", "Value": "APP - Dashboard title" },
-        { "Name": "APP_FOOTER", "Value": "APP - Footer" },
-        { "Name": "APP_KEYWORDS", "Value": "keywords" },
-        { "Name": "APP_COLOR", "Value": "#0d6efd" },
-        { "Name": "DATA_TIMEOUT_MINUTES", "Value": "15" },
-        { "Name": "WORKER_ENABLED", "Value": "1" },
-        { "Name": "DATA_RETENTION_DAYS", "Value": "730" },
-        { "Name": "RAW_RETENTION_DAYS", "Value": "90" },
-        { "Name": "HTTPLOG_RETENTION_DAYS", "Value": "90" },
-        { "Name": "EVENTLOG_RETENTION_DAYS", "Value": "365" },
-        { "Name": "CSV_RETENTION_DAYS", "Value": "30" },
-        { "Name": "SENT_IMAGE_RETENTION_DAYS", "Value": "7" },
-        { "Name": "SNAPSHOT_INTERVAL_MINUTES", "Value": "5" },
-        { "Name": "SIMULATOR_ENABLED", "Value": "0" }
+        {
+            "Name": "APP_TITLE",
+            "Value": "APP - Title"
+        },
+        {
+            "Name": "APP_DASHBOARD_TITLE",
+            "Value": "APP - Dashboard title"
+        },
+        {
+            "Name": "APP_FOOTER",
+            "Value": "APP - Footer"
+        },
+        {
+            "Name": "APP_KEYWORDS",
+            "Value": "keywords"
+        },
+        {
+            "Name": "APP_COLOR",
+            "Value": "#0d6efd"
+        },
+        {
+            "Name": "DATA_TIMEOUT_MINUTES",
+            "Value": "15"
+        },
+        {
+            "Name": "WORKER_ENABLED",
+            "Value": "1"
+        },
+        {
+            "Name": "DATA_RETENTION_DAYS",
+            "Value": "730"
+        },
+        {
+            "Name": "RAW_RETENTION_DAYS",
+            "Value": "90"
+        },
+        {
+            "Name": "HTTPLOG_RETENTION_DAYS",
+            "Value": "90"
+        },
+        {
+            "Name": "EVENTLOG_RETENTION_DAYS",
+            "Value": "365"
+        },
+        {
+            "Name": "CSV_RETENTION_DAYS",
+            "Value": "30"
+        },
+        {
+            "Name": "SENT_IMAGE_RETENTION_DAYS",
+            "Value": "7"
+        },
+        {
+            "Name": "SNAPSHOT_INTERVAL_MINUTES",
+            "Value": "5"
+        },
+        {
+            "Name": "SNAPSHOT_KEEP_COUNT",
+            "Value": "100"
+        },
+        {
+            "Name": "AI_FRAME_COUNT",
+            "Value": "10"
+        },
+        {
+            "Name": "AI_WORKER_INTERVAL_MINUTES",
+            "Value": "15"
+        },
+        {
+            "Name": "AI_CLIP_SECONDS",
+            "Value": "2"
+        }
     ]
 }

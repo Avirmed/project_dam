@@ -22,7 +22,7 @@ from datetime import datetime
 from database import db
 from models import CsvLogger, StationData
 from services import file_transfer
-from util import statictext, util as Util
+from util import util as Util
 
 logger = logging.getLogger("worker")
 
@@ -30,9 +30,14 @@ PLACEHOLDER = re.compile(r"^%([A-Za-z0-9_\-.]+)%$")
 _slots = {}  # logger ID -> last interval slot that was written
 
 
-def csv_root():
-    # data/csv/<LoggerID>/ - private worker output, never web-served
-    return os.path.join(statictext.APP_DATA_PATH, "csv")
+CSV_DIR = "csv"
+
+
+def csv_root(station):
+    # RTU Data/<SiteCode>/csv/<LoggerID>/ - private worker output, never web-served
+    from models import Station
+
+    return os.path.join(Station.data_folder_for(station.SiteCode), CSV_DIR)
 
 
 def device_name(station):
@@ -86,7 +91,7 @@ def write_row(logger_row, station, latest, cfg, moment):
         for m in mapping
     ]
 
-    folder = os.path.join(csv_root(), str(logger_row.ID))
+    folder = os.path.join(csv_root(station), str(logger_row.ID))
     os.makedirs(folder, exist_ok=True)
     path = os.path.join(
         folder, render_filename(logger_row.FilenameFormat, station, moment)

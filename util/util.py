@@ -264,6 +264,9 @@ def build_upload_filename(upload_time, filename, ext):
 # Certificate / private-key uploads for the per-station TLS settings.
 ALLOWED_CERT_EXTENSIONS = {"crt", "pem", "key"}
 
+# Trained YOLO weights uploaded per camera (ai/trained_models/, see ai/README.md).
+ALLOWED_MODEL_EXTENSIONS = {"pt"}
+
 
 def parse_source_list(raw):
     """Parse a comma/semicolon separated list of IPs or CIDR ranges into

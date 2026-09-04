@@ -184,6 +184,8 @@ cython_debug/
 /logs
 /pgsql
 /python313
+# Uploaded YOLO weights (dashboard camera form) - large binaries, per install
+/ai/trained_models/*.pt
 # /static/data
 
 # migrations/ is committed (schema is versioned; entrypoint runs `flask db upgrade`)
@@ -201,8 +203,8 @@ cython_debug/
 /certs
 
 # Runtime folders: chunked front-end uploads (tmp/) and private worker data
-# (data/csv, data/security_in, data/images_out) - never committed
+# (RTU Data/<SiteCode>/csv, <CameraID>/images|images_temp|images_out, _security_in) - never committed
 /tmp
-/data
+/RTU Data
 # Worker-generated public pictures (front CCTV page), refreshed at runtime
 /static/data/cameras

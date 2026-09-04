@@ -159,6 +159,90 @@ def save():
     return jsonify(jsonResult), jsonResult["Code"]
 
 
+def _camera_from_request():
+    """(camera, error json) for the model upload / delete endpoints."""
+    camera_id = request.form.get("id", "")
+    kind = request.form.get("kind", "TrainedModel")
+    if not str(camera_id).isdigit() or kind != "TrainedModel":
+        return None, {"Message": statictext.ResponseCode[400], "Code": 400}
+    camera = Camera.query.get(int(camera_id))
+    if not camera:
+        return None, {"Message": statictext.ResponseCode[404], "Code": 404}
+    return camera, None
+
+
+@camera_bp.route("/modelupload", methods=["POST"])
+@require_types(*EDITORS)
+def model_upload():
+    """Store the camera's YOLO weights (.pt) as ai/trained_models/<CameraID>.pt
+    (Camera.store_model). Only the file name goes back to the form / Meta."""
+    jsonResult = {
+        "Result": False,
+        "Title": statictext.Messages["Title"],
+        "Message": statictext.Messages["InvalidAccess"],
+        "Code": 400,
+    }
+
+    file = request.files.get("file")
+    camera, error = _camera_from_request()
+    if error or not file:
+        jsonResult.update(
+            error or {"Message": statictext.ResponseCode[400], "Code": 400}
+        )
+        return jsonify(jsonResult), jsonResult["Code"]
+
+    try:
+        filename = camera.store_model(file)
+    except ValueError as e:
+        jsonResult.update({"Message": str(e), "Code": 422})
+        return jsonify(jsonResult), jsonResult["Code"]
+    except Exception as e:
+        jsonResult.update(
+            {"Message": f"{statictext.ResponseCode[500]}: {str(e)}", "Code": 500}
+        )
+        return jsonify(jsonResult), jsonResult["Code"]
+
+    jsonResult.update(
+        {
+            "Result": True,
+            "Message": statictext.Messages["ModelUploaded"],
+            "Code": 200,
+            "Filename": filename,
+        }
+    )
+    return jsonify(jsonResult), jsonResult["Code"]
+
+
+@camera_bp.route("/modeldelete", methods=["POST"])
+@require_types(*EDITORS)
+def model_delete():
+    """Remove the camera's uploaded weights file and clear Meta.TrainedModel."""
+    jsonResult = {
+        "Result": False,
+        "Title": statictext.Messages["Title"],
+        "Message": statictext.Messages["InvalidAccess"],
+        "Code": 400,
+    }
+
+    camera, error = _camera_from_request()
+    if error:
+        jsonResult.update(error)
+        return jsonify(jsonResult), jsonResult["Code"]
+
+    try:
+        camera.remove_model()
+    except Exception as e:
+        jsonResult.update(
+            {"Message": f"{statictext.ResponseCode[500]}: {str(e)}", "Code": 500}
+        )
+        return jsonify(jsonResult), jsonResult["Code"]
+
+    jsonResult.update(
+        {"Result": True, "Message": statictext.Messages["ModelDeleted"], "Code": 200}
+    )
+    return jsonify(jsonResult), jsonResult["Code"]
+
+
 @camera_bp.route("/delete", methods=["POST"])
 @require_types(*EDITORS)
 def delete():

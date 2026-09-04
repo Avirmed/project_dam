@@ -22,6 +22,7 @@ def init():
         "APP_TMP_PATH",
         "APP_DATA_PATH",
         "APP_CERT_PATH",
+        "APP_MODEL_PATH",
         "UPLOAD_CK_FOLDER_FILE",
         "UPLOAD_CK_FOLDER_IMAGE",
     }

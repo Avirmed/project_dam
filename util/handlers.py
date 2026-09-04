@@ -2,8 +2,10 @@ import logging
 import re
 from flask import request, jsonify
 from flask_login import current_user
-from models import User
+from models import User, Camera
 from datetime import datetime
+
+CAMERA_PICTURES_PREFIX = Camera.snapshotUrl.rstrip("/") + "/"
 
 
 def register_handlers(app):
@@ -15,6 +17,14 @@ def register_handlers(app):
             logging.info(
                 f"Request: {request.method} {path} | User: {current_user.get_id()}"
             )
+
+    @app.after_request
+    def no_cache_camera_pictures(response):
+        # static/data/cameras/<CameraID>/image.gif|jpg are rewritten in place by
+        # the snapshot job; the URLs also carry ?t=<mtime>, this covers proxies.
+        if request.path.startswith(CAMERA_PICTURES_PREFIX):
+            response.headers["Cache-Control"] = "no-store, max-age=0"
+        return response
 
     @app.errorhandler(404)
     def page_not_found(e):

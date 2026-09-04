@@ -187,9 +187,7 @@ def _folder_size(path):
 def _folder_sizes():
     base = statictext.APP_DIRECTORY
     targets = [
-        ("data/csv", os.path.join(statictext.APP_DATA_PATH, "csv")),
-        ("data/security_in", os.path.join(statictext.APP_DATA_PATH, "security_in")),
-        ("data/images_out", os.path.join(statictext.APP_DATA_PATH, "images_out")),
+        ("RTU Data", statictext.APP_DATA_PATH),
         (
             "static/data/events",
             os.path.join(statictext.APP_STATIC_PATH, "data", "events"),

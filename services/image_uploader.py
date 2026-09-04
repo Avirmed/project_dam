@@ -1,14 +1,13 @@
 """Camera image uploader (design slide 6).
 
-Images that another process saves under Camera.imageOutPath/<CameraID>/
-are sent to the customer's server through the camera's "Upload JPG" (FTP)
+Images that another process saves under the camera's RTU Data folder
+(Camera.images_out_folder() = RTU Data/<SiteCode>/<CameraID>/images_out/) are sent to the customer's server through the camera's "Upload JPG" (FTP)
 settings; delivered files move to a `sent` sub-folder, failures stay for the
 next run. The outcome is stored on the camera (LastUploadRun / LastUploadResult).
 """
 
 import logging
 import os
-import re
 import shutil
 import time
 from datetime import datetime
@@ -23,15 +22,8 @@ MIN_AGE_SECONDS = 2
 IMAGE_EXT = (".jpg", ".jpeg", ".png")
 
 
-def out_root():
-    path = Camera.imageOutPath
-    os.makedirs(path, exist_ok=True)
-    return path
-
-
 def camera_folder(camera):
-    safe_id = re.sub(r"[\\/:*?\"<>|]", "_", str(camera.CameraID or camera.ID))
-    path = os.path.join(out_root(), safe_id)
+    path = camera.images_out_folder()
     os.makedirs(path, exist_ok=True)
     return path
 

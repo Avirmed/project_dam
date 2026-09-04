@@ -93,7 +93,7 @@
             grid.append(`
                 <div class="col-md-6 col-xxl-4">
                     <div class="border rounded-2 h-100 cctv-card">
-                        <div class="cctv-image bg-light rounded-top">
+                        <div class="cctv-image bg-light rounded-top ${hasSnap ? "cctv-zoom" : ""}" data-image="${esc(cam.SnapshotImage)}" data-title="${esc(cam.CameraName)}" data-time="${hasSnap ? when(cam.SnapshotTime) : ""}" title="${hasSnap ? esc(T.Enlarge) : ""}">
                             <img src="${esc(cam.SnapshotImage)}" alt="" loading="lazy">
                             <span class="badge text-bg-dark cctv-type-badge">${esc(cam.CameraTypeText || "")}${cam.CCTV_NO ? " #" + esc(cam.CCTV_NO) : ""}</span>
                         </div>
@@ -102,12 +102,24 @@
                                 <div class="fw-semibold text-truncate">${esc(cam.CameraName)}</div>
                                 <small class="text-muted">${hasSnap ? `${esc(T.TakenAt)}: ${when(cam.SnapshotTime)}` : esc(T.NoSnapshot)}</small>
                             </div>
-                            ${hasSnap ? `<a class="btn btn-sm btn-outline-secondary flex-shrink-0" href="${esc(cam.SnapshotImage)}" download="${esc(cam.CameraID)}.jpg" title="${esc(T.Download)}">${ST.Icon.Download}</a>` : ""}
                         </div>
                     </div>
                 </div>`);
         });
     }
+
+    // Lightbox: the animation (newest snapshots) full size in a modal.
+    page.on("click", ".cctv-zoom", function () {
+        const box = $(this);
+        const modal = page.find(".cctv-lightbox");
+        modal.find(".cctv-lightbox-title").text(box.data("title"));
+        modal.find(".cctv-lightbox-time").text(box.data("time") ? `${T.TakenAt}: ${box.data("time")}` : "");
+        modal.find(".cctv-lightbox-img").attr("src", box.data("image"));
+        modal.modal("show");
+    });
+    page.find(".cctv-lightbox").on("hidden.bs.modal", function () {
+        $(this).find(".cctv-lightbox-img").attr("src", "");  // stop the animation when closed
+    });
 
     page.on("click", ".cctv-item", function () {
         selectedId = Number($(this).data("id"));

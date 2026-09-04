@@ -16,17 +16,29 @@ from util import statictext, util as Util
 class Camera(db.Model):
     __tablename__ = "tbl_camera"
 
-    # Worker folders (deployment constants, same pattern as Station.drfFilePath):
-    #   eventWatchPath - Security CCTVs drop event snapshots here (services/event_watcher.py)
-    #   imageOutPath   - <imageOutPath>/<CameraID>/ holds images to send via the
-    #                    camera's Upload JPG (FTP) settings (services/image_uploader.py)
-    # Both live under the private data/ root (not web-served, not tmp/).
-    eventWatchPath = os.path.join(statictext.APP_DATA_PATH, "security_in")
-    imageOutPath = os.path.join(statictext.APP_DATA_PATH, "images_out")
-    # Public: latest picture per camera for the front CCTV page
-    # (services/snapshot.py) - <snapshotPath>/<CameraID>/latest.jpg
+    # Worker folders (deployment constants, same pattern as Station.drfFilePath).
+    # Private, per camera, under the station's RTU Data folder (see
+    # statictext.APP_DATA_PATH; data_folder() below):
+    #   images/       snapshot archive  (services/snapshot.py)
+    #   images_temp/  1..N.jpg frames of the AI worker's RTSP clip
+    #   raw_temp/     that clip (raw.mp4 + raw.json), overwritten each run
+    #   images_out/   images to send via the camera's Upload JPG (FTP) settings
+    #                 (services/image_uploader.py)
+    # Security CCTVs drop event snapshots into the shared eventWatchPath
+    # (services/event_watcher.py).
+    eventWatchPath = os.path.join(
+        statictext.APP_DATA_PATH, statictext.APP_DATA_SECURITY_DIR
+    )
+    # Public: <snapshotPath>/<CameraID>/image.gif (animation of images_temp) and
+    # image.jpg (newest picture) for the front CCTV page and the camera form.
     snapshotPath = os.path.join(statictext.APP_STATIC_PATH, "data", "cameras")
     snapshotUrl = "/static/data/cameras"
+    snapshotGif = "image.gif"
+    snapshotStill = "image.jpg"
+    # Trained YOLO weights for the AI water-level detector (ai/detect.py):
+    # <modelPath>/<CameraID>.pt, uploaded from the camera form; the file name is
+    # kept in Meta.CameraConfigures.configs.TrainedModel. Not web-served.
+    modelPath = statictext.APP_MODEL_PATH
 
     sort = [
         {"column": "CameraID", "field": "CameraID", "dir": "asc"},
@@ -65,6 +77,117 @@ class Camera(db.Model):
         cfg = data.get("configs") if isinstance(data, dict) else None
         return cfg if isinstance(cfg, dict) else {}
 
+    def safe_id(self):
+        """CameraID usable as a file name (same rule as services/snapshot.py)."""
+        import re
+
+        return re.sub(r"[\\/:*?\"<>|]", "_", str(self.CameraID or self.ID))
+
+    def station_code(self):
+        """SiteCode of the station chosen on the camera form, or None."""
+        from models.station import Station
+
+        station_id = Util.safe_int(self.configs().get("StationID"), None)
+        if station_id is None:
+            return None
+        station = Station.query.get(station_id)
+        return station.SiteCode if station else None
+
+    def data_folder(self):
+        """Private RTU Data/<SiteCode or _unassigned>/<CameraID> folder (not created)."""
+        from models.station import Station
+
+        return os.path.join(
+            Station.data_folder_for(self.station_code()), self.safe_id()
+        )
+
+    def images_folder(self):
+        return os.path.join(self.data_folder(), "images")
+
+    def images_temp_folder(self):
+        return os.path.join(self.data_folder(), "images_temp")
+
+    def images_out_folder(self):
+        return os.path.join(self.data_folder(), "images_out")
+
+    def raw_temp_folder(self):
+        """Last RTSP clip recorded by the AI worker (raw.mp4 + raw.json)."""
+        return os.path.join(self.data_folder(), "raw_temp")
+
+    def public_folder(self):
+        """static/data/cameras/<CameraID> - web-served animation / newest picture."""
+        return os.path.join(self.snapshotPath, self.safe_id())
+
+    def remove_files(self):
+        """Delete everything stored for this camera on disk: the RTU Data
+        folder (images, images_temp, images_out), the public pictures and the
+        uploaded model. Used when the camera row is deleted; never raises."""
+        import shutil
+
+        for folder in (self.data_folder(), self.public_folder()):
+            shutil.rmtree(folder, ignore_errors=True)
+        self._remove_model_files()
+
+    def set_config(self, key, value, block="CameraConfigures"):
+        """Write one value into Meta[block]["configs"] (new dict so SQLAlchemy
+        notices the JSONB change); caller commits."""
+        import copy
+
+        meta = copy.deepcopy(self.Meta) if isinstance(self.Meta, dict) else {}
+        data = meta.get(block) if isinstance(meta.get(block), dict) else {}
+        cfg = data.get("configs") if isinstance(data.get("configs"), dict) else {}
+        cfg[key] = value
+        data["configs"] = cfg
+        data.setdefault("status", True)
+        meta[block] = data
+        self.Meta = meta
+
+    def model_file(self):
+        """Absolute path of the uploaded weights, or None when none is stored."""
+        name = str(self.configs().get("TrainedModel") or "").strip()
+        if not name or os.path.basename(name) != name:
+            return None
+        return os.path.join(self.modelPath, name)
+
+    def store_model(self, file):
+        """Save an uploaded weights file as <modelPath>/<CameraID>.<ext>, drop
+        any previous file of this camera and record the name in Meta.
+        Returns the stored file name; raises ValueError on a bad extension."""
+        ext = Util.get_safe_extension(
+            file.filename, allowed=Util.ALLOWED_MODEL_EXTENSIONS
+        )
+        if not ext:
+            raise ValueError(statictext.Messages["InvalidFileType"])
+        filename = f"{self.safe_id()}.{ext}"
+        os.makedirs(self.modelPath, exist_ok=True)
+        self._remove_model_files()
+        file.save(os.path.join(self.modelPath, filename))
+        self.set_config("TrainedModel", filename)
+        self.UpdateUserID = current_user.UserID
+        self.UpdateDate = db.func.now()
+        db.session.commit()
+        return filename
+
+    def remove_model(self):
+        """Delete the stored weights file(s) and clear the Meta reference."""
+        self._remove_model_files()
+        self.set_config("TrainedModel", "")
+        self.UpdateUserID = current_user.UserID
+        self.UpdateDate = db.func.now()
+        db.session.commit()
+
+    def _remove_model_files(self):
+        """Remove every file named <CameraID>.* under modelPath (any extension)."""
+        stem = self.safe_id()
+        if not os.path.isdir(self.modelPath):
+            return
+        for name in os.listdir(self.modelPath):
+            if os.path.splitext(name)[0] == stem:
+                try:
+                    os.remove(os.path.join(self.modelPath, name))
+                except OSError:
+                    pass
+
     def build_links(self):
         """RTSP stream and ISAPI snapshot URLs from the camera settings
         (design slides 4-5), e.g.
@@ -92,21 +215,28 @@ class Camera(db.Model):
         }
 
     def snapshot(self):
-        """Latest stored picture: {SnapshotImage: URL or blank image,
-        SnapshotTime: datetime | None}. Time = file mtime (no DB column)."""
-        from datetime import datetime
-        from services.snapshot import snapshot_file, FILE_NAME
+        """Public pictures for the CCTV page / camera form:
+        {SnapshotImage: animation URL (falls back to the still, then the blank
+        image), SnapshotStill: newest picture URL or None, SnapshotTime: taken-at
+        of the newest archived picture or None}. The files are rewritten in
+        place by services/snapshot.py, so the URLs carry ?t=<mtime> as a
+        cache-buster (plus a no-store header, util/handlers.py)."""
+        from services.snapshot import snapshot_file, snapshot_time
 
-        path = snapshot_file(self)
-        try:
-            taken = datetime.fromtimestamp(os.path.getmtime(path))
-        except OSError:
-            return {"SnapshotImage": statictext.Images["Blank"], "SnapshotTime": None}
-        folder = os.path.basename(os.path.dirname(path))
+        folder = self.public_folder()
+        base = f"{self.snapshotUrl}/{os.path.basename(folder)}"
+        urls = {}
+        for key, name in (("gif", self.snapshotGif), ("still", self.snapshotStill)):
+            path = os.path.join(folder, name)
+            try:
+                urls[key] = f"{base}/{name}?t={int(os.path.getmtime(path))}"
+            except OSError:
+                urls[key] = None
+        newest = snapshot_file(self)
         return {
-            # mtime as cache-buster so browsers refresh the picture
-            "SnapshotImage": f"{self.snapshotUrl}/{folder}/{FILE_NAME}?t={int(taken.timestamp())}",
-            "SnapshotTime": taken,
+            "SnapshotImage": urls["gif"] or urls["still"] or statictext.Images["Blank"],
+            "SnapshotStill": urls["still"],
+            "SnapshotTime": snapshot_time(newest) if newest else None,
         }
 
     def serialize(self):
@@ -124,8 +254,10 @@ class Camera(db.Model):
             db.session.delete(self)
             if commit:
                 db.session.commit()
+            # row gone: drop the camera's folders and model file as well
+            self.remove_files()
             return True
-        except Exception as e:
+        except Exception:
             db.session.rollback()
             return False
 

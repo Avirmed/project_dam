@@ -172,7 +172,7 @@ def start_worker(app):
         snapshot,
         sysinfo,
         retention,
-        simulator,
+        ai_worker,
     )
 
     if not JOBS:
@@ -183,10 +183,7 @@ def start_worker(app):
         register("snapshot", snapshot.run, 30)  # per-camera due-ness inside
         register("sysinfo", sysinfo.sample, 10)  # CPU sample + cached folder sizes
         register("retention", retention.run, 3600)
-        # demo payloads (SIMULATOR_ENABLED); 15 s so a new 15-min slot is written
-        # almost at once - otherwise stations look "No connection" for up to a
-        # minute after every slot boundary (DATA_TIMEOUT_MINUTES = 15)
-        register("simulator", simulator.run, 15)
+        register("ai_worker", ai_worker.run, 15)  # per-camera slot due-ness inside
 
     _stop.clear()
     _thread = threading.Thread(

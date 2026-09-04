@@ -663,7 +663,7 @@ function updateEditForm(tmpForm, jsonData, updateIMG = false) {
 
                     // file-type config: the hidden input holds the stored filename
                     if (field.is("input[type='hidden']")) {
-                        field.closest(".field-basic").find(".config-file-name").text(value != null ? value : "");
+                        setConfigFileName(field.closest(".field-basic"), value);
                     }
                 }
             }
@@ -848,6 +848,14 @@ function ajaxFailToast(jqXHR) {
     }
 }
 
+// Show the stored file name of a file-type config field and its optional
+// remove button (only rendered when the field declares a `remove` route).
+function setConfigFileName(wrap, filename) {
+    let name = filename != null ? String(filename) : "";
+    wrap.find(".config-file-name").text(name);
+    wrap.find(".config-file-remove").toggleClass("d-none", name === "");
+}
+
 // File-type config fields (e.g. TLS certificates) upload immediately to the
 // route in data-upload; only the returned filename is kept in the hidden input
 // that serializes into Meta. The record must already exist (its ID is read from
@@ -884,13 +892,51 @@ $(document).on("change", ".config-file", function () {
         if (jsonData.Result) {
             let wrap = input.closest(".field-basic");
             wrap.find(`input[type='hidden'][name="${target}"]`).val(jsonData.Filename);
-            wrap.find(".config-file-name").text(jsonData.Filename);
+            setConfigFileName(wrap, jsonData.Filename);
             toastr.success(jsonData.Message, jsonData.Title);
         } else {
             toastr.error(jsonData.Message, jsonData.Title);
         }
     }).fail(ajaxFailToast).always(function () {
         input.val("");
+    });
+});
+
+// Remove button of a file-type config field: confirm, POST {id, kind} to the
+// field's remove route, then clear the stored name (server already cleared Meta).
+$(document).on("click", ".config-file-remove", function () {
+    let btn = $(this);
+    let wrap = btn.closest(".field-basic");
+    let form = btn.closest("form");
+    let recordId = form.find("input[type='hidden'][name$='ID']").first().val();
+    let target = btn.data("target");
+    if (!recordId) {
+        return;
+    }
+
+    bootbox.confirm({
+        title: LOCAL_VARIABLES.StaticText.Messages.DeleteFileQuestion,
+        message: `<h5>${wrap.find(".config-file-name").text()}</h5>`,
+        centerVertical: true,
+        size: "sm",
+        buttons: {
+            confirm: { label: LOCAL_VARIABLES.StaticText.Yes, className: "btn-danger btn-sm me-2" },
+            cancel: { label: LOCAL_VARIABLES.StaticText.No, className: "btn-secondary btn-sm" },
+        },
+        callback: function (confirmed) {
+            if (!confirmed) {
+                return;
+            }
+            $.post(btn.data("url"), { id: recordId, kind: target }, function (jsonData) {
+                if (jsonData.Result) {
+                    wrap.find(`input[type='hidden'][name="${target}"]`).val("");
+                    setConfigFileName(wrap, "");
+                    toastr.warning(jsonData.Message, jsonData.Title);
+                } else {
+                    toastr.error(jsonData.Message, jsonData.Title);
+                }
+            }, "json").fail(ajaxFailToast);
+        },
     });
 });
 

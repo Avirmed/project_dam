@@ -53,4 +53,22 @@
 			</div>
 		</div>
 	</div>
+
+	{# Lightbox for one camera (static/js/modules/cctv.js): the animation of the newest snapshots, full size #}
+	<div class="modal fade cctv-lightbox" tabindex="-1" aria-hidden="true">
+		<div class="modal-dialog modal-lg modal-dialog-centered">
+			<div class="modal-content">
+				<div class="modal-header py-2">
+					<div>
+						<h6 class="modal-title cctv-lightbox-title mb-0"></h6>
+						<small class="text-muted cctv-lightbox-time"></small>
+					</div>
+					<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{{ StaticText.Close }}"></button>
+				</div>
+				<div class="modal-body p-0 bg-dark text-center">
+					<img class="cctv-lightbox-img" src="" alt="" title="{{ T.Animation }}">
+				</div>
+			</div>
+		</div>
+	</div>
 </div>

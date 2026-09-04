@@ -768,6 +768,8 @@ hr.divder{
 .cctv-image { position: relative; aspect-ratio: 4 / 3; overflow: hidden; }
 .cctv-image img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .cctv-type-badge { position: absolute; left: .5rem; top: .5rem; opacity: .85; }
+.cctv-image.cctv-zoom { cursor: zoom-in; }
+.cctv-lightbox-img { max-width: 100%; max-height: 80vh; object-fit: contain; }
 .notification-list img { width: 48px; height: 48px; object-fit: cover; }
 @media print {
     .header, .sidebar, .cctv-sidebar, .cctv-actions, .stat-filters, .stat-actions, .page-breadcrumb, .footer, .tabulator-export, .tabulator-search-input { display: none !important; }
@@ -930,7 +932,7 @@ body[app-main] .cctv-page .cctv-title { font-size: 15px; }
 body[app-main] .cctv-page .cctv-item .fw-semibold { font-size: 12px; }
 body[app-main] .cctv-page .cctv-basin { font-size: 11px; }
 body[app-main] .cctv-page .cctv-image { aspect-ratio: 16 / 10; }
-body[app-main] .cctv-page .cctv-image img[src$="blank.png"] { object-fit: contain; padding: 22%; opacity: .6; }
+body[app-main] .cctv-page .cctv-image img[src$="blank.png"] { object-fit: cover; padding: 0; }
 /* statistics */
 body[app-main] .statistics-page .stat-card .dash-card-title { font-size: 11px; }
 

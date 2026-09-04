@@ -1,3 +1,4 @@
+{% from "dashboard/main/config_field.html" import render_field with context %}
 <div class="app-json-data" data-field="CameraConfigures">
     <div class="row">
         <div class="col-12 d-none">
@@ -82,10 +83,23 @@
                         </div>
                     </div>
                     
-                    <div class="col-md-4 mb-2">
+                    {# YOLO weights upload (statictext.CameraModelField): the file goes to
+                       /api/cameras/modelupload right away, Meta keeps only the file name #}
+                    <div class="col-md-5 mb-2">
                         <div class="form-group field-basic" data-field="TrainedModel">
-                            <label class="small mb-2" for="TrainedModel">{{ StaticText.CameraField.TrainedModel }}</label>
-                            <input type="text" class="form-control form-control-sm" id="TrainedModel" name="TrainedModel">
+                            {{ render_field("TrainedModel", StaticText.CameraModelField) }}
+                        </div>
+                    </div>
+
+                    <div class="col-md-3 mb-2">
+                        <div class="form-group field-basic" data-field="ModelImageSize">
+                            <label class="small mb-2" for="ModelImageSize">{{ StaticText.CameraField.ModelImageSize }}</label>
+                            <select class="selectTwo form-control-sm" id="ModelImageSize" name="ModelImageSize">
+                                {% for key, value in StaticText.ModelImageSizes.items() %}
+                                <option value="{{ key }}">{{ value }}</option>
+                                {% endfor %}
+                            </select>
+                            <small class="text-muted d-block mt-1">{{ StaticText.CameraField.ModelImageSizeHelp }}</small>
                         </div>
                     </div>
 

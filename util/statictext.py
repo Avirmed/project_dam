@@ -10,12 +10,25 @@ APP_STATIC_PATH = os.path.join(APP_DIRECTORY, "static")
 # tmp/ is reserved for chunked front-end uploads (*.partN, assembled files);
 # /main/cleartmp drops leftovers older than 24 h.
 APP_TMP_PATH = os.path.join(APP_DIRECTORY, "tmp")
-# Private worker data (csv/, security_in/, images_out/): outside static/ so it is
-# never web-served; git-ignored. Public worker output goes under static/data/.
-APP_DATA_PATH = os.path.join(APP_DIRECTORY, "data")
+# Private worker data, laid out per station like the legacy server's folder:
+#   RTU Data/<SiteCode>/csv/<LoggerID>/           CSV Logger files
+#   RTU Data/<SiteCode>/<CameraID>/images/        camera snapshots (archive)
+#   RTU Data/<SiteCode>/<CameraID>/images_temp/   newest SNAPSHOT_TEMP_COUNT copies
+#   RTU Data/<SiteCode>/<CameraID>/images_out/    images queued for the FTP upload
+#   RTU Data/_security_in/                        security-camera event drop folder
+#   RTU Data/_unassigned/<CameraID>/              cameras without a station
+# Outside static/ so it is never web-served; git-ignored. RTU_DATA_PATH in .env
+# moves it elsewhere. Public worker output goes under static/data/.
+APP_DATA_PATH = os.getenv("RTU_DATA_PATH") or os.path.join(APP_DIRECTORY, "RTU Data")
+APP_DATA_SECURITY_DIR = "_security_in"
+APP_DATA_UNASSIGNED_DIR = "_unassigned"
 # Station TLS certificates / private keys live outside static/ so they are never
 # web-served. Excluded from the /main/init reflection (filesystem path).
 APP_CERT_PATH = os.path.join(APP_DIRECTORY, "certs")
+# Trained YOLO weights uploaded per camera (ai/trained_models/<CameraID>.pt),
+# read by the separate ai/detect.py interpreter. Filesystem path: excluded from
+# the /main/init reflection like the other APP_*_PATH constants.
+APP_MODEL_PATH = os.path.join(APP_DIRECTORY, "ai", "trained_models")
 APP_KEY = util.generate_key("KEY_", APP_NAME)
 APP_IV = util.generate_key("IV_", APP_NAME)
 APP_COLOR = "#0d6efd"
@@ -583,12 +596,14 @@ FrontPage = {
         "Title": "CCTV",
         "Stations": "Stations",
         "Search": "Search station",
-        "CameraType": "Camera_Type - ประเภท",
+        "CameraType": "Camera type",
         "NoCameras": "No cameras configured for this station",
         "NoSnapshot": "No snapshot yet",
         "Snapshot": "Snapshot",
         "TakenAt": "Taken at",
         "Download": "Download",
+        "Enlarge": "Click to enlarge",
+        "Animation": "Animation of the latest snapshots",
         "PrintReport": "Print Report",
         "SelectStation": "Select a station on the left",
         "Cameras": "camera(s)",
@@ -660,6 +675,10 @@ StationDataKeys = {
     "Velocity": "VELOCITY",  # surface velocity [m/s] from the device / camera
     "Flow": "FLOW",  # discharge [m³/s]; computed (A·k·v) when the device does not send it
     "Area": "AREA",  # wetted area [m²] used for the computed FLOW
+    # camera analysis (services/ai_worker.py), text / flag values - kept out of the charts
+    "Direction": "DIRECTION",  # surface flow direction: left / right (as seen by the camera)
+    "WaterColor": "COLOR",  # dominant water colour #rrggbb
+    "RainFlag": "RAIN_FLAG",  # 1 when the clip shows rain (vertical motion), else 0
 }
 
 # Labels / units of the StationData.Data columns shown as grid columns and
@@ -671,11 +690,14 @@ StationDataParameters = {
     StationDataKeys["Velocity"]: {"text": "Velocity", "unit": "m/s"},
     StationDataKeys["Flow"]: {"text": "Flow rate", "unit": "m³/s"},
     StationDataKeys["Area"]: {"text": "Wetted area", "unit": "m²"},
+    StationDataKeys["Direction"]: {"text": "Flow direction", "unit": ""},
+    StationDataKeys["WaterColor"]: {"text": "Water colour", "unit": ""},
+    StationDataKeys["RainFlag"]: {"text": "Rain detected", "unit": ""},
 }
 
 # Settings rows rendered as an on/off switch on the dashboard Settings page
 # (value stored as "1" / "0"); any name ending in _ENABLED is treated the same.
-BooleanSettings = ["WORKER_ENABLED", "SIMULATOR_ENABLED"]
+BooleanSettings = ["WORKER_ENABLED"]
 
 # Retention defaults (days, 0 = keep forever) used when the Settings rows are
 # missing; applied daily by services/retention.py.
@@ -683,12 +705,29 @@ DATA_RETENTION_DAYS = 730  # tbl_station_data rows
 RAW_RETENTION_DAYS = 90  # raw device payload inside those rows
 HTTPLOG_RETENTION_DAYS = 90  # delivered / failed HTTP logs
 EVENTLOG_RETENTION_DAYS = 365  # security events + images
-CSV_RETENTION_DAYS = 30  # CSV Logger files under data/csv (already sent by FTP)
-SENT_IMAGE_RETENTION_DAYS = 7  # delivered camera images under data/images_out/*/sent
+CSV_RETENTION_DAYS = (
+    30  # CSV Logger files under RTU Data/<SiteCode>/csv (already sent by FTP)
+)
+SENT_IMAGE_RETENTION_DAYS = (
+    7  # delivered camera images under RTU Data/<SiteCode>/<CameraID>/images_out/sent
+)
 
 # Camera snapshot refresh for the front CCTV page (services/snapshot.py);
 # fallback when the SNAPSHOT_INTERVAL_MINUTES row is missing, 0 = off.
 SNAPSHOT_INTERVAL_MINUTES = 5
+# Pictures kept per camera in RTU Data/<SiteCode>/<CameraID>/images/ (oldest
+# deleted after each download); fallback for the SNAPSHOT_KEEP_COUNT row,
+# 0 = keep all.
+SNAPSHOT_KEEP_COUNT = 100
+# AI worker: frames extracted from each RTSP clip into images_temp/1..N.jpg
+# (optical-flow input, animated into static/data/cameras/<CameraID>/image.gif);
+# fallback for the AI_FRAME_COUNT row.
+AI_FRAME_COUNT = 10
+
+# AI worker (services/ai_worker.py): camera analysis every N minutes (0 = off)
+# and the length of the RTSP clip it records per camera (raw_temp/).
+AI_WORKER_INTERVAL_MINUTES = 15
+AI_CLIP_SECONDS = 2
 
 # Fallback when the DATA_TIMEOUT_MINUTES row is missing from Settings: a station
 # whose latest payload is older than this is shown as "No connection".
@@ -769,7 +808,7 @@ WorkerJobs = {
     "snapshot": "Camera snapshot",
     "sysinfo": "System monitor",
     "retention": "Data retention",
-    "simulator": "Demo data simulator",
+    "ai_worker": "AI worker (camera analysis)",
 }
 
 ConnectionModes = {
@@ -886,6 +925,23 @@ SensorFormTab = {
     "rainlevel_configures": "Rain Level",
 }
 
+# Image-analysis detection region shared by the Velocity / Garbage / Rain Level
+# tabs: two corner points (pixels) per row, as on the design (Point 1 x/y, Point 2 x/y).
+SensorPointsTable = {
+    "headers": ["Point 1 x", "Point 1 y", "Point 2 x", "Point 2 y"],
+    "columns": ["p1x", "p1y", "p2x", "p2y"],
+}
+
+# Which pixel row a Sampling table refers to (AI worker, ai/detect.py level_from)
+LevelFroms = {
+    "frame": "Full frame",
+    "crop": "Detection region",
+}
+
+# Water Level tab: Sampling tables per camera (several rows = several gauges, the
+# lowest reading wins), the optional region handed to the YOLO model (empty =
+# whole frame) and whether the Sampling pixel rows were surveyed on the full
+# frame or on that region.
 SensorWaterLevelConfigures = [
     {
         "fields": {
@@ -897,16 +953,23 @@ SensorWaterLevelConfigures = [
                 "columns": ["Sampling", "CameraID", "SamplingID"],
                 "align": "end",
             },
+            "Points": {
+                "title": "Detection region (optional)",
+                "placeholder": "",
+                "table": True,
+                "headers": SensorPointsTable["headers"],
+                "columns": SensorPointsTable["columns"],
+                "align": "end",
+                "help": "Region of the camera frame given to the water-level model; leave empty for the whole frame.",
+            },
+            "LevelFrom": {
+                "title": "Sampling pixel rows refer to",
+                "placeholder": "",
+                "select": LevelFroms,
+            },
         }
     }
 ]
-
-# Image-analysis detection region shared by the Velocity / Garbage / Rain Level
-# tabs: two corner points (pixels) per row, as on the design (Point 1 x/y, Point 2 x/y).
-SensorPointsTable = {
-    "headers": ["Point 1 x", "Point 1 y", "Point 2 x", "Point 2 y"],
-    "columns": ["p1x", "p1y", "p2x", "p2y"],
-}
 
 SensorVelocityConfigures = [
     {
@@ -918,6 +981,16 @@ SensorVelocityConfigures = [
                 "headers": SensorPointsTable["headers"],
                 "columns": SensorPointsTable["columns"],
                 "align": "end",
+            },
+            # Real-world width (m) of the detection region: optical-flow pixel
+            # displacement is scaled by Length / region width to get m/s.
+            "Length": {
+                "title": "Region length (m)",
+                "placeholder": "",
+                "type": "number",
+                "min": 0,
+                "step": "0.01",
+                "help": "Distance in metres covered by the detection region horizontally (Point 1 x to Point 2 x).",
             },
             # Level-depending velocity calibration: coefficient (k) and offset
             # applied when the water level reaches the given level.
@@ -1056,6 +1129,12 @@ CameraTypes = {
     "Security": "Security",
 }
 
+# YOLO inference size per camera model (Camera configures form)
+ModelImageSizes = {
+    "640": "640 px",
+    "1024": "1024 px",
+}
+
 CameraSources = {
     "FTP": "FTP",
     "RTSP": "RTSP ( Real-Time Streaming Protocol )",
@@ -1082,6 +1161,10 @@ CameraField = {
     "Resolution": "Resolution",
     "RSTP_IP": "RSTP IP",
     "TrainedModel": "Profile (Model Trained)",
+    "TrainedModelHelp": "YOLO weights (.pt) used by the AI water-level detector; stored as ai/trained_models/<CameraID>.pt. Save the camera first.",
+    "TrainedModelRemove": "Remove the uploaded model file",
+    "ModelImageSize": "Model image size",
+    "ModelImageSizeHelp": "Inference size the model was trained with (640 for most stations, 1024 for the TS.KB type).",
     "Port": "Port",
     "Username": "Username",
     "Password": "Password",
@@ -1097,7 +1180,7 @@ CameraField = {
     "LastUploadResult": "Last upload result",
     "SnapshotImage": "Latest snapshot",
     "SnapshotTime": "Snapshot taken at",
-    "SnapshotHelp": "Refreshed by the worker every SNAPSHOT_INTERVAL_MINUTES from the ISAPI snapshot link; shown on the front CCTV page.",
+    "SnapshotHelp": "Refreshed by the worker every SNAPSHOT_INTERVAL_MINUTES from the ISAPI snapshot link into RTU Data/<SiteCode>/<CameraID>/images and shown on the front CCTV page (the AI worker animation takes precedence when present).",
     "Onvif": "Onvif (ONVIF Profile G Specification )",
     "Onvif_IP": "Onvif IP",
     "Onvif_Port": "Port",
@@ -1105,6 +1188,19 @@ CameraField = {
     "Onvif_Password": "Password",
     "Status": "Status",
     "Remark": "Remark",
+}
+
+# File field of the camera form (rendered by dashboard/main/config_field.html):
+# uploads go straight to `upload`, the remove button POSTs `remove`, and only
+# the stored file name lives in Meta.CameraConfigures.configs.TrainedModel.
+CameraModelField = {
+    "title": CameraField["TrainedModel"],
+    "type": "file",
+    "accept": ".pt",
+    "upload": "/api/cameras/modelupload",
+    "remove": "/api/cameras/modeldelete",
+    "help": CameraField["TrainedModelHelp"],
+    "remove_title": CameraField["TrainedModelRemove"],
 }
 
 CameraFormTab = {
@@ -1154,6 +1250,9 @@ SamplingField = {
     "SamplingName": "Sampling Name",
     "SamplingDate": "วันที่สร้าง (Creation Date)",
     "SamplingConfigures": "Camera Configures",
+    "PixelY": "Pixel Y (row on the frame)",
+    "Level": "Water level (m)",
+    "TableHelp": "Surveyed pairs of camera pixel row and water level; the detector fits a cubic spline through them (rows sorted by pixel).",
     "Status": "Status",
     "Remark": "Remark",
 }
@@ -1167,13 +1266,16 @@ SamplingConfigures = [
     {
         "title": SamplingField["SamplingConfigures"],
         "fields": {
+            # Calibration table used by ai/calibration.py: x = pixel row of the
+            # waterline on the camera frame, y = the water level surveyed for it.
             "CameraConfigures": {
                 "title": "Camera Configures",
                 "placeholder": "",
                 "table": True,
-                "headers": ["x-axis", "y-axis"],
+                "headers": [SamplingField["PixelY"], SamplingField["Level"]],
                 "columns": ["x", "y"],
                 "align": "start",
+                "help": SamplingField["TableHelp"],
             },
         },
     },
@@ -1350,9 +1452,21 @@ EventLogField = {
 }
 
 EventLogStatuses = {
-    0: {"text": "Pending", "class": "app-badge badge text-bg-secondary", "pill": "status-pill status-pill-pending"},
-    1: {"text": "Approve", "class": "app-badge badge text-bg-danger", "pill": "status-pill status-pill-approve"},
-    2: {"text": "Reject", "class": "app-badge badge text-bg-dark", "pill": "status-pill status-pill-reject"},
+    0: {
+        "text": "Pending",
+        "class": "app-badge badge text-bg-secondary",
+        "pill": "status-pill status-pill-pending",
+    },
+    1: {
+        "text": "Approve",
+        "class": "app-badge badge text-bg-danger",
+        "pill": "status-pill status-pill-approve",
+    },
+    2: {
+        "text": "Reject",
+        "class": "app-badge badge text-bg-dark",
+        "pill": "status-pill status-pill-reject",
+    },
 }
 # Row action menu of the Event Log grids (one dropdown instead of two buttons)
 EventLogActions = {"Menu": "Action", "SetStatus": "Set status"}
@@ -1518,6 +1632,9 @@ Messages = {
     "InvalidFileType": "This file type is not allowed.",
     "TokenGenerated": "A new token has been generated. Save the form to apply it.",
     "CertUploaded": "Certificate file uploaded successfully.",
+    "ModelUploaded": "Model file uploaded successfully.",
+    "ModelDeleted": "Model file removed.",
+    "DeleteFileQuestion": "Remove this file?",
     "ApiConfigInvalid": "REST API settings are invalid.",
     "ApiPortInvalid": "Listener port must be a number between 0 and 65,535.",
     "ApiSourceInvalid": "Custom source must be a comma-separated list of IP addresses or CIDR ranges.",
