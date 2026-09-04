@@ -442,6 +442,7 @@ function initForm(form) {
     });
 
     applyShowWhen(form);
+    syncConfigColors(form);
 }
 
 function updateEditForm(tmpForm, jsonData, updateIMG = false) {
@@ -670,6 +671,7 @@ function updateEditForm(tmpForm, jsonData, updateIMG = false) {
     });
 
     applyShowWhen(tmpForm);
+    syncConfigColors(tmpForm);
 }
 
 function serializeEditForm(form) {
@@ -1295,87 +1297,122 @@ function loadImageAsBase64(url) {
     });
 }
 
-async function exportPdfWithImages(table, tableName, imageSize = 20) {
-    let imageField = "Image";
-
-    const columns = table.getColumnDefinitions();
-    const visibleCols = columns.filter(col => col.visible !== false && col.title !== undefined);
-    const headers = visibleCols.map(col => ({ header: col.title, dataKey: col.field }));
-
-    const rows = table.getRows();
-    const data = [];
-    let i = 1;
-
-    for (const row of rows) {
-        const rowData = row.getData();
-        const rowElement = row.getElement();
-        const imgEl = rowElement.querySelector("img");
-
-        let processedRow = {};
-
-        for (const col of headers) {
-            const field = col.dataKey;
-
-            if (field === imageField && imgEl) {
-                const canvas = document.createElement("canvas");
-                canvas.width = imgEl.naturalWidth;
-                canvas.height = imgEl.naturalHeight;
-                const ctx = canvas.getContext("2d");
-                ctx.drawImage(imgEl, 0, 0);
-                const base64 = canvas.toDataURL("image/png");
-                processedRow[field] = { content: base64 };
-            } else {
-                if (field === "rownum") {
-                    processedRow[field] = i++;
-                } else {
-                    processedRow[field] = rowData[field];
+// jsPDF font with Thai + Latin glyphs and real metrics (the theme's "Arial" has
+// neither: rows collapse to zero height and Thai text disappears). Sarabun (OFL,
+// static/fonts) is fetched once, cached, and registered in the document's VFS.
+const PDF_FONT = { name: "Sarabun", files: { normal: "Sarabun-Regular.ttf", bold: "Sarabun-Bold.ttf" }, cache: {} };
+async function ensurePdfFont(doc) {
+    try {
+        for (const style of Object.keys(PDF_FONT.files)) {
+            const file = PDF_FONT.files[style];
+            if (!PDF_FONT.cache[file]) {
+                const buf = await (await fetch(`/static/fonts/${file}`)).arrayBuffer();
+                let bin = "";
+                const bytes = new Uint8Array(buf);
+                for (let i = 0; i < bytes.length; i += 0x8000) {
+                    bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
                 }
+                PDF_FONT.cache[file] = btoa(bin);
             }
+            doc.addFileToVFS(file, PDF_FONT.cache[file]);
+            doc.addFont(file, PDF_FONT.name, style);
         }
-
-        data.push(processedRow);
+        return PDF_FONT.name;
+    } catch (e) {
+        return "helvetica"; // Latin-only fallback, never blocks the export
     }
+}
 
-    const doc = new jsPDF({ orientation: "landscape" });
-
-    doc.autoTable({
-        styles: {
-            font: "Arial",
-            fontStyle: "normal",
-        },
-        bodyStyles: {
-            minCellHeight: imageSize + 4,
-        },
-        columnStyles: {
-            [imageField]: {
-                cellWidth: imageSize + 8,
-            }
-        },
-        columns: headers,
-        body: data,
-        didParseCell: function (data) {
-            if (data.column.dataKey === imageField && !data.cell.text.includes("Image")) {
-                data.cell.text = "";
-            }
-        },
-        didDrawCell: function (data) {
-            if (data.column.dataKey === imageField) {
-                const base64 = data.cell.raw?.content;
-                if (base64) {
-                    const imgHeight = imageSize;
-                    const imgWidth = imageSize;
-
-                    data.doc.addImage(base64, "PNG", data.cell.x + 2, data.cell.y + 2, imgWidth, imgHeight);
-
-                    if (data.row.height < imageSize + 4) {
-                        data.row.height = imageSize + 4;
-                    }
-                }
-            }
+// PDF export of a Tabulator grid (landscape A4, jsPDF + autoTable, Sarabun for
+// Thai text). Robust by design:
+//   - only exportable columns (visible, download !== false, a real title)
+//   - HTML cells (badges, links) are reduced to their text
+//   - images are embedded only when the <img> really loaded (a 404 placeholder or a
+//     still-loading picture would make jsPDF throw "corrupt PNG"); addImage is
+//     guarded so one bad picture never aborts the whole file
+//   - rows = what the user sees (the current page, filtered / sorted)
+//   - a title line with the table name, the date and the row count
+async function exportPdfWithImages(table, tableName, imageSize = 16) {
+    const columns = table.getColumnDefinitions().filter((col) => col.visible !== false && col.download !== false && col.field && String(col.title || "").trim() !== "");
+    const headers = columns.map((col) => ({ header: String(col.title).replace(/<[^>]+>/g, "").trim(), dataKey: col.field }));
+    const imageFields = columns.filter((col) => /image/i.test(col.field)).map((col) => col.field);
+    const plainText = (v) => {
+        if (v === null || v === undefined) return "";
+        if (typeof v === "object") return JSON.stringify(v);
+        const str = String(v);
+        return /<[a-z][\s\S]*>/i.test(str) ? $("<div>").html(str).text().trim() : str;
+    };
+    const imageData = (imgEl) => {
+        if (!imgEl || !imgEl.complete || !imgEl.naturalWidth || /blank\.png$/.test(imgEl.src)) return null;
+        try {
+            const size = 96;
+            const canvas = document.createElement("canvas");
+            const ratio = imgEl.naturalWidth / imgEl.naturalHeight;
+            canvas.width = ratio >= 1 ? size : Math.round(size * ratio);
+            canvas.height = ratio >= 1 ? Math.round(size / ratio) : size;
+            canvas.getContext("2d").drawImage(imgEl, 0, 0, canvas.width, canvas.height);
+            return canvas.toDataURL("image/jpeg", 0.85);
+        } catch (e) {
+            return null; // cross-origin or tainted canvas
         }
+    };
+
+    const rows = table.getRows("active");
+    const body = rows.map((row, i) => {
+        const rowData = row.getData();
+        const out = {};
+        headers.forEach((col) => {
+            const field = col.dataKey;
+            if (field === "rownum") {
+                out[field] = i + 1;
+            } else if (imageFields.includes(field)) {
+                const cell = row.getCell(field);
+                const img = cell && cell.getElement() ? cell.getElement().querySelector("img") : null;
+                out[field] = { content: "", image: imageData(img) };
+            } else {
+                out[field] = plainText(rowData[field]);
+            }
+        });
+        return out;
     });
 
-    doc.save(`${tableName}.pdf`);
+    const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+    const font = await ensurePdfFont(doc);
+    doc.setFont(font, "normal");
+    doc.setFontSize(11);
+    doc.text(String(tableName), 10, 10);
+    doc.setFontSize(8);
+    doc.setTextColor(120);
+    doc.text(`${moment().format("YYYY-MM-DD HH:mm")} · ${rows.length} rows`, 10, 15);
+    doc.setTextColor(0);
+
+    const columnStyles = {};
+    imageFields.forEach((f) => (columnStyles[f] = { cellWidth: imageSize + 6 }));
+    doc.autoTable({
+        startY: 19,
+        margin: { left: 10, right: 10 },
+        styles: { font: font, fontStyle: "normal", fontSize: 7.5, cellPadding: 1.6, overflow: "linebreak", valign: "middle" },
+        headStyles: { fillColor: [243, 244, 246], textColor: 40, fontStyle: "bold", lineWidth: 0.1, lineColor: [220, 222, 226] },
+        // NB: never pass minCellHeight: undefined - autoTable merges it over its default
+        // and every row height becomes NaN (all rows drawn on one line)
+        bodyStyles: Object.assign({ lineWidth: 0.1, lineColor: [226, 228, 232] }, imageFields.length ? { minCellHeight: imageSize + 3 } : {}),
+        alternateRowStyles: { fillColor: [250, 250, 251] },
+        columnStyles: columnStyles,
+        columns: headers,
+        body: body,
+        didDrawCell: function (data) {
+            if (data.section !== "body" || !imageFields.includes(data.column.dataKey)) return;
+            const raw = data.cell.raw;
+            if (!raw || !raw.image) return;
+            try {
+                data.doc.addImage(raw.image, "JPEG", data.cell.x + 1.5, data.cell.y + 1.5, imageSize, imageSize);
+            } catch (e) {
+                // a single unreadable picture must not abort the export
+            }
+        },
+    });
+
+    doc.save(`${tableName}_${moment().format("YYYYMMDD_HHmm")}.pdf`);
 }
 
 $(document).on("click", ".tabulator-export button", function (e) {
@@ -1642,6 +1679,11 @@ $(document).on("click", ".fileType", function (e) {
 
 });
 
+// Option label for select2Ajax: `textField` is a column name or a function(row).
+function select2Label(row, textField) {
+    return typeof textField === "function" ? textField(row) : row[textField];
+}
+
 function select2Ajax(inputEl, valueField, textField, targetEl = null, targetField = '') {
     if (inputEl.length == 0) {
         return;
@@ -1657,7 +1699,7 @@ function select2Ajax(inputEl, valueField, textField, targetEl = null, targetFiel
             inputEl.html('');
             inputEl.append(new Option(firstOptionText, '', false, false));
             jsonData.data.map((data, i) => {
-                inputEl.append(new Option(data[textField], data[valueField], false, false));
+                inputEl.append(new Option(select2Label(data, textField), data[valueField], false, false));
             });
             inputEl.select2();
             if (inputEl.attr("data-selectid")) {
@@ -1697,7 +1739,7 @@ function select2Ajax(inputEl, valueField, textField, targetEl = null, targetFiel
                         inputEl.html('');
                         inputEl.append(new Option(firstOptionText, '', false, false));
                         jsonData.data.map((data, i) => {
-                            inputEl.append(new Option(data[textField], data[valueField], false, false));
+                            inputEl.append(new Option(select2Label(data, textField), data[valueField], false, false));
                         });
 
                         inputEl.select2();
@@ -1729,7 +1771,7 @@ function select2Ajax(inputEl, valueField, textField, targetEl = null, targetFiel
 }
 
 function initArcGIS(mapContainerID, latitudeEl, longitudeEl, zoomEl) {
-    const ICON_SIZE = 30;
+    const ICON_SIZE = 25;
     const TOUCH_MOVE_THRESHOLD = 20;
     const ZOOM_UPDATE_DELAY = 200;
 
@@ -1929,7 +1971,7 @@ function initArcGIS(mapContainerID, latitudeEl, longitudeEl, zoomEl) {
 
 function mapMonitor(mapContainerID) {
     const RELOAD_TIME_INTERVAL = 15 * 60 * 1000;
-    const ICON_SIZE = 30;
+    const ICON_SIZE = 25;
     const TOUCH_MOVE_THRESHOLD = 20;
 
     const mapContainer = $(`#${mapContainerID}`).parent();
@@ -2028,10 +2070,48 @@ function mapMonitor(mapContainerID) {
         function buildPopupContent(e) {
             const data = e.graphic.attributes;
             const content = $(`<div class="map-popup-info" />`);
+            const ST = LOCAL_VARIABLES.StaticText;
+            const P = (ST.FrontPage || {}).Popup || {};
+            const K = ST.StationDataKeys || {};
+            const U = ST.StationDataParameters || {};
+            const type = (ST.WaterLevelTypes || {})[data.WaterLevelType] || {};
+            const wd = data.WaterLevelData || {};
+            const values = wd.Values || {};
+            const esc = (s) => $("<div>").text(s == null ? "" : String(s)).html();
+            const num = (key, digits) => {
+                const v = values[key];
+                return v == null || v === "" || isNaN(Number(v)) ? "-" : Number(v).toFixed(digits);
+            };
+            const unit = (key) => (U[key] || {}).unit || "";
+            const tile = (label, key, digits, cls) => `
+                <div class="map-popup-tile ${cls || ""}">
+                    <div class="k">${esc(label)}</div>
+                    <div class="v">${num(key, digits)} <span class="u">${esc(unit(key))}</span></div>
+                </div>`;
+            const canOpen = !!LOCAL_VARIABLES.Authorization;
+            const ago = wd.RecordTime ? moment(wd.RecordTime).fromNow() : "";
 
             content.html(`
-                <img class="img-thumbnail object-fit-cover rounded-1 mb-2 p-0" src="${data.ImageMD}" style="width: 100%; height: 160px;">
-                <p>${data.Address || ''}</p>
+                <div class="map-popup-hero">
+                    <img src="${data.ImageMD}" alt="" onerror="this.onerror=null;this.src='${ST.Images.Blank}'">
+                    <div class="map-popup-hero-overlay">
+                        <span class="map-popup-status" style="background:${type.color || "#7f7f7f"}">${esc(type.text_en || "")}</span>
+                        <span class="map-popup-time" title="${esc(wd.RecordTime || "")}">${wd.RecordTime ? `${esc(P.LastUpdate)}: ${esc(ago)}` : esc(P.NoData)}</span>
+                    </div>
+                </div>
+                ${wd.RecordTime ? `
+                <div class="map-popup-grid">
+                    ${tile(P.WaterLevel, K.WaterLevel, 2, "primary")}
+                    ${tile(P.FlowRate, K.Flow, 2)}
+                    ${tile(P.VelocityShort || P.Velocity, K.Velocity, 2)}
+                    ${tile(P.Rainfall, K.Rainfall, 2)}
+                </div>` : ""}
+                ${data.Address ? `<div class="map-popup-address">${ST.Icon.Location || ""}<span>${esc(data.Address)}</span></div>` : ""}
+                ${canOpen ? `
+                <div class="map-popup-actions">
+                    <a class="btn btn-sm btn-primary flex-fill" href="/station/${data.StationID}">${esc(P.More)}</a>
+                    <a class="btn btn-sm btn-outline-secondary flex-fill" href="/statistics/${data.StationID}">${esc(P.Statistics)}</a>
+                </div>` : ""}
             `);
 
             return content.get(0);
@@ -2056,7 +2136,7 @@ function mapMonitor(mapContainerID) {
                 },
                 attributes: data,
                 popupTemplate: {
-                    title: `<i class="bi bi-circle-fill info-color info-color-${data.WaterLevelType}"></i> ${data.SiteName} (${data.SiteCode})`,
+                    title: `${data.SiteCode} · ${data.SiteName}`, // status is shown by the pill in the popup body
                     content: buildPopupContent
                 }
             });
@@ -2147,6 +2227,8 @@ function mapMonitor(mapContainerID) {
             });
         }
 
+        window.mapView = view; // exposed for page scripts (e.g. focusing a station) and UI tests
+
         view.when(() => {
             if (reloadInterval) clearInterval(reloadInterval);
             reloadInterval = setInterval(() => siteDataUpdate(false), RELOAD_TIME_INTERVAL);
@@ -2179,4 +2261,14 @@ $(document).on("click", "[data-close-dropdown]", function (e) {
         const bsDropdown = bootstrap.Dropdown.getOrCreateInstance(toggleButton);
         bsDropdown.hide();
     }
+});
+
+function syncConfigColors(scope) {
+    $(scope || document).find("input[type='color'].form-control-color-input").each(function () {
+        $(this).next("small").text($(this).val() || "");
+    });
+}
+
+$(document).on("input change", "form input[type='color'].form-control-color-input", function () {
+    $(this).next("small").text($(this).val() || "");
 });

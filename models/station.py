@@ -105,6 +105,181 @@ class Station(db.Model):
             sensor = Sensor.query.get(int(code))
         return sensor
 
+    @classmethod
+    def live_status(cls, requestData):
+        """Active stations in the current user's scope with their live status:
+        each row gets WaterLevelType / WaterLevelData from its newest inbound
+        payload (StationData.evaluate_status; older than DATA_TIMEOUT_MINUTES
+        = "No connection"). Used by the public map (/api/stations/sites) and
+        the dashboard overview (/main/summary)."""
+        from models.settings import Settings
+        from models.stationdata import StationData
+        from models.team import Team
+
+        requestData = dict(requestData or {})
+        if not isinstance(requestData.get("filters"), dict):
+            requestData["filters"] = {}
+        requestData["filters"]["Status"] = 1
+
+        # Staff / Guest only see their teams' stations (fail-closed without a team).
+        Team.apply_station_scope(requestData)
+
+        jsonResult = cls.list(requestData)
+
+        timeout_minutes = Util.safe_int(
+            Settings.load_settings().get("DATA_TIMEOUT_MINUTES"),
+            statictext.DATA_TIMEOUT_MINUTES,
+        )
+        latest = StationData.latest_by_station(
+            [row["StationID"] for row in jsonResult["data"]]
+        )
+        for row in jsonResult["data"]:
+            row["WaterLevelType"], row["WaterLevelData"] = StationData.evaluate_status(
+                row.get("Meta"), latest.get(row["StationID"]), timeout_minutes
+            )
+            # The map is public: never ship the station configuration (REST API
+            # credentials, FTP settings) to the browser - thresholds are applied here.
+            row.pop("Meta", None)
+        return jsonResult
+
+    @classmethod
+    def public_detail(cls, station_id):
+        """Everything the public station page shows (front design slide 8):
+        identity, specifications (Point 1 / 2 thresholds), the newest measured
+        values with their status, and rain accumulated over 1 / 2 / 3 days.
+        None when the station does not exist / is inactive."""
+        from models.settings import Settings
+        from models.stationdata import StationData
+
+        station = cls.query.filter(cls.StationID == station_id, cls.Status == 1).first()
+        if station is None:
+            return None
+
+        meta = station.Meta or {}
+        configures = (meta.get("StationConfigures") or {}).get("configs") or {}
+        timeout_minutes = Util.safe_int(
+            Settings.load_settings().get("DATA_TIMEOUT_MINUTES"),
+            statictext.DATA_TIMEOUT_MINUTES,
+        )
+        latest = StationData.latest_by_station([station.StationID]).get(
+            station.StationID
+        )
+        level, water_data = StationData.evaluate_status(meta, latest, timeout_minutes)
+        keys = statictext.StationDataKeys
+
+        values = (water_data or {}).get("Values") or {}
+        return {
+            "StationID": station.StationID,
+            "SiteCode": station.SiteCode,
+            "SiteName": station.SiteName,
+            "DeviceID": station.DeviceID,
+            "ProjectName": station.project.ProjectName if station.project else None,
+            "WatershedName": (
+                station.riverbasin.WatershedName if station.riverbasin else None
+            ),
+            "Region": statictext.Regions.get(station.Region),
+            "SiteInstall": statictext.SiteInstalls.get(station.SiteInstall),
+            "MeasuredValue": statictext.MeasuredValues.get(station.MeasuredValue),
+            "Address": station.Address,
+            "Latitude": station.Latitude,
+            "Longitude": station.Longitude,
+            "Image": station.getImage("lg"),
+            "ImageMD": station.getImage("md"),
+            "Specifications": {
+                key: configures.get(key)
+                for block in statictext.StationConfigures
+                for key in block.get("fields", {})
+            },
+            "WaterLevelType": level,
+            "RecordTime": (water_data or {}).get("RecordTime"),
+            "Values": {
+                "WaterLevel": values.get(keys["WaterLevel"]),
+                "WaterLevel2": values.get(keys["WaterLevel2"]),
+                "FlowRate": values.get(keys["Flow"]),
+                "Velocity": values.get(keys["Velocity"]),
+                "Rainfall": values.get(keys["Rainfall"]),
+            },
+            "RainAccumulation": [
+                StationData.rain_accumulation(station.StationID, days)
+                for days in (1, 2, 3)
+            ],
+            "LatestRainfall": StationData.latest_rainfall(station.StationID),
+        }
+
+    @classmethod
+    def with_cameras(cls, requestData):
+        """Active stations in scope, each with its enabled cameras (matched by
+        Camera.Meta.CameraConfigures.configs.StationID), for the CCTV page.
+        Only public camera fields are returned (no stream / ISAPI credentials).
+        filters: ProjectID, RiverBasinID, Region, CameraType; search."""
+        from models.camera import Camera
+
+        requestData = dict(requestData or {})
+        filters = (
+            requestData.get("filters")
+            if isinstance(requestData.get("filters"), dict)
+            else {}
+        )
+        camera_type = str(filters.pop("CameraType", "") or "").strip()
+        requestData["filters"] = filters
+        stations = cls.live_status(requestData)["data"]
+
+        by_station = {}
+        for camera in (
+            Camera.query.filter(Camera.Status == 1).order_by(Camera.CameraID).all()
+        ):
+            cfg = camera.configs()
+            station_id = Util.safe_int(cfg.get("StationID"), None)
+            if station_id is None:
+                continue
+            if camera_type and str(cfg.get("CameraType") or "") != camera_type:
+                continue
+            snap = camera.snapshot()
+            by_station.setdefault(station_id, []).append(
+                {
+                    "ID": camera.ID,
+                    "CameraID": camera.CameraID,
+                    "CameraName": camera.CameraName,
+                    "CameraType": cfg.get("CameraType"),
+                    "CameraTypeText": statictext.CameraTypes.get(
+                        cfg.get("CameraType"), cfg.get("CameraType")
+                    ),
+                    "CCTV_NO": cfg.get("CCTV_NO"),
+                    "SnapshotImage": snap["SnapshotImage"],
+                    "SnapshotTime": snap["SnapshotTime"],
+                }
+            )
+
+        rows = []
+        for st in stations:
+            cameras = by_station.get(st["StationID"], [])
+            if camera_type and not cameras:
+                continue
+            rows.append(
+                {
+                    "StationID": st["StationID"],
+                    "SiteCode": st["SiteCode"],
+                    "SiteName": st["SiteName"],
+                    "WatershedName": st.get("WatershedName"),
+                    "ProjectName": st.get("ProjectName"),
+                    "WaterLevelType": st.get("WaterLevelType"),
+                    "RecordTime": (st.get("WaterLevelData") or {}).get("RecordTime"),
+                    "Image": st.get("ImageMD"),
+                    "Cameras": cameras,
+                    "SnapshotTime": max(
+                        (c["SnapshotTime"] for c in cameras if c["SnapshotTime"]),
+                        default=None,
+                    ),
+                }
+            )
+        rows.sort(
+            key=lambda r: (
+                str(r.get("WatershedName") or ""),
+                str(r.get("SiteCode") or ""),
+            )
+        )
+        return rows
+
     def serialize(self):
         data = {
             column.name: getattr(self, column.name) for column in self.__table__.columns

@@ -1,19 +1,6 @@
-<div class="tabulator-filters mb-4">
+{% from "dashboard/main/filter_field.html" import filter_select, filter_input, filter_period, filter_dates, filter_param_range with context %}
+<div class="tabulator-filters app-filters">
 	<div class="row">
-		<div class="col-xl-3 col-lg-4 col-md-6">
-			<div class="row align-items-center mb-3">
-				<div class="col-auto">
-					<label class="small" for="StatusFilter">{{ StaticText.CsvLoggerField.Status }}</label>
-				</div>
-				<div class="col">
-					<select class="form-control form-control-sm select2" id="StatusFilter" name="Status">
-						<option value="" selected>-- {{ StaticText.All }} --</option>
-						{% for key, value in StaticText.StatusLabel.items() %}
-						<option value="{{ key }}">{{ value.text }}</option>
-						{% endfor %}
-					</select>
-				</div>
-			</div>
-		</div>
+		{{ filter_select("StatusFilter", "Status", StaticText.FilterLabels.Status, options=StaticText.StatusLabel, first=StaticText.All) }}
 	</div>
 </div>

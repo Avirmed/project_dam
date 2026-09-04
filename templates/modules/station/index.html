@@ -1,0 +1,173 @@
+{# Public station page (front design slide 8): /station/<StationID>.
+   Rendered by static/js/modules/station.js from POST /api/stations/public;
+   cameras from /api/stations/cameras, events from /api/eventlog/list, the
+   measurement section from /api/stationdata/{series,summary,list}. #}
+{% set T = StaticText.FrontPage.Station %}
+{% set F = StaticText.StationDataField %}
+{% from "dashboard/main/filter_field.html" import filter_period with context %}
+<div class="station-page" data-station="{{ contentid or '' }}">
+	<div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3 station-header">
+		<div class="min-w-0">
+			<h4 class="mb-0 station-title text-truncate">{{ T.Title }}</h4>
+			<div class="small text-muted station-subtitle"></div>
+		</div>
+		<div class="d-flex gap-2 station-actions">
+			<a class="btn btn-sm btn-outline-secondary station-link-cctv d-none">{{ StaticText.Icon.Camera | safe }} {{ T.OpenCCTV }}</a>
+			<a class="btn btn-sm btn-outline-secondary station-link-stats">{{ StaticText.Icon.Chart | safe }} {{ StaticText.FrontPage.Popup.Statistics }}</a>
+			<a href="/" class="btn btn-sm btn-outline-secondary">{{ StaticText.Icon.Back | safe }} {{ T.Back }}</a>
+		</div>
+	</div>
+
+	<div class="station-notfound alert alert-warning d-none">{{ T.NotFound }}</div>
+
+	<div class="station-body d-none">
+		<div class="row g-3">
+			{# ---------------------- 1. station identity (photo | table) | measurement values #}
+			<div class="col-xl-7">
+				<div class="card h-100 mb-0">
+					<div class="card-body">
+						<div class="dash-card-title">{{ T.Info }}</div>
+						<div class="row g-3">
+							<div class="col-md-5">
+								{# station photo (default picture when none); click opens it full size (blueimp gallery) #}
+								<a class="station-image-link d-block" href="{{ StaticText.Images.Blank }}" data-gallery="#station-gallery" title="{{ T.Image }}">
+									<img class="img-fluid rounded station-image w-100" src="{{ StaticText.Images.Blank }}" alt="">
+								</a>
+							</div>
+							<div class="col-md-7">
+						<table class="table table-sm mb-0 station-info">
+							<tbody>
+								<tr><th>{{ T.Name }}</th><td data-info="SiteName">-</td></tr>
+								<tr><th>{{ T.Code }}</th><td><span data-info="SiteCode">-</span> <span class="text-muted">· <span data-info="DeviceID"></span></span></td></tr>
+								<tr><th>{{ T.Project }}</th><td data-info="ProjectName">-</td></tr>
+								<tr><th>{{ T.RiverBasin }}</th><td data-info="WatershedName">-</td></tr>
+								<tr><th>{{ T.Latitude }}</th><td data-info="Latitude">-</td></tr>
+								<tr><th>{{ T.Longitude }}</th><td data-info="Longitude">-</td></tr>
+								<tr><th>{{ T.Location }}</th><td data-info="Address">-</td></tr>
+								<tr><th>{{ T.MeasuredValue }}</th><td data-info="MeasuredValue">-</td></tr>
+								<tr><th>{{ T.SiteInstall }}</th><td data-info="SiteInstall">-</td></tr>
+								<tr><th>{{ T.Region }}</th><td data-info="Region">-</td></tr>
+							</tbody>
+						</table>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<div class="col-xl-5">
+				<div class="card h-100 mb-0">
+					<div class="card-body">
+						<div class="dash-card-title">{{ T.Measurements }}</div>
+						<table class="table table-sm mb-0 station-measurements">
+							<tbody>
+								<tr><th>{{ StaticText.FrontPage.Popup.WaterLevel }}</th><td data-value="WaterLevel">-</td><td class="unit">m.MSL</td></tr>
+								<tr class="station-wl-note-row d-none"><td colspan="3" class="station-wl-note"></td></tr>
+								<tr class="station-wl2-row d-none"><th>{{ StaticText.StationDataParameters[StaticText.StationDataKeys.WaterLevel2].text }}</th><td data-value="WaterLevel2">-</td><td class="unit">m.MSL</td></tr>
+								<tr><th>{{ StaticText.FrontPage.Popup.FlowRate }}</th><td data-value="FlowRate">-</td><td class="unit">m³/s</td></tr>
+								<tr><th>{{ StaticText.FrontPage.Popup.Velocity }}</th><td data-value="Velocity">-</td><td class="unit">m/s</td></tr>
+								<tr data-rain="1"><th><span class="rain-label"></span><small class="rain-window d-block text-muted"></small></th><td class="rain-value">-</td><td class="unit">mm</td></tr>
+								<tr data-rain="2"><th><span class="rain-label"></span><small class="rain-window d-block text-muted"></small></th><td class="rain-value">-</td><td class="unit">mm</td></tr>
+								<tr data-rain="3"><th><span class="rain-label"></span><small class="rain-window d-block text-muted"></small></th><td class="rain-value">-</td><td class="unit">mm</td></tr>
+								<tr><th>{{ T.LatestRainfall }}</th><td data-value="LatestRainfall" colspan="2">-</td></tr>
+								<tr><th>{{ T.LastUpdate }}</th><td data-value="RecordTime" colspan="2">-</td></tr>
+							</tbody>
+						</table>
+					</div>
+				</div>
+			</div>
+
+			{# ---------------------- 2. cross-section + its Point 1 / 2 values | security events #}
+			<div class="col-xl-8">
+				<div class="card h-100 mb-0">
+					<div class="card-body">
+						<div class="dash-card-title">{{ T.CrossSection }}</div>
+						<div class="row g-3 align-items-stretch">
+							<div class="col-lg-6 d-flex align-items-start">
+								<div class="station-dam w-100"></div>
+							</div>
+							<div class="col-lg-6 station-specs">
+								{% for block in StaticText.StationConfigures %}
+								<div class="{{ 'mb-3' if not loop.last else '' }}">
+									<h6 class="small fw-bold">{{ block.title }}</h6>
+									<table class="table table-sm mb-0">
+										<tbody>
+											{% for key, field in block.fields.items() %}
+											<tr><th>{{ field.title }}</th><td class="text-end" data-spec="{{ key }}">-</td></tr>
+											{% endfor %}
+										</tbody>
+									</table>
+								</div>
+								{% endfor %}
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<div class="col-xl-4">
+				<div class="card h-100 mb-0">
+					<div class="card-body d-flex flex-column">
+						<div class="d-flex align-items-center justify-content-between">
+							<div class="dash-card-title mb-0">{{ T.Events }}</div>
+							<a class="small station-events-link" href="/events">{{ T.AllEvents }}</a>
+						</div>
+						<div class="station-events station-events-list mt-2"></div>
+						<div class="small text-muted text-center py-3 station-events-empty d-none flex-fill d-flex align-items-center justify-content-center">{{ T.NoEvents }}</div>
+					</div>
+				</div>
+			</div>
+
+			{# ---------------------------------------------------- measurements data #}
+			<div class="col-12">
+				<div class="card mb-0 tabulator-container station-data">
+					<div class="card-body">
+						<div class="dash-card-title">{{ T.Data }}</div>
+						<div class="row g-2 mb-3 station-summary">
+							<div class="col-6 col-md-3"><div class="stat-tile"><div class="stat-tile-label">{{ F.Total }}</div><div class="stat-tile-value" data-summary="total">0</div></div></div>
+							<div class="col-6 col-md-3"><div class="stat-tile"><div class="stat-tile-label">{{ F.FirstRecord }}</div><div class="stat-tile-value stat-tile-time" data-summary="first">-</div></div></div>
+							<div class="col-6 col-md-3"><div class="stat-tile"><div class="stat-tile-label">{{ F.LastRecord }}</div><div class="stat-tile-value stat-tile-time" data-summary="last">-</div></div></div>
+							<div class="col-6 col-md-3"><div class="stat-tile"><div class="stat-tile-label">{{ F.Chart }}</div><div class="stat-tile-value stat-tile-time station-chart-info">-</div></div></div>
+						</div>
+
+						<div class="tabulator-filters app-filters">
+							<div class="row">
+								{{ filter_period(selected="24h") }}
+								<div class="col-xl-3 col-lg-4 col-md-6">
+									<div class="app-filter-field">
+										<label class="app-filter-label" for="BucketSelect">{{ F.Bucket }}</label>
+										<div>
+											<select class="form-control form-control-sm select2" id="BucketSelect">
+												{% for key, value in StaticText.StationDataBuckets.items() %}
+												<option value="{{ key }}">{{ value }}</option>
+												{% endfor %}
+											</select>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+
+						<div class="station-chart mb-3" style="height: 320px;"></div>
+						<div class="small text-muted text-center py-4 station-chart-empty d-none">{{ F.NoNumeric }}</div>
+
+						<hr class="station-sep">
+						{% include "addons/tabulator-export.html" ignore missing %}
+						<div
+							id="stationDataTable"
+							class="app-tabulator-table mt-0 mb-0"
+
+							cfg-ajax-url="/api/stationdata/list"
+							cfg-index="ID"
+							cfg-minHeight="320"
+							cfg-pagination
+							cfg-page-size="25"
+							cfg-extra-params="{'filters': {'StationID': {{ contentid or 0 }}}}"
+							data-name="station-{{ contentid or '' }}"
+						></div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>

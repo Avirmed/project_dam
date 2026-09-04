@@ -7,8 +7,6 @@ from flask_login import current_user, login_required
 
 from models import (
     Station,
-    StationData,
-    Settings,
     Team,
 )
 
@@ -393,32 +391,53 @@ def sites():
     ) or {}
     requestData = {**get_data, **post_data}
 
-    if not requestData.get("filters"):
-        requestData["filters"] = {}
+    # Active stations in the user's scope with their live status
+    # (shared with the dashboard overview, see Station.live_status).
+    return jsonify(Station.live_status(requestData))
 
-    requestData["filters"]["Status"] = 1
 
-    # Staff / Guest only see their teams' stations (fail-closed without a team).
-    Team.apply_station_scope(requestData)
+@station_bp.route("/public", methods=["GET", "POST"])
+@login_required
+def public_detail():
+    """Public station page (front design slide 8): identity, specifications,
+    newest values + status, rain accumulation. Scoped like /detail."""
+    get_data = request.args.to_dict()
+    post_data = (
+        request.get_json() if request.is_json else request.form.to_dict()
+    ) or {}
+    requestData = {**get_data, **post_data}
 
-    jsonResult = Station.list(requestData)
-
-    # Live status from each station's newest inbound payload (REST API server);
-    # stations without recent data show as "No connection".
-    timeout_minutes = util.safe_int(
-        Settings.load_settings().get("DATA_TIMEOUT_MINUTES"),
-        statictext.DATA_TIMEOUT_MINUTES,
-    )
-    latest = StationData.latest_by_station(
-        [row["StationID"] for row in jsonResult["data"]]
-    )
-
-    for row in jsonResult["data"]:
-        row["WaterLevelType"], row["WaterLevelData"] = StationData.evaluate_status(
-            row.get("Meta"), latest.get(row["StationID"]), timeout_minutes
+    objID = util.safe_int(requestData.get("cid"), None)
+    data = Station.public_detail(objID) if objID else None
+    if data is None or not Team.can_access_station(objID):
+        error_code = 404
+        return (
+            jsonify(
+                {
+                    "Result": False,
+                    "Title": statictext.Messages["Title"],
+                    "Message": statictext.ResponseCode[error_code],
+                    "Code": error_code,
+                }
+            ),
+            error_code,
         )
 
-    return jsonify(jsonResult)
+    return jsonify({"Result": True, "Code": 200, "Data": data})
+
+
+@station_bp.route("/cameras", methods=["GET", "POST"])
+@login_required
+def cameras():
+    """CCTV page: active stations in scope with their enabled cameras and the
+    latest public snapshot of each (no stream credentials)."""
+    get_data = request.args.to_dict()
+    post_data = (
+        request.get_json() if request.is_json else request.form.to_dict()
+    ) or {}
+    requestData = {**get_data, **post_data}
+
+    return jsonify({"data": Station.with_cameras(requestData)})
 
 
 @station_bp.route("/save", methods=["POST"])

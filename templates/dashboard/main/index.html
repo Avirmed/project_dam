@@ -1,11 +1,232 @@
-<div class="row flex-grow-1 h-100">
-    <div class="col-xl-9 col-lg-8 col-md-7 mb-4">
-        {% include "main/map.html" %}
-    </div>
-    <div class="col-xl-3 col-lg-4 col-md-5 mb-4 d-flex flex-column">
-        <div class="flex-fill">
+{# Dashboard overview - data from GET /main/summary (static/js/dashboard/main.js) #}
+{% set T = StaticText.DashboardSummary %}
+<div class="dash-overview" data-admin="{{ 1 if User.UserType == 1 else 0 }}">
+
+    {# ------------------------------------------------------------ toolbar #}
+    <div class="d-flex align-items-center justify-content-between mb-3">
+        <div class="dash-card-title mb-0">{{ T.Title }}</div>
+        <div class="d-flex align-items-center gap-2 small text-muted">
+            <span class="dash-updated"><span class="dash-updated-text"></span></span>
+            <span class="d-none d-md-inline">&middot; {{ T.AutoRefresh.replace("{n}", "60") }}</span>
+            <button type="button" class="btn btn-link btn-sm p-0 lh-1 text-reset dash-refresh" title="{{ T.Refresh }}">{{ StaticText.Icon.Refresh | safe }}</button>
         </div>
-        <div class="flex-fill">
+    </div>
+
+    {# ---------------------------------------------------------- KPI cards #}
+    <div class="row g-3 mb-3 dash-kpis">
+        <div class="col-6 col-md-4 col-xl-2">
+            <a class="card kpi-card h-100 text-reset text-decoration-none" href="/dashboard/stations">
+                <div class="card-body d-flex align-items-center gap-3">
+                    <div class="kpi-icon" style="--kpi-color: var(--bs-primary);">{{ StaticText.Icon.Station | safe }}</div>
+                    <div class="min-w-0">
+                        <div class="kpi-value" data-kpi="stations">0</div>
+                        <div class="kpi-label">{{ T.ActiveStations }}</div>
+                    </div>
+                </div>
+            </a>
+        </div>
+        {% for key, value in StaticText.WaterLevelTypes.items() %}
+        <div class="col-6 col-md-4 col-xl-2">
+            <div class="card kpi-card h-100" data-level="{{ key }}" style="--kpi-color: {{ value.color }};">
+                <div class="card-body d-flex align-items-center gap-3">
+                    <div class="kpi-icon" style="--kpi-color: {{ value.color }};">{{ StaticText.Icon.WaterLevel | safe }}</div>
+                    <div class="min-w-0">
+                        <div class="kpi-value" data-kpi="level-{{ key }}">0</div>
+                        <div class="kpi-label">{{ value.text_en }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+        <div class="col-6 col-md-4 col-xl-2">
+            <a class="card kpi-card h-100 text-reset text-decoration-none" href="/dashboard/stationdata">
+                <div class="card-body d-flex align-items-center gap-3">
+                    <div class="kpi-icon" style="--kpi-color: var(--bs-info);">{{ StaticText.Icon.Data | safe }}</div>
+                    <div class="min-w-0">
+                        <div class="kpi-value" data-kpi="today">0</div>
+                        <div class="kpi-label">{{ T.PayloadsToday }}</div>
+                        <div class="kpi-sub"><span class="text-muted">{{ T.LastPayload }}:</span> <span data-kpi="last">-</span></div>
+                    </div>
+                </div>
+            </a>
         </div>
     </div>
+
+    {# ------------------------------------------------- map + attention list #}
+    <div class="row g-3 mb-3">
+        <div class="col-xl-8 col-lg-7">
+            <div class="dash-map">
+                {% include "main/map.html" %}
+            </div>
+        </div>
+        <div class="col-xl-4 col-lg-5 d-flex flex-column gap-3">
+            <div class="card flex-fill mb-0">
+                <div class="card-body">
+                    <div class="dash-card-title">{{ T.StationStatus }}</div>
+                    <div class="dash-chart-wrap" style="height: 190px;">
+                        <div id="dashStatusChart" class="w-100 h-100"></div>
+                    </div>
+                    <div class="small text-muted text-center mt-1">{{ T.Timeout.replace("{n}", "<span data-kpi='timeout'>15</span>") | safe }}</div>
+                </div>
+            </div>
+            <div class="card flex-fill mb-0">
+                <div class="card-body pb-2">
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <div class="dash-card-title mb-0">{{ T.Attention }}</div>
+                        <span class="count-pill" data-kpi="attention-count">0</span>
+                    </div>
+                    <ul class="list-group list-group-flush dash-list dash-attention"></ul>
+                    <div class="text-success small py-3 text-center dash-attention-empty d-none">{{ StaticText.Icon.Check | safe }} {{ T.NoAttention }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {# ------------------------------------- payload chart + http + events #}
+    <div class="row g-3 mb-3">
+        <div class="col-xl-8 col-lg-7">
+            <div class="card h-100 mb-0">
+                <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div class="dash-card-title">{{ T.Payloads24h }}</div>
+                        <small class="text-muted">{{ T.PerHour }}</small>
+                    </div>
+                    <div class="dash-chart-wrap" style="height: 240px;">
+                        <div id="dashPayloadChart" class="w-100 h-100"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-4 col-lg-5 d-flex flex-column gap-3">
+            <a class="card flex-fill mb-0 text-reset text-decoration-none" href="/dashboard/httplog">
+                <div class="card-body">
+                    <div class="dash-card-title">{{ T.HttpDelivery }}</div>
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="dash-chart-wrap flex-shrink-0" style="width: 96px; height: 96px;">
+                            <div id="dashHttpChart" class="w-100 h-100"></div>
+                        </div>
+                        <div class="flex-fill dash-tiles">
+                            {% for key, value in StaticText.HttpLogStatuses.items() %}
+                            <div class="d-flex justify-content-between align-items-center py-1">
+                                <span class="small"><span class="status-dot me-2 dash-http-dot-{{ key }}"></span>{{ value.text }}</span>
+                                <span class="fw-semibold" data-kpi="http-{{ key }}">0</span>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </a>
+            <a class="card flex-fill mb-0 text-reset text-decoration-none" href="/events">
+                <div class="card-body">
+                    <div class="dash-card-title">{{ T.SecurityEvents }}</div>
+                    <div class="row g-2 text-center">
+                        {% for key, value in StaticText.EventLogStatuses.items() %}
+                        <div class="col-4">
+                            <div class="rounded-2 py-2 dash-tile dash-event-{{ key }}">
+                                <div class="dash-tile-value" data-kpi="event-{{ key }}">0</div>
+                                <div class="small text-muted">{{ value.text }}</div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </a>
+        </div>
+    </div>
+
+    {# ---------------------------------------- worker + system (admin only) #}
+    {% if User.UserType == 1 %}
+    <div class="row g-3 mb-3">
+        <div class="col-xl-7">
+            <div class="card h-100 mb-0">
+                <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                        <div class="dash-card-title mb-0">{{ T.Worker }}</div>
+                        <div class="d-flex align-items-center gap-3 small text-muted">
+                            <span><span class="status-dot me-1 dash-worker-dot"></span><span class="dash-worker-state"></span></span>
+                            <span>{{ T.StartedAt }}: <span class="dash-worker-started"></span></span>
+                            <span>{{ T.LastTick }}: <span class="dash-worker-tick"></span></span>
+                        </div>
+                    </div>
+                    <div class="table-responsive mt-2">
+                        <table class="table table-sm align-middle dash-worker-table mb-0">
+                            <thead>
+                                <tr class="small text-muted">
+                                    <th>{{ T.Job }}</th>
+                                    <th class="text-end">{{ T.Interval }}</th>
+                                    <th>{{ T.LastRun }}</th>
+                                    <th>{{ T.NextRun }}</th>
+                                    <th class="text-end">{{ T.Duration }}</th>
+                                    <th class="text-end">{{ T.Runs }}</th>
+                                    <th>{{ T.Result }}</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-5">
+            <div class="card h-100 mb-0">
+                <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div class="dash-card-title mb-0">{{ T.System }}</div>
+                        <small class="text-muted"><span data-sys="platform"></span> &middot; {{ T.Host }} <span data-sys="host"></span> &middot; {{ T.PID }} <span data-sys="pid"></span></small>
+                    </div>
+
+                    <div class="row g-3 mt-0">
+                        <div class="col-6 col-md-3">
+                            <div class="dash-tile rounded-2 p-2 h-100">
+                                <div class="small text-muted">{{ T.Uptime }}</div>
+                                <div class="fw-semibold" data-sys="uptime">-</div>
+                                <div class="small text-muted"><span data-sys="mode"></span></div>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <div class="dash-tile rounded-2 p-2 h-100">
+                                <div class="small text-muted">{{ T.CPU }} <span class="text-muted" data-sys="cpu-count"></span></div>
+                                <div class="fw-semibold"><span data-sys="cpu">-</span>%</div>
+                                <div class="progress dash-progress mt-1" style="height: 6px;"><div class="progress-bar bg-primary" data-bar="cpu" style="width: 0%"></div></div>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <div class="dash-tile rounded-2 p-2 h-100">
+                                <div class="small text-muted">{{ T.Memory }}</div>
+                                <div class="fw-semibold"><span data-sys="mem">-</span>%</div>
+                                <div class="progress dash-progress mt-1" style="height: 6px;"><div class="progress-bar bg-success" data-bar="mem" style="width: 0%"></div></div>
+                                <div class="small text-muted text-truncate" data-sys="mem-text"></div>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <div class="dash-tile rounded-2 p-2 h-100">
+                                <div class="small text-muted">{{ T.Disk }} <span data-sys="disk-path"></span></div>
+                                <div class="fw-semibold"><span data-sys="disk">-</span>%</div>
+                                <div class="progress dash-progress mt-1" style="height: 6px;"><div class="progress-bar bg-warning" data-bar="disk" style="width: 0%"></div></div>
+                                <div class="small text-muted text-truncate" data-sys="disk-text"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mt-0">
+                        <div class="col-md-6">
+                            <div class="d-flex justify-content-between small mt-2">
+                                <span class="text-muted">{{ T.Database }} &middot; <span data-sys="db-version"></span></span>
+                                <span><span class="fw-semibold" data-sys="db-size">-</span> &middot; <span data-sys="db-conn">-</span> {{ T.Connections | lower }}</span>
+                            </div>
+                            <div class="dash-chart-wrap" style="height: 170px;">
+                                <div id="dashTableChart" class="w-100 h-100"></div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="small text-muted mt-2">{{ T.Folders }}</div>
+                            <ul class="list-unstyled small mb-0 dash-folders"></ul>
+                            <div class="small text-muted mt-2">{{ T.ProcessMemory }}: <span data-sys="process">-</span> &middot; {{ T.Python }} <span data-sys="python"></span></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
 </div>

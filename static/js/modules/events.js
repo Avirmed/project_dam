@@ -28,6 +28,10 @@ function loadEventlogCounters() {
 }
 
 $(function () {
+    // filter lists (the shared engine only makes them select2; options come from here)
+    select2Ajax($("#ProjectIDFilter"), "ProjectID", "ProjectName");
+    select2Ajax($("#RiverBasinIDFilter"), "RiverBasinID", "WatershedName");
+
     $(".tabulator-filters .datepicker").datepicker().on("changeDate clearDate", function () {
         $(this).trigger("change");
     });

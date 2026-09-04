@@ -1,0 +1,32 @@
+{% from "dashboard/main/filter_field.html" import filter_select, filter_input, filter_period, filter_dates, filter_param_range with context %}
+{# Public Report page (front design slide 9): received payloads as a table with
+   export (CSV / Excel / PDF / print) for a period, station optional
+   (static/js/modules/report.js; grid = /api/stationdata/list) #}
+{% set T = StaticText.FrontPage.Report %}
+{% set F = StaticText.StationDataField %}
+<div class="tabulator-container report-page">
+	<h5 class="page-title mb-0">{{ T.Title }}</h5>
+	<p class="page-hint">{{ T.Hint }}</p>
+
+<div class="tabulator-filters app-filters">
+	<div class="row">
+		{{ filter_select("ProjectIDFilter", "ProjectID", StaticText.FilterLabels.Project, url="/api/projects/list?status=1", first=StaticText.All, col="third") }}
+		{{ filter_select("RiverBasinIDFilter", "RiverBasinID", StaticText.FilterLabels.Watershed, url="/api/riverbasins/list?status=1", first=StaticText.All, col="third") }}
+		{{ filter_select("StationIDFilter", "StationID", StaticText.FilterLabels.Station, url="/api/stations/list?status=1", first=StaticText.All, col="third") }}
+		{{ filter_period(selected="7d") }}
+	</div>
+</div>
+
+	{% include "addons/tabulator-export.html" ignore missing %}
+	<div
+		id="reportTable"
+		class="app-tabulator-table mt-0 mb-4"
+
+		cfg-ajax-url="/api/stationdata/list"
+		cfg-index="ID"
+		cfg-minHeight="480"
+		cfg-pagination
+		cfg-numberic
+		data-name="report"
+	></div>
+</div>

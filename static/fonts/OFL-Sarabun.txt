@@ -1,0 +1,2 @@
+Sarabun (c) Cadson Demak - SIL Open Font License 1.1 - https://fonts.google.com/specimen/Sarabun
+Used for PDF export (jsPDF) because the theme's Arial has no Thai glyphs.

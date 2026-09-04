@@ -1,0 +1,11 @@
+{% from "dashboard/main/filter_field.html" import filter_select, filter_input, filter_period, filter_dates, filter_param_range with context %}
+{# Station Data filters - every :input name lands in the grid filters (project.js ajaxParams) and in the summary / series calls (stationdata.js) #}
+<div class="tabulator-filters app-filters">
+	<div class="row">
+		{{ filter_select("ProjectIDFilter", "ProjectID", StaticText.FilterLabels.Project, url="/api/projects/list?status=1", first=StaticText.All, col="third") }}
+		{{ filter_select("RiverBasinIDFilter", "RiverBasinID", StaticText.FilterLabels.Watershed, url="/api/riverbasins/list?status=1", first=StaticText.All, col="third") }}
+		{{ filter_select("StationIDFilter", "StationID", StaticText.FilterLabels.Station, url="/api/stations/list?status=1", first=StaticText.All, col="third") }}
+		{{ filter_period(selected="7d") }}
+		{{ filter_param_range() }}
+	</div>
+</div>

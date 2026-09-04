@@ -210,7 +210,14 @@ StationConfigures = [
                 "title": "RIGHT_BANK_WL_UP – ระดับตลิ่งขวา",
                 "placeholder": "",
             },
-            "ZEROGATE_UP": {"title": "ZEROGATE_UP - ศูนย์เสาระดับ", "placeholder": ""},
+            "ZEROGATE_UP": {
+                "title": "ZEROGATE_UP - ศูนย์เสาระดับ (ม.รทก / MSL)",
+                "placeholder": "",
+            },
+            "ZEROGATE_UP_SL": {
+                "title": "ZEROGATE_UP - ศูนย์เสาระดับ (ม.รสม / SL)",
+                "placeholder": "",
+            },
             "GROUND_LEVEL_WL_UP": {
                 "title": "GROUND_LEVEL_WL_UP -ระดับท้องน้ำ",
                 "placeholder": "",  # "Current Water Level – ZeroGate",
@@ -231,7 +238,11 @@ StationConfigures = [
                 "placeholder": "",
             },
             "ZEROGATE_DOWN": {
-                "title": "ZEROGATE_DOWN - ศูนย์เสาระดับ",
+                "title": "ZEROGATE_DOWN - ศูนย์เสาระดับ (ม.รทก / MSL)",
+                "placeholder": "",
+            },
+            "ZEROGATE_DOWN_SL": {
+                "title": "ZEROGATE_DOWN - ศูนย์เสาระดับ (ม.รสม / SL)",
                 "placeholder": "",
             },
             "GROUND_LEVEL_WL_DOWN": {
@@ -486,11 +497,157 @@ APIConfigures = [
 StationDataField = {
     "ID": "ID",
     "StationID": "Station",
+    "SiteCode": "Site code",
+    "SiteName": "Station",
     "DeviceID": "Device ID",
     "RecordTime": "Record time",
     "Data": "Mapped data",
     "Raw": "Raw payload",
     "CreateDate": "Created Date",
+    # Station Data page (dashboard/stationdata): filters, tiles, chart, detail
+    "Parameter": "Parameter",
+    "Min": "Min",
+    "Max": "Max",
+    "Range": "Period",
+    "DateFrom": "From",
+    "DateTo": "To",
+    "Bucket": "Resolution",
+    "Chart": "Chart",
+    "Detail": "Payload detail",
+    "Total": "Payloads",
+    "Stations": "Stations",
+    "FirstRecord": "First record",
+    "LastRecord": "Last record",
+    "Points": "points",
+    "Avg": "avg",
+    "SelectStation": "Select one station to draw the chart.",
+    "NoNumeric": "No numeric values for this parameter in the selected period.",
+    "RawPurged": "raw payload removed by retention",
+}
+
+# Public front pages (templates/modules/*): map popup, station detail (design
+# slide 8), CCTV (slides 4-7), Statistics / Report (slide 9), notifications.
+FrontPage = {
+    "Popup": {
+        "WaterLevel": "Water Level",
+        "FlowRate": "Flow Rate",
+        "Velocity": "Water Flow Velocity",
+        "VelocityShort": "Velocity",  # map popup tile (narrow)
+        "Rainfall": "Rainfall",
+        "LastUpdate": "Last Update",
+        "More": "More",
+        "Statistics": "Statistics",
+        "NoData": "No data received yet",
+    },
+    "Station": {
+        "Title": "Station",
+        "Measurements": "Measurement Value - ข้อมูลตรวจวัด",
+        "Specifications": "Station Specifications - ข้อมูลท้องน้ำของสถานี",
+        "Info": "Station Specifications - ข้อมูลจำเพาะของสถานี",
+        "Image": "Station Image",
+        "CrossSection": "Cross-section · live water level",
+        "CrossSectionZoom": "Click to enlarge",
+        "Breadcrumb": "Station",
+        "Cameras": "Cameras",
+        "NoCameras": "No cameras configured",
+        "Events": "Recent security events",
+        "NoEvents": "No security events",
+        "AllEvents": "All events",
+        "Data": "Measurements",
+        "OpenCCTV": "CCTV",
+        "Above": "above",
+        "Below": "below",
+        "Warning": "warning",
+        "Critical": "critical",
+        "RainAcc": "Rain accumulated {n} day(s)",
+        "LatestRainfall": "Latest Rainfall",
+        "LastUpdate": "Last Update",
+        "Point1": "ข้อมูลท้องน้ำจุดที่ 1 ( Water Level Point 1 )",
+        "Point2": "ข้อมูลท้องน้ำจุดที่ 2 ( Water Level Point 2 )",
+        "Name": "Station_Name - ชื่อสถานี",
+        "Code": "Station_Code - รหัส",
+        "RiverBasin": "River_Basin - ลุ่มน้ำ",
+        "Project": "Project - โครงการ",
+        "Latitude": "Latitude - ละติจูด",
+        "Longitude": "Longitude - ลองจิจูด",
+        "Location": "Location - ที่ตั้ง",
+        "MeasuredValue": "Measured_Value - ค่าที่ตรวจวัด",
+        "SiteInstall": "Site Install",
+        "Region": "Region",
+        "GoogleMap": "Google Maps",
+        "Chart": "Last 7 days",
+        "NotFound": "Station not found",
+        "Back": "Back to map",
+    },
+    "CCTV": {
+        "Title": "CCTV",
+        "Stations": "Stations",
+        "Search": "Search station",
+        "CameraType": "Camera_Type - ประเภท",
+        "NoCameras": "No cameras configured for this station",
+        "NoSnapshot": "No snapshot yet",
+        "Snapshot": "Snapshot",
+        "TakenAt": "Taken at",
+        "Download": "Download",
+        "PrintReport": "Print Report",
+        "SelectStation": "Select a station on the left",
+        "Cameras": "camera(s)",
+    },
+    "Statistics": {
+        "Title": "Station Statistics",
+        "Parameters": "Parameters",
+        "SelectStation": "Select a station to draw the charts",
+        "NoData": "No data for this parameter in the selected period",
+        "ExportCSV": "CSV",
+        "Print": "PDF / Print",
+        "Points": "points",
+    },
+    "Report": {
+        "Title": "Report",
+        "Hint": "Select the period and, optionally, the station; export with the buttons above the table.",
+    },
+    "Notifications": {
+        "Title": "Notifications",
+        "Empty": "No pending security events",
+        "ViewAll": "View all events",
+        "Pending": "pending",
+    },
+}
+
+# Labels of the shared filter fields (templates/dashboard/main/filter_field.html).
+FilterLabels = {
+    "Project": "Project",
+    "Watershed": "Watershed",
+    "Station": "Station",
+    "Region": "Region",
+    "Status": "Status",
+    "UserType": "User type",
+    "Period": "Period",
+    "Date": "Date",
+    "DateFrom": "From",
+    "DateTo": "To",
+    "Parameter": "Parameter",
+    "Min": "Min",
+    "Max": "Max",
+}
+
+# Quick period filter on the Station Data page (seconds back from now;
+# "custom" = use the From / To dates).
+StationDataRanges = {
+    "1h": {"text": "Last hour", "seconds": 3600},
+    "6h": {"text": "Last 6 hours", "seconds": 6 * 3600},
+    "24h": {"text": "Last 24 hours", "seconds": 24 * 3600},
+    "7d": {"text": "Last 7 days", "seconds": 7 * 86400},
+    "30d": {"text": "Last 30 days", "seconds": 30 * 86400},
+    "custom": {"text": "Custom dates", "seconds": 0},
+}
+
+# Chart resolution: "auto" picks raw / hourly / daily from the row count.
+StationDataBuckets = {
+    "auto": "Auto",
+    "raw": "Raw values",
+    "hour": "Hourly average",
+    "day": "Daily average",
 }
 
 # StationDataKeys - the agreed "Database Column" names inside StationData.Data
@@ -505,9 +662,20 @@ StationDataKeys = {
     "Area": "AREA",  # wetted area [m²] used for the computed FLOW
 }
 
+# Labels / units of the StationData.Data columns shown as grid columns and
+# chart parameters (keys = StationDataKeys values).
+StationDataParameters = {
+    StationDataKeys["WaterLevel"]: {"text": "Water Level", "unit": "m"},
+    StationDataKeys["WaterLevel2"]: {"text": "Water Level 2", "unit": "m"},
+    StationDataKeys["Rainfall"]: {"text": "Rainfall", "unit": "mm"},
+    StationDataKeys["Velocity"]: {"text": "Velocity", "unit": "m/s"},
+    StationDataKeys["Flow"]: {"text": "Flow rate", "unit": "m³/s"},
+    StationDataKeys["Area"]: {"text": "Wetted area", "unit": "m²"},
+}
+
 # Settings rows rendered as an on/off switch on the dashboard Settings page
 # (value stored as "1" / "0"); any name ending in _ENABLED is treated the same.
-BooleanSettings = ["WORKER_ENABLED"]
+BooleanSettings = ["WORKER_ENABLED", "SIMULATOR_ENABLED"]
 
 # Retention defaults (days, 0 = keep forever) used when the Settings rows are
 # missing; applied daily by services/retention.py.
@@ -525,6 +693,84 @@ SNAPSHOT_INTERVAL_MINUTES = 5
 # Fallback when the DATA_TIMEOUT_MINUTES row is missing from Settings: a station
 # whose latest payload is older than this is shown as "No connection".
 DATA_TIMEOUT_MINUTES = 15
+
+# Dashboard overview (/dashboard, GET /main/summary) - labels of every panel.
+DashboardSummary = {
+    "Title": "Dashboard",
+    "Refresh": "Refresh",
+    "Updated": "",
+    "AutoRefresh": "{n} s",
+    "Ago": "ago",
+    "JustNow": "just now",
+    "Stations": "Stations",
+    "ActiveStations": "Stations",
+    "PayloadsToday": "Today",
+    "LastPayload": "Last",
+    "Payloads24h": "Payloads · 24 h",
+    "PerHour": "/ h",
+    "StationStatus": "Status",
+    "Attention": "Attention",
+    "NoAttention": "All normal",
+    "HttpDelivery": "HTTP",
+    "SecurityEvents": "Events",
+    "Worker": "Worker",
+    "WorkerAlive": "Running",
+    "WorkerStopped": "Stopped",
+    "WorkerDisabled": "Off",
+    "Job": "Job",
+    "Interval": "Every",
+    "LastRun": "Last",
+    "NextRun": "Next",
+    "Duration": "Time",
+    "Runs": "Runs",
+    "Errors": "Errors",
+    "Result": "Result",
+    "NeverRun": "-",
+    "StartedAt": "Since",
+    "LastTick": "Tick",
+    "System": "System",
+    "Uptime": "Uptime",
+    "CPU": "CPU",
+    "Memory": "Memory",
+    "ProcessMemory": "App",
+    "Disk": "Disk",
+    "Free": "free",
+    "Used": "used",
+    "Database": "Database",
+    "DbSize": "DB size",
+    "Connections": "conn.",
+    "Tables": "Tables",
+    "Rows": "rows",
+    "Folders": "Folders",
+    "Files": "files",
+    "Python": "Python",
+    "PostgreSQL": "PostgreSQL",
+    "Mode": "Mode",
+    "Debug": "Debug",
+    "Production": "Production",
+    "Host": "Host",
+    "PID": "PID",
+    "Total": "Total",
+    "Timeout": "> {n} min silent = No connection",
+    "OpenStation": "Open",
+    # duration suffixes: 2d 3h 15m 9s
+    "Days": "d",
+    "Hours": "h",
+    "Minutes": "m",
+    "Seconds": "s",
+}
+
+# Worker job names shown on the dashboard (keys = services/scheduler.py register()).
+WorkerJobs = {
+    "http_sender": "HTTP sender",
+    "csv_logger": "CSV logger",
+    "event_watcher": "Security event watcher",
+    "image_uploader": "Image uploader (FTP)",
+    "snapshot": "Camera snapshot",
+    "sysinfo": "System monitor",
+    "retention": "Data retention",
+    "simulator": "Demo data simulator",
+}
 
 ConnectionModes = {
     "active": "Active Mode",
@@ -705,6 +951,13 @@ SensorDirectionConfigures = [
 SensorGarbageConfigures = [
     {
         "fields": {
+            # colour of the detected garbage / sediment area (design slide 9)
+            "Color": {
+                "title": "Color",
+                "placeholder": "",
+                "type": "color",
+                "default": "#ffffff",
+            },
             "Points": {
                 "title": "Detection points",
                 "placeholder": "",
@@ -1082,7 +1335,7 @@ EventLogField = {
     "Title": "Security - ระบบรักษาความปลอดภัย",
     "CameraID": "Camera",
     "StationID": "Station – สถานีโทรมาตร",
-    "Image": "Image",
+    "Image": "Picture",
     "WatershedName": "River - ลุ่มน้ำ",
     "EventTime": "Date Time",
     "Event": "Event – เหตุการณ์",
@@ -1097,10 +1350,12 @@ EventLogField = {
 }
 
 EventLogStatuses = {
-    0: {"text": "Pending", "class": "app-badge badge text-bg-secondary"},
-    1: {"text": "Approve", "class": "app-badge badge text-bg-danger"},
-    2: {"text": "Reject", "class": "app-badge badge text-bg-dark"},
+    0: {"text": "Pending", "class": "app-badge badge text-bg-secondary", "pill": "status-pill status-pill-pending"},
+    1: {"text": "Approve", "class": "app-badge badge text-bg-danger", "pill": "status-pill status-pill-approve"},
+    2: {"text": "Reject", "class": "app-badge badge text-bg-dark", "pill": "status-pill status-pill-reject"},
 }
+# Row action menu of the Event Log grids (one dropdown instead of two buttons)
+EventLogActions = {"Menu": "Action", "SetStatus": "Set status"}
 
 # Delivery lifecycle of an outbound HTTP payload (design slide 18).
 HttpLogStatuses = {
@@ -1300,6 +1555,13 @@ Icon = {
     "DatabaseGear": '<i class="bi bi-database-fill-gear"></i>',
     "Calculator": '<i class="bi bi-calculator"></i>',
     "Check": '<i class="bi bi-check-circle"></i>',
+    "Refresh": '<i class="bi bi-arrow-clockwise"></i>',
+    "Station": '<i class="bi bi-router"></i>',
+    "WaterLevel": '<i class="bi bi-water"></i>',
+    "Data": '<i class="bi bi-database"></i>',
+    "Location": '<i class="bi bi-geo-alt"></i>',
+    "Camera": '<i class="bi bi-camera-video"></i>',
+    "Chart": '<i class="bi bi-graph-up"></i>',
     "Uncheck": '<i class="bi bi-x-circle"></i>',
     "CheckFill": '<i class="bi bi-check-circle-fill"></i>',
     "UncheckFill": '<i class="bi bi-x-circle-fill"></i>',

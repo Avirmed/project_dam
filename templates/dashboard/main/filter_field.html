@@ -1,0 +1,106 @@
+{#
+    Shared filter fields (dashboard + public front) - compact toolbar look:
+    small label above the field, one field per grid cell.
+
+    Wrap the fields in:
+        <div class="tabulator-filters app-filters"><div class="row">...</div></div>
+    `.tabulator-filters` is what the shared grid engine (project.js ajaxParams) and the
+    page scripts read (`.tabulator-filters :input` -> filters[name] = value); `.app-filters`
+    carries the look (custom.css). The map's own filter bar (main/map.html) is separate.
+    Labels come from StaticText.FilterLabels.
+
+    filter_select(id, name, label, url=None, options=None, selected=None, first=None, col=None)
+        url      : list endpoint loaded by select2Ajax() / cascadeStationFilter() in the page script
+        options  : dict {key: text | {"text": ...}} rendered inline
+        first    : text of the leading empty option (StaticText.All / Choose); None = no empty option
+        col      : grid cell; None = "col-xl-3 col-lg-4 col-md-6", "third" = col-xl-4, "wide" = col-xl-6
+    filter_input(id, name, label, type="text", cls="", col=None, placeholder="")
+    filter_period(selected="7d", col="wide")   quick Range select | From - To (datepickers)
+    filter_dates(col=None)                     From - To only
+    filter_param_range(col="wide")             Parameter select | Min - Max
+#}
+{% macro _col(col) -%}
+{%- if col == "wide" -%}col-xl-6 col-lg-8 col-md-12{%- elif col == "third" -%}col-xl-4 col-lg-4 col-md-6{%- elif col -%}{{ col }}{%- else -%}col-xl-3 col-lg-4 col-md-6{%- endif -%}
+{%- endmacro %}
+
+{% macro filter_select(id, name, label, url=None, options=None, selected=None, first=None, col=None) %}
+<div class="{{ _col(col) }}">
+    <div class="app-filter-field">
+        <label class="app-filter-label" for="{{ id }}" title="{{ label }}">{{ label }}</label>
+        <div>
+            <select class="form-control form-control-sm select2" id="{{ id }}" name="{{ name }}"{% if url %} data-url="{{ url }}"{% endif %}>
+                {% if first is not none %}<option value="" selected>-- {{ first }} --</option>{% endif %}
+                {% for key, value in (options or {}).items() %}
+                <option value="{{ key }}"{% if selected is not none and key|string == selected|string %} selected{% endif %}>{{ value.text if value is mapping else value }}</option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+</div>
+{% endmacro %}
+
+{% macro filter_input(id, name, label, type="text", cls="", col=None, placeholder="") %}
+<div class="{{ _col(col) }}">
+    <div class="app-filter-field">
+        <label class="app-filter-label" for="{{ id }}" title="{{ label }}">{{ label }}</label>
+        <div>
+            <input type="{{ type }}" class="form-control form-control-sm {{ cls }}" id="{{ id }}" name="{{ name }}" autocomplete="off"{% if type == "number" %} step="any"{% endif %}{% if placeholder %} placeholder="{{ placeholder }}"{% endif %}>
+        </div>
+    </div>
+</div>
+{% endmacro %}
+
+{% macro _dates() %}
+            <input type="text" class="form-control form-control-sm datepicker" id="DateFromFilter" name="DateFrom" autocomplete="off" placeholder="{{ StaticText.FilterLabels.DateFrom }}">
+            <span class="app-filter-range-sep">–</span>
+            <input type="text" class="form-control form-control-sm datepicker" id="DateToFilter" name="DateTo" autocomplete="off" placeholder="{{ StaticText.FilterLabels.DateTo }}">
+{% endmacro %}
+
+{% macro filter_period(selected="7d", col="wide") %}
+<div class="{{ _col(col) }}">
+    <div class="app-filter-field">
+        <label class="app-filter-label" for="RangeFilter">{{ StaticText.FilterLabels.Period }} ({{ StaticText.FilterLabels.DateFrom }} – {{ StaticText.FilterLabels.DateTo }})</label>
+        <div class="app-filter-range">
+            <div class="app-filter-range-select">
+                <select class="form-control form-control-sm select2" id="RangeFilter" name="Range">
+                    {% for key, value in StaticText.StationDataRanges.items() %}
+                    <option value="{{ key }}"{% if key == selected %} selected{% endif %}>{{ value.text }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            {{ _dates() }}
+        </div>
+    </div>
+</div>
+{% endmacro %}
+
+{% macro filter_dates(col=None) %}
+<div class="{{ _col(col) }}">
+    <div class="app-filter-field">
+        <label class="app-filter-label" for="DateFromFilter">{{ StaticText.FilterLabels.Date }} ({{ StaticText.FilterLabels.DateFrom }} – {{ StaticText.FilterLabels.DateTo }})</label>
+        <div class="app-filter-range app-filter-range-dates">
+            {{ _dates() }}
+        </div>
+    </div>
+</div>
+{% endmacro %}
+
+{% macro filter_param_range(col="wide") %}
+<div class="{{ _col(col) }}">
+    <div class="app-filter-field">
+        <label class="app-filter-label" for="ParameterFilter">{{ StaticText.FilterLabels.Parameter }} ({{ StaticText.FilterLabels.Min }} – {{ StaticText.FilterLabels.Max }})</label>
+        <div class="app-filter-range">
+            <div class="app-filter-range-select">
+                <select class="form-control form-control-sm select2" id="ParameterFilter" name="Parameter">
+                    {% for key, value in StaticText.StationDataParameters.items() %}
+                    <option value="{{ key }}">{{ value.text }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <input type="number" step="any" class="form-control form-control-sm" id="MinFilter" name="Min" autocomplete="off" placeholder="{{ StaticText.FilterLabels.Min }}">
+            <span class="app-filter-range-sep">–</span>
+            <input type="number" step="any" class="form-control form-control-sm" id="MaxFilter" name="Max" autocomplete="off" placeholder="{{ StaticText.FilterLabels.Max }}">
+        </div>
+    </div>
+</div>
+{% endmacro %}

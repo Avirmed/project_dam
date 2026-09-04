@@ -580,6 +580,10 @@ input[readonly] {
     transform-origin: bottom right;
 }
 
+body[app-dashboard] #WaterLevelInfo{
+    display: none;
+}
+
 @media (max-width: 767.98px) {
     #WaterLevelInfo {
         position: static;
@@ -708,3 +712,324 @@ hr.divder{
     border-color: var(--app-base-border-color);
     opacity: 1;
 }
+/* ---------------------------------------------------------------------------
+   Dashboard overview (templates/dashboard/main/index.html, js/dashboard/main.js)
+   --------------------------------------------------------------------------- */
+.dash-overview .card { border: 1px solid var(--app-base-border-color); border-left-width: 3px; box-shadow: 0 1px 2px rgba(0, 0, 0, .04); }
+.dash-card-title { font-size: .75rem; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--bs-secondary-color); margin-bottom: .5rem; }
+.dash-map { height: 100%; min-height: 480px; }
+.dash-map > div { margin-bottom: 0 !important; }
+.dash-chart-wrap { position: relative; width: 100%; }
+.dash-chart-wrap canvas, .dash-chart-wrap > div { width: 100% !important; }
+.kpi-card { transition: transform .2s ease, box-shadow .2s ease; }
+.kpi-card:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(0, 0, 0, .08); }
+.kpi-icon { --kpi-color: var(--bs-primary); width: 40px; height: 40px; border-radius: 12px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; color: var(--kpi-color); background: color-mix(in srgb, var(--kpi-color) 14%, transparent); }
+.kpi-card { border-left: 3px solid transparent; }
+.kpi-card[data-level] { border-left-color: var(--kpi-color); }
+.kpi-value { font-size: 1.5rem; font-weight: 600; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.kpi-label { font-size: .74rem; line-height: 1.15; color: var(--bs-secondary-color); }
+.kpi-sub { font-size: .72rem; }
+.dash-tile { background: color-mix(in srgb, var(--app-base-border-color) 35%, transparent); }
+.dash-list { max-height: 260px; overflow: auto; }
+.dash-list .list-group-item { background: transparent; border-color: var(--app-base-border-color); }
+.dash-progress { background: color-mix(in srgb, var(--app-base-border-color) 70%, transparent); }
+.dash-progress .progress-bar { transition: width .9s cubic-bezier(.2, .8, .2, 1); }
+.dash-worker-table { font-size: .74rem; }
+.table.dash-worker-table tbody tr td, .table.dash-worker-table thead tr th { font-size: .74rem; border-color: var(--app-base-border-color); padding: .3rem .4rem; vertical-align: middle; }
+.dash-worker-table .dash-result { display: inline-block; max-width: 240px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; vertical-align: middle; }
+.dash-folders li { line-height: 1.25; }
+.dash-folders .dash-folder-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dash-folders .dash-folder-size { white-space: nowrap; font-variant-numeric: tabular-nums; margin-left: .5rem; }
+.status-dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; vertical-align: middle; }
+.pulse-dot { animation: dashPulseDot 1.8s ease-in-out infinite; }
+.kpi-card.pulse { animation: dashPulseCard 1.8s ease-in-out infinite; }
+.dash-refresh.spin i { display: inline-block; animation: dashSpin .8s linear infinite; }
+.fade-in { animation: dashFadeIn .45s ease both; }
+@keyframes dashFadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+@keyframes dashSpin { to { transform: rotate(360deg); } }
+@keyframes dashPulseDot { 0%, 100% { box-shadow: 0 0 0 0 rgba(25, 135, 84, .5); } 50% { box-shadow: 0 0 0 6px rgba(25, 135, 84, 0); } }
+@keyframes dashPulseCard { 0%, 100% { box-shadow: 0 0 0 0 rgba(255, 0, 0, .35); } 50% { box-shadow: 0 0 0 8px rgba(255, 0, 0, 0); } }
+/* theme's .fs-5 is overridden to 5px in dist/css/style.css - use an own size for tile numbers */
+.dash-tile-value { font-size: 1.25rem; font-weight: 600; line-height: 1.2; font-variant-numeric: tabular-nums; }
+
+/* ---------------------------------------------------------------------------
+   Public front pages: station detail, CCTV, statistics, map popup, notifications
+   --------------------------------------------------------------------------- */
+.map-popup-info table td { padding: .1rem 0; }
+.station-page .table th { width: 55%; }
+/* Point 1 / 2 tables: long Thai labels wrap, values never clip */
+.station-page .station-specs table { table-layout: fixed; }
+.station-page .station-specs th { width: 70%; white-space: normal; word-break: break-word; }
+.station-page .station-specs td { white-space: nowrap; font-variant-numeric: tabular-nums; }
+.station-page .station-measurements td[data-value] { font-variant-numeric: tabular-nums; }
+.cctv-list { max-height: calc(100vh - 260px); overflow: auto; }
+.cctv-list .cctv-basin:first-child { margin-top: 0 !important; }
+.cctv-list .list-group-item.active { background: color-mix(in srgb, var(--app-base-color) 12%, transparent); color: inherit; border-color: transparent; }
+.cctv-image { position: relative; aspect-ratio: 4 / 3; overflow: hidden; }
+.cctv-image img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.cctv-type-badge { position: absolute; left: .5rem; top: .5rem; opacity: .85; }
+.notification-list img { width: 48px; height: 48px; object-fit: cover; }
+@media print {
+    .header, .sidebar, .cctv-sidebar, .cctv-actions, .stat-filters, .stat-actions, .page-breadcrumb, .footer, .tabulator-export, .tabulator-search-input { display: none !important; }
+    .cctv-main, .stat-charts { width: 100% !important; }
+    .card { border: 0 !important; box-shadow: none !important; }
+}
+
+/* Sidebar / horizontal menu text 12px. The theme sizes the inner <span> (15px light,
+   14px dark) and the submenu links separately, and the front (horizontal) layout renders
+   the menu as .sidebar-menu WITHOUT the #sidebar-menu id - so class selectors + !important. */
+.sidebar-menu a,
+.sidebar-menu a span,
+.sidebar-menu .submenu a,
+.sidebar-menu .submenu-hdr,
+.sidebar-menu h6 { font-size: 12px !important; }
+/* Dashboard "Needs attention" list: station title (SiteCode - SiteName) */
+.dash-attention .list-group-item a.fw-semibold { font-size: 12px; }
+/* Dashboard "Storage folders" list */
+.dash-folders { font-size: 11px; }
+/* Dashboard "Needs attention" list: everything but the title (status label, level, time) */
+.dash-attention .list-group-item .small,
+.dash-attention .list-group-item .small * { font-size: 11px; }
+/* Header bell: pending-event counter, anchored where the theme puts its status dot */
+.notification_item .btn-menubar { overflow: visible; }
+.notification_item .notification-count {
+    position: absolute; top: -3px; right: -3px; z-index: 2;
+    min-width: 15px; height: 15px; padding: 0 3px;
+    border-radius: 8px; border: 1.5px solid var(--app-base-background-color, #fff);
+    background: #E70D0D; color: #fff;
+    font-size: 9px; font-weight: 600; line-height: 12px; text-align: center;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, .25);
+}
+/* Solid red counter pill (dashboard "Needs attention", same family as the bell counter) */
+.count-pill {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-width: 18px; height: 18px; padding: 0 6px; border-radius: 9px;
+    background: #E70D0D; color: #fff; font-size: 10px; font-weight: 600; line-height: 1;
+    font-variant-numeric: tabular-nums; box-shadow: 0 1px 2px rgba(0, 0, 0, .2);
+}
+/* Dashboard overview typography: everything is 12px, secondary text 11px; only the
+   big figures (.kpi-value, .dash-tile-value, chart centre) and the system tile
+   values keep their own sizes */
+.dash-overview { font-size: 12px; }
+.dash-overview small, .dash-overview .small, .dash-overview .kpi-label, .dash-overview .kpi-sub,
+.dash-overview .dash-card-title, .dash-overview .dash-folders, .dash-overview .text-muted:not(.dash-tile-value) { font-size: 11px; }
+.dash-overview .dash-worker-table, .dash-overview .table.dash-worker-table tbody tr td, .dash-overview .table.dash-worker-table thead tr th { font-size: 11px; }
+.dash-overview .dash-tile > .fw-semibold { font-size: 14px; }
+.dash-overview .kpi-value { font-size: 1.5rem; }
+.dash-overview .dash-tile-value { font-size: 1.25rem; }
+
+/* ---------------------------------------------------------------------------
+   Filters (dashboard/main/filter_field.html) - every list / report page.
+   Compact toolbar: small label above the field, equal cells. The map filter bar
+   (.stations-filters in main/map.html) is NOT covered: it has no .app-filters class.
+   --------------------------------------------------------------------------- */
+.app-filters { margin-bottom: .5rem; }
+.app-filters .app-filter-field { margin-bottom: .75rem; }
+.app-filters .app-filter-label { display: block; margin-bottom: .2rem; font-size: 11px; font-weight: 500; color: color-mix(in srgb, var(--bs-secondary-color) 70%, transparent); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* Parameter + Min - Max in one cell (Station Data) */
+.app-filters .app-filter-range { display: flex; align-items: center; gap: .4rem; }
+.app-filters .app-filter-range > .app-filter-range-select { flex: 1 1 50%; min-width: 0; }
+.app-filters .app-filter-range > input { flex: 1 1 22%; min-width: 0; }
+.app-filters .app-filter-range > .app-filter-range-sep { color: var(--bs-secondary-color); }
+.app-filters .app-filter-range-dates > input { flex: 1 1 45%; }
+.app-filters .form-control-sm, .app-filters .select2-container .select2-selection__rendered, .app-filters .form-check-label { font-size: 12px; }
+.app-filters .stat-actions .btn { font-size: 12px; }
+
+/* ---------------------------------------------------------------------------
+   Native <select> elements look exactly like the theme's select2 boxes, so a
+   plain select (e.g. #BucketSelect on the Station Data chart) never differs
+   from the form selects: same height, border, radius, text and chevron.
+   --------------------------------------------------------------------------- */
+select.form-select, select.form-control {
+    height: 38px; padding: 0 2rem 0 10px;
+    border: 1px solid #E5E7EB; border-radius: 5px; /* = computed select2 / .form-control border */
+    color: #111827; font-size: 14px; line-height: 36px;
+    background-color: var(--app-base-background-color, #fff);
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3e%3cpath d='M2.5 4.5l3.5 3.5 3.5-3.5' fill='none' stroke='%23888' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3e%3c/svg%3e");
+    background-repeat: no-repeat; background-position: right 10px center; background-size: 12px 12px;
+    -webkit-appearance: none; appearance: none; box-shadow: none;
+}
+select.form-select-sm, select.form-control-sm { height: 30px; line-height: 28px; font-size: 12px; }
+select.form-select:focus, select.form-control:focus { border-color: var(--app-base-color); box-shadow: none; outline: 0; }
+[data-theme=dark] select.form-select, [data-theme=dark] select.form-control { color: #D8DFEE; border-color: var(--app-base-border-color); }
+/* Native <select> option list: the theme paints the checked / hovered option orange
+   (#F26522, with a broken rgba(var(...)) background). Match the select2 dropdown
+   instead: plain text, the app colour only as a light tint on the highlighted row. */
+select.form-select option, select.form-control option {
+    color: #111827; background-color: #fff; padding: .35rem .75rem;
+}
+select.form-select option:checked, select.form-control option:checked,
+select.form-select option:hover, select.form-control option:hover,
+select.form-select option:focus, select.form-control option:focus {
+    color: #111827;
+    background-color: color-mix(in srgb, var(--app-base-color) 14%, #fff);
+}
+[data-theme=dark] select.form-select option, [data-theme=dark] select.form-control option { color: #D8DFEE; background-color: #22242a; }
+[data-theme=dark] select.form-select option:checked, [data-theme=dark] select.form-control option:checked,
+[data-theme=dark] select.form-select option:hover, [data-theme=dark] select.form-control option:hover {
+    background-color: color-mix(in srgb, var(--app-base-color) 30%, #22242a);
+}
+
+/* ---------------------------------------------------------------------------
+   Header notification dropdown (templates/main/notification.html + notifications.js)
+   --------------------------------------------------------------------------- */
+.notification-dropdown { min-width: 360px !important; max-width: 360px; padding: 0 !important; border: 1px solid var(--app-base-border-color); border-radius: .6rem; box-shadow: 0 10px 30px rgba(0, 0, 0, .12); overflow: hidden; }
+.notification-dropdown > .d-flex.border-bottom { padding: .65rem .9rem; margin: 0 !important; border-color: var(--app-base-border-color) !important; }
+.notification-dropdown .notification-title { font-size: 12px; font-weight: 600; margin: 0; }
+.notification-dropdown .notification-summary { font-size: 11px; }
+.notification-dropdown .noti-content { height: auto; max-height: 320px; overflow-y: auto; scrollbar-width: thin; }
+.notification-dropdown .notification-empty { font-size: 11px; padding: 1.25rem 0; }
+.noti-item { display: flex; gap: .6rem; align-items: center; padding: .55rem .9rem; color: inherit; text-decoration: none; border-bottom: 1px solid var(--app-base-border-color); transition: background .15s; }
+.noti-item:last-child { border-bottom: 0; }
+.noti-item:hover { background: color-mix(in srgb, var(--app-base-color) 7%, transparent); color: inherit; }
+.noti-thumb { width: 44px; height: 44px; flex-shrink: 0; border-radius: .4rem; object-fit: cover; background: color-mix(in srgb, var(--app-base-border-color) 40%, transparent); }
+.noti-body { flex: 1 1 auto; min-width: 0; }
+.noti-row { display: flex; align-items: baseline; justify-content: space-between; gap: .5rem; }
+.noti-title { font-size: 12px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.noti-time { font-size: 11px; color: var(--bs-secondary-color); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.noti-sub { font-size: 11px; color: var(--bs-secondary-color); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: .1rem; }
+.notification-dropdown > .d-flex.p-0 { padding: .6rem .9rem !important; margin: 0 !important; border-top: 1px solid var(--app-base-border-color); background: color-mix(in srgb, var(--app-base-border-color) 25%, transparent); }
+.notification-dropdown > .d-flex.p-0 .btn { font-size: 12px; }
+
+/* ---------------------------------------------------------------------------
+   Public front (body[app-main]) - same type scale as the dashboard: 12px
+   content, 11px secondary text, compact tables and tiles. Header / nav / map
+   filter bar untouched.
+   --------------------------------------------------------------------------- */
+body[app-main] .page-wrapper .content { font-size: 12px; }
+body[app-main] .page-title { font-size: 15px; font-weight: 600; margin: 0 0 .75rem; }
+body[app-main] .page-hint { font-size: 11px; color: var(--bs-secondary-color); margin: .15rem 0 .75rem; }
+body[app-main] .content small, body[app-main] .content .small, body[app-main] .content .text-muted:not(.stat-tile-value) { font-size: 11px; }
+body[app-main] .content .card { border: 1px solid var(--app-base-border-color); box-shadow: 0 1px 2px rgba(0, 0, 0, .04); }
+body[app-main] .content .card-body { padding: .9rem 1rem; }
+body[app-main] .content .btn-sm { font-size: 12px; }
+/* tables (Tabulator + plain) */
+body[app-main] .tabulator { font-size: 12px; }
+body[app-main] .tabulator .tabulator-header .tabulator-col .tabulator-col-content { padding: 8px 8px; }
+body[app-main] .tabulator .tabulator-header .tabulator-col-title { font-size: 12px; font-weight: 600; }
+body[app-main] .tabulator .tabulator-row .tabulator-cell { padding: 6px 8px; font-variant-numeric: tabular-nums; }
+body[app-main] .tabulator .tabulator-footer { font-size: 11px; }
+body[app-main] .content .table { font-size: 12px; }
+body[app-main] .content .table > :not(caption) > * > * { padding: .35rem .5rem; }
+/* KPI tiles (Event Log counters) */
+.stat-tile { border: 1px solid var(--app-base-border-color); border-left-width: 3px; border-radius: .4rem; padding: .5rem .75rem; background: var(--app-base-background-color); }
+.stat-tile-label { font-size: 11px; color: var(--bs-secondary-color); }
+.stat-tile-value { font-size: 20px; font-weight: 600; line-height: 1.2; font-variant-numeric: tabular-nums; }
+.stat-tile-0 { border-left-color: #6c757d; } .stat-tile-1 { border-left-color: #dc3545; } .stat-tile-2 { border-left-color: #212529; }
+/* station page */
+body[app-main] .station-page .station-title { font-size: 16px; }
+body[app-main] .station-page .station-status-badge { font-size: 11px; font-weight: 500; padding: .2rem .55rem; }
+body[app-main] .station-page .table th { color: var(--bs-secondary-color); font-weight: 400; }
+body[app-main] .station-page .table td { font-size: 12px; font-variant-numeric: tabular-nums; }
+body[app-main] .station-page .station-measurements td[data-value], body[app-main] .station-page .station-measurements .rain-value { font-weight: 600; }
+body[app-main] .station-page .station-dam svg { width: 100%; height: auto; display: block; }
+body[app-main] .station-page .station-measurements .rain-window { font-size: 10px; }
+body[app-main] .station-page .station-image { max-height: 260px; object-fit: cover; }
+/* CCTV */
+body[app-main] .cctv-page .cctv-title { font-size: 15px; }
+body[app-main] .cctv-page .cctv-item .fw-semibold { font-size: 12px; }
+body[app-main] .cctv-page .cctv-basin { font-size: 11px; }
+body[app-main] .cctv-page .cctv-image { aspect-ratio: 16 / 10; }
+body[app-main] .cctv-page .cctv-image img[src$="blank.png"] { object-fit: contain; padding: 22%; opacity: .6; }
+/* statistics */
+body[app-main] .statistics-page .stat-card .dash-card-title { font-size: 11px; }
+
+/* ---------------------------------------------------------------------------
+   Map popup (project.js buildPopupContent, rendered inside the ArcGIS popup)
+   --------------------------------------------------------------------------- */
+.esri-popup .esri-popup__header-title { font-size: 13px; font-weight: 600; }
+.esri-popup .esri-popup__content { margin: 0; }
+.esri-view .esri-popup__main-container { max-height: min(520px, calc(100% - 24px)); }
+.map-popup-info { width: 300px; max-width: 100%; font-size: 12px; }
+.map-popup-hero { position: relative; height: 110px; border-radius: .5rem; overflow: hidden; background: color-mix(in srgb, var(--app-base-border-color) 40%, transparent); }
+.map-popup-hero img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.map-popup-hero img[src$="blank.png"] { object-fit: contain; } /* default picture shown as is */
+.map-popup-hero-overlay { position: absolute; left: 0; right: 0; bottom: 0; padding: 1.2rem .55rem .4rem; display: flex; align-items: flex-end; justify-content: space-between; gap: .5rem; background: linear-gradient(to top, rgba(0, 0, 0, .65), rgba(0, 0, 0, 0)); color: #fff; font-size: 11px; }
+.map-popup-status { display: inline-block; padding: .15rem .5rem; border-radius: 1rem; font-size: 10px; font-weight: 600; color: #fff; letter-spacing: .02em; box-shadow: 0 1px 2px rgba(0, 0, 0, .3); }
+.map-popup-time { white-space: nowrap; opacity: .9; }
+.map-popup-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: .35rem; margin: .5rem 0 .4rem; }
+.map-popup-tile { background: color-mix(in srgb, var(--app-base-border-color) 35%, transparent); border-radius: .45rem; padding: .3rem .5rem; min-width: 0; }
+.map-popup-tile .k { font-size: 10px; color: var(--bs-secondary-color); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.map-popup-tile .v { font-size: 14px; font-weight: 600; line-height: 1.25; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.map-popup-tile .u { font-size: 10px; font-weight: 400; color: var(--bs-secondary-color); }
+.map-popup-tile.primary { grid-column: 1 / -1; display: flex; align-items: baseline; justify-content: space-between; background: color-mix(in srgb, var(--app-base-color) 10%, transparent); }
+.map-popup-tile.primary .k { font-size: 11px; }
+.map-popup-tile.primary .v { font-size: 14px; }
+.map-popup-address { display: flex; gap: .35rem; align-items: flex-start; font-size: 11px; color: var(--bs-secondary-color); margin-bottom: .45rem; }
+.map-popup-actions { display: flex; gap: .4rem; }
+.map-popup-actions .btn { font-size: 12px; }
+/* Page footer (templates/main/footer.html) */
+.footer, .footer p, .footer a, footer.footer { font-size: 12px; }
+
+/* Public station page v3 */
+body[app-main] .station-page .station-subtitle { font-size: 11px; margin-top: .15rem; }
+body[app-main] .station-page .station-measurements th, body[app-main] .station-page .station-info th { width: 48%; }
+body[app-main] .station-page .station-measurements td[data-value], body[app-main] .station-page .station-measurements .rain-value { text-align: right; white-space: nowrap; }
+body[app-main] .station-page .station-measurements td.unit { width: 1%; white-space: nowrap; padding-left: .35rem; color: var(--bs-secondary-color); font-size: 11px; }
+body[app-main] .station-page .station-measurements .rain-window { font-size: 10px; }
+body[app-main] .station-page .station-wl-note { font-size: 11px; padding-top: 0; border-top: 0; text-align: right; }
+body[app-main] .station-page .station-specs table { table-layout: fixed; }
+body[app-main] .station-page .station-specs th { width: 68%; white-space: normal; word-break: break-word; }
+body[app-main] .station-page .station-specs td { white-space: nowrap; }
+body[app-main] .station-page .station-camera-img { position: relative; aspect-ratio: 16 / 10; border-radius: .4rem; overflow: hidden; background: color-mix(in srgb, var(--app-base-border-color) 40%, transparent); }
+body[app-main] .station-page .station-camera-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+body[app-main] .station-page .station-camera-img img[src$="blank.png"] { object-fit: contain; padding: 22%; opacity: .5; }
+body[app-main] .station-page .station-camera-img .badge { position: absolute; left: .35rem; top: .35rem; font-size: 9px; opacity: .85; }
+body[app-main] .station-page .station-events { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: .5rem; }
+body[app-main] .station-page .station-event { display: flex; gap: .5rem; align-items: center; padding: .4rem .5rem; border: 1px solid var(--app-base-border-color); border-radius: .4rem; color: inherit; text-decoration: none; }
+body[app-main] .station-page .station-event:hover { background: color-mix(in srgb, var(--app-base-color) 6%, transparent); }
+body[app-main] .station-page .station-event-img { width: 44px; height: 44px; object-fit: cover; border-radius: .35rem; flex-shrink: 0; background: color-mix(in srgb, var(--app-base-border-color) 40%, transparent); }
+body[app-main] .station-page .stat-tile-time { font-size: 13px; }
+body[app-main] .station-page .station-dam svg { width: 100%; height: auto; display: block; }
+
+/* Station page v4: bilingual labels, 12px cap, spacing */
+body[app-main] .station-page .table th, body[app-main] .station-page .table td { font-size: 12px; }
+body[app-main] .station-page .lbl-th { font-size: 12px; }
+body[app-main] .station-page .lbl-key { font-size: 10px; color: var(--bs-secondary-color); opacity: .8; }
+body[app-main] .station-page .dash-card-title .lbl-th { font-size: 11px; font-weight: 600; text-transform: none; }
+body[app-main] .station-page .dash-card-title .lbl-key { font-size: 10px; text-transform: uppercase; letter-spacing: .04em; }
+body[app-main] .station-page .station-specs h6 .lbl-th { font-size: 12px; }
+body[app-main] .station-page .station-specs h6 .lbl-key { font-size: 10px; }
+body[app-main] .station-page .station-image { max-height: 220px; object-fit: cover; }
+body[app-main] .station-page .station-events { grid-template-columns: 1fr; }
+body[app-main] .station-page .station-sep { margin: 1.25rem 0 1rem; border-color: var(--app-base-border-color); opacity: 1; }
+body[app-main] .station-page .station-summary { margin-bottom: 1rem !important; }
+body[app-main] .station-page .station-data .app-filters { margin-bottom: .75rem; }
+/* Station page v5: cross-section scaled to the card, events as a 2-column grid */
+body[app-main] .station-page .station-dam svg { width: 100%; height: auto; max-height: 420px; display: block; }
+body[app-main] .station-page .station-events { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+@media (max-width: 991.98px) { body[app-main] .station-page .station-events { grid-template-columns: 1fr; } }
+/* Station page v6: events as a single column beside the cross-section; photo capped */
+body[app-main] .station-page .station-events-list { grid-template-columns: 1fr; }
+body[app-main] .station-page .station-image { max-height: 240px; }
+body[app-main] .station-page .station-specs th { width: 72%; }
+body[app-main] .station-page .station-specs h6 { margin-bottom: .35rem; }
+/* Measurement Value table on the public station page: 11px */
+body[app-main] .station-page .station-measurements th, body[app-main] .station-page .station-measurements td,
+body[app-main] .station-page .station-measurements .lbl-th, body[app-main] .station-page .station-measurements td.unit { font-size: 11px; }
+body[app-main] .station-page .station-measurements .rain-window { font-size: 9.5px; }
+/* Station page header: status as a pill badge inside the subtitle line */
+body[app-main] .station-page .station-subtitle .station-status-badge { font-size: 10px; font-weight: 600; color: #fff; padding: .2em .55em; vertical-align: 1px; }
+/* Cross-section card: Point 1 / 2 specification tables at 11px */
+body[app-main] .station-page .station-specs th, body[app-main] .station-page .station-specs td,
+body[app-main] .station-page .station-specs .lbl-th, body[app-main] .station-page .station-specs h6, body[app-main] .station-page .station-specs h6 .lbl-th { font-size: 11px; }
+body[app-main] .station-page .station-specs .lbl-key { font-size: 9.5px; }
+/* Station page tiles: every value (count and times) the same 13px */
+body[app-main] .station-page .stat-tile-value { font-size: 13px; }
+/* Station photo: no zoom cursor on the default blank picture */
+body[app-main] .station-page .station-image-link.no-image { cursor: default; }
+/* Cross-section drawing: click to enlarge (same SVG in a wide dialog) */
+body[app-main] .station-page .station-dam-zoom { cursor: zoom-in; }
+.station-dam-dialog .modal-body { padding: .5rem .75rem 1rem; }
+.station-dam-dialog .station-dam-large svg { width: 100%; height: auto; max-height: 78vh; }
+/* Event Log: soft status pills with a coloured dot, row action dropdown */
+.status-pill { display: inline-flex; align-items: center; gap: .35rem; font-size: 11px; font-weight: 500; line-height: 1; padding: .3rem .6rem; border-radius: 999px; border: 1px solid transparent; white-space: nowrap; }
+.status-pill-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; display: inline-block; }
+.status-pill-pending { color: #6b7280; background: #f3f4f6; border-color: #e5e7eb; }
+.status-pill-approve { color: #b42318; background: #fef3f2; border-color: #fecdca; }
+.status-pill-reject { color: #1f2937; background: #e5e7eb; border-color: #d1d5db; }
+.app-row-menu .dropdown-menu { min-width: 8.5rem; }
+.app-row-menu .dropdown-item.disabled { opacity: .55; pointer-events: none; }
+
+/* Dropdown menus everywhere (row menus, header menus, select lists): 12px items */
+.dropdown-item { font-size: 12px; }

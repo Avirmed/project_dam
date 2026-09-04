@@ -43,6 +43,13 @@ def get(id):
     return jsonify(object_data)
 
 
+@eventlog_bp.route("/latest", methods=["GET", "POST"])
+@login_required
+def latest():
+    """Newest pending events for the header notification dropdown."""
+    return jsonify(EventLog.latest(_request_data()))
+
+
 @eventlog_bp.route("/counters", methods=["GET", "POST"])
 @login_required
 def counters():
@@ -70,18 +77,37 @@ def list():
     approve = statictext.EventLogStatuses[EventLog.STATUS_APPROVE]
     reject = statictext.EventLogStatuses[EventLog.STATUS_REJECT]
 
+    actions = statictext.EventLogActions
     for row in jsonResult.get("data", []):
-        status = statictext.EventLogStatuses.get(row.get("Status"), {})
+        current = row.get("Status")
+        status = statictext.EventLogStatuses.get(current, {})
+        # soft pill with a coloured dot (classes in custom.css)
         row["StatusBadge"] = (
-            f'<span class="{status.get("class", "")}">{status.get("text", "")}</span>'
+            f'<span class="{status.get("pill", "")}"><i class="status-pill-dot"></i>{status.get("text", "")}</span>'
         )
+        # one row menu like the dashboard grids (.tmp-control): Approve / Reject,
+        # the current status disabled
+        items = ""
+        for code, label, icon in (
+            (EventLog.STATUS_APPROVE, approve["text"], statictext.Icon["Check"]),
+            (EventLog.STATUS_REJECT, reject["text"], statictext.Icon["Uncheck"]),
+        ):
+            disabled = " disabled" if current == code else ""
+            items += (
+                f'<li><a class="dropdown-item actionBtn{disabled}" href="javascript:;" '
+                f'data-status="{code}">{icon} {label}</a></li>'
+            )
+        popper = "'" + '{"strategy":"fixed"}' + "'"  # menu escapes the cell's overflow clipping
         row["control"] = (
-            f'<span class="actionBtn text-success d-block" role="button" data-status="{EventLog.STATUS_APPROVE}">'
-            f'{statictext.Icon["CheckFill"]} {approve["text"]}</span>'
-            f'<span class="actionBtn text-danger d-block" role="button" data-status="{EventLog.STATUS_REJECT}">'
-            f'{statictext.Icon["UncheckFill"]} {reject["text"]}</span>'
+            f'<div class="dropdown position-static app-row-menu">'
+            f'<button class="btn btn-sm" type="button" data-bs-toggle="dropdown" '
+            f'data-bs-popper-config={popper} title="{actions["Menu"]}">'
+            f'{statictext.Icon["VerticalDots"]}</button>'
+            f'<ul class="dropdown-menu dropdown-menu-end">{items}</ul></div>'
         )
 
+    # No. | Image | Station | River | Date Time | Event | Status | Action
+    # fixed widths for the narrow columns; River and Event share the rest
     jsonResult["column"] = [
         {
             "title": statictext.Numbering,
@@ -96,17 +122,19 @@ def list():
         },
         {"title": statictext.EventLogField["ID"], "field": "ID", "visible": False},
         {
-            "title": statictext.EventLogField["StationID"],
-            "field": "SiteCode",
+            "title": statictext.EventLogField["Image"],
+            "field": "Image",
+            "width": 70,
             "headerHozAlign": "center",
             "hozAlign": "center",
             "vertAlign": "middle",
             "headerSort": False,
+            "resizable": False,
         },
         {
-            "title": statictext.EventLogField["Image"],
-            "field": "Image",
-            "width": 140,
+            "title": statictext.EventLogField["StationID"],
+            "field": "SiteCode",
+            "width": 160,
             "headerHozAlign": "center",
             "hozAlign": "center",
             "vertAlign": "middle",
@@ -116,6 +144,7 @@ def list():
             "title": statictext.EventLogField["WatershedName"],
             "field": "WatershedName",
             "formatter": "textarea",
+            "minWidth": 160,
             "headerHozAlign": "center",
             "vertAlign": "middle",
             "headerSort": False,
@@ -123,6 +152,7 @@ def list():
         {
             "title": statictext.EventLogField["EventTime"],
             "field": "EventTime",
+            "width": 150,
             "headerHozAlign": "center",
             "hozAlign": "center",
             "vertAlign": "middle",
@@ -131,6 +161,7 @@ def list():
         {
             "title": statictext.EventLogField["Event"],
             "field": "Event",
+            "minWidth": 140,
             "headerHozAlign": "center",
             "hozAlign": "center",
             "vertAlign": "middle",
@@ -139,18 +170,20 @@ def list():
         {
             "title": statictext.EventLogField["Status"],
             "field": "StatusBadge",
-            "width": 110,
+            "width": 100,
             "headerHozAlign": "center",
             "hozAlign": "center",
             "vertAlign": "middle",
             "formatter": "html",
             "headerSort": False,
+            "resizable": False,
         },
         {
             "title": statictext.EventLogField["Action"],
             "field": "control",
-            "width": 120,
-            "headerHozAlign": "center",
+            "width": 60,
+            "headerHozAlign": "right",
+            "hozAlign": "right",
             "vertAlign": "middle",
             "formatter": "html",
             "headerSort": False,

@@ -1,0 +1,51 @@
+{% from "dashboard/main/filter_field.html" import filter_select, filter_input, filter_period, filter_dates, filter_param_range with context %}
+{# Public Statistics page (front design slide 9): one chart per selected
+   parameter for one station over a period (static/js/modules/statistics.js) #}
+{% set T = StaticText.FrontPage.Statistics %}
+{% set F = StaticText.StationDataField %}
+<div class="statistics-page">
+	<h5 class="page-title">{{ T.Title }}</h5>
+
+<div class="tabulator-filters app-filters stat-filters">
+	<div class="row">
+		{{ filter_select("ProjectIDFilter", "ProjectID", StaticText.FilterLabels.Project, url="/api/projects/list?status=1", first=StaticText.All, col="third") }}
+		{{ filter_select("RiverBasinIDFilter", "RiverBasinID", StaticText.FilterLabels.Watershed, url="/api/riverbasins/list?status=1", first=StaticText.All, col="third") }}
+		{{ filter_select("StationIDFilter", "StationID", StaticText.FilterLabels.Station, url="/api/stations/list?status=1", first=StaticText.Choose, col="third") }}
+		{{ filter_period(selected="7d") }}
+		<div class="col-xl-3 col-lg-4 col-md-6">
+			<div class="app-filter-field">
+				<label class="app-filter-label" for="BucketSelect">{{ F.Bucket }}</label>
+				<div>
+					<select class="form-control form-control-sm select2" id="BucketSelect">
+						{% for key, value in StaticText.StationDataBuckets.items() %}
+						<option value="{{ key }}">{{ value }}</option>
+						{% endfor %}
+					</select>
+				</div>
+			</div>
+		</div>
+		<div class="col-12">
+			<div class="app-filter-field d-flex align-items-end gap-3 flex-wrap">
+				<div>
+				<label class="app-filter-label">{{ T.Parameters }}</label>
+				<div class="d-flex flex-wrap align-items-center gap-3 stat-params">
+					{% for key, value in StaticText.StationDataParameters.items() %}
+					<div class="form-check form-check-inline m-0">
+						<input class="form-check-input" type="checkbox" id="param-{{ key }}" value="{{ key }}" checked>{# every parameter drawn by default #}
+						<label class="form-check-label small" for="param-{{ key }}">{{ value.text }}</label>
+					</div>
+					{% endfor %}
+				</div>
+				</div>
+				<div class="ms-auto d-flex gap-2 stat-actions">
+					<button type="button" class="btn btn-sm btn-outline-secondary stat-csv" disabled>{{ StaticText.Export.CSV | safe }}</button>
+					<button type="button" class="btn btn-sm btn-outline-secondary stat-print" disabled>{{ StaticText.Icon.Print | safe }} {{ T.Print }}</button>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+
+	<div class="text-muted text-center py-5 stat-empty">{{ T.SelectStation }}</div>
+	<div class="stat-charts"></div>
+</div>

@@ -109,7 +109,8 @@ function loadForm(cid = '') {
                 renderCameraLinks(moduleForm);
             }
 
-            select2Ajax($("#StationID"), "StationID", "SiteName");
+            // design slide 11: "<SiteCode> – <SiteName> (<DeviceID>)"
+            select2Ajax($("#StationID"), "StationID", (s) => `${s.SiteCode} – ${s.SiteName}${s.DeviceID ? ` (${s.DeviceID})` : ""}`);
 
             $(".selectTwo").select2();
             initForm(moduleForm);

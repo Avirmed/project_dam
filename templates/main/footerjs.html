@@ -36,11 +36,20 @@
 
         <script src="{{ url_for('static', filename='js/libs/blueimpGallery/js/jquery.blueimp-gallery.min.js') }}"></script>
 
+        {# ECharts must load BEFORE the ArcGIS (Dojo AMD) loader: its UMD wrapper
+           would otherwise register as an anonymous AMD module - no window.echarts
+           and a corrupted Dojo loader (the map's require() fails silently). #}
+        <script src="{{ url_for('static', filename='js/libs/echarts/dist/echarts.min.js') }}"></script>
+
         <link rel="stylesheet" href="https://js.arcgis.com/4.29/esri/themes/light/main.css"/>
         <script src="https://js.arcgis.com/4.29/"></script>
 
         <script src="{{ url_for('static', filename='js/file.uploader.js') }}"></script>
         <script src="{{ url_for('static', filename='js/damchart.js', v=time) }}"></script>
         <script src="{{ url_for('static', filename='js/profilechart.js', v=time) }}"></script>
+        <script src="{{ url_for('static', filename='js/hydrochart.js', v=time) }}"></script>
+        <script src="{{ url_for('static', filename='js/payload.js', v=time) }}"></script>
         <script src="{{ url_for('static', filename='js/project.js', v=time) }}"></script>
+        <script src="{{ url_for('static', filename='js/filters.js', v=time) }}"></script>
         <script src="{{ url_for('static', filename='js/app.js', v=time) }}"></script>
+        <script src="{{ url_for('static', filename='js/notifications.js', v=time) }}"></script>

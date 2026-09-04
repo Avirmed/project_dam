@@ -71,8 +71,6 @@ def register_blueprints(app):
         (csvlogger_bp, "/csvlogger"),
         (httplog_bp, "/httplog"),
         (stationdata_bp, "/stationdata"),
-        # Device-facing REST API server: POST /api/inbound/<DeviceID> (no login;
-        # gated by each station's own API settings).
         (inbound_bp, "/inbound"),
         (eventlog_bp, "/eventlog"),
     ]

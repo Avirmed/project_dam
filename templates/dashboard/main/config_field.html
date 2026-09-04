@@ -7,7 +7,8 @@
     (a `select` key -> select, a `table` key -> table, otherwise text).
 
     Supported types: text (default), number, password, select, checkbox, date,
-    table, file, generate, divider.
+    color, table, file, generate, divider.
+      color    : native colour picker, value kept as #rrggbb (`default` = initial colour, #ffffff).
       file     : uploads straight to `field.upload` (handled in project.js) and keeps
                  only the returned filename in a hidden input named `key`.
       generate : readonly input + button that POSTs `field.generate` for a fresh value.
@@ -89,6 +90,20 @@
         {% if 'max' in field %}max="{{ field.max }}"{% endif %}
         placeholder="{{ field.placeholder }}"
     >
+{%- elif ftype == 'color' -%}
+    {# same look as the Settings page colour rows: swatch + hex text; project.js
+       writes the input value into the <small> that follows it. Stored as #rrggbb #}
+    <label class="small mb-2">{{ field.title }}</label>
+    <div class="d-flex align-items-center">
+        <input
+            type="color"
+            name="{{ key }}"
+            class="form-control form-control-color form-control-color-input me-2"
+            value="{{ field.default or '#ffffff' }}"
+            title="{{ field.title }}"
+        >
+        <small class="text-muted">{{ field.default or '#ffffff' }}</small>
+    </div>
 {%- elif ftype == 'password' -%}
     <label class="small mb-2">{{ field.title }}</label>
     <input

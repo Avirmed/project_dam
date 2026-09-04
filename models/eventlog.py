@@ -69,7 +69,9 @@ class EventLog(db.Model):
     station = db.relationship("Station")
 
     # Event Log page: one station / basin over a date range.
-    __table_args__ = (db.Index("ix_tbl_eventlog_station_time", "StationID", "EventTime"),)
+    __table_args__ = (
+        db.Index("ix_tbl_eventlog_station_time", "StationID", "EventTime"),
+    )
 
     def __repr__(self):
         return f"<EventLog {self.ID}:{self.Event}>"
@@ -87,9 +89,13 @@ class EventLog(db.Model):
             if self.station and self.station.riverbasin
             else None
         )
+        # blank placeholder when no image or when the file is no longer on disk
+        has_file = bool(self.ImageSource) and os.path.isfile(
+            os.path.join(self.drfFilePath, *self.ImageSource.split("/"))
+        )
         data["Image"] = (
             f"{self.filePath}/{self.ImageSource}"
-            if self.ImageSource
+            if has_file
             else statictext.Images["Blank"]
         )
         data["StatusText"] = statictext.EventLogStatuses.get(self.Status, {}).get(
@@ -212,6 +218,24 @@ class EventLog(db.Model):
                 query = query.filter(cls.EventTime < date_to + timedelta(days=1))
 
         return query
+
+    @classmethod
+    def latest(cls, params={}, limit=8):
+        """Newest pending events in the user's scope (header notifications)."""
+        params = dict(params or {})
+        filters = dict(params.get("filters") or {})
+        filters["Status"] = cls.STATUS_PENDING
+        params["filters"] = filters
+        rows = (
+            cls._filtered_query(params)
+            .order_by(cls.EventTime.desc())
+            .limit(limit)
+            .all()
+        )
+        return {
+            "pending": cls._filtered_query(params).count(),
+            "data": [row.serialize() for row in rows],
+        }
 
     @classmethod
     def counters(cls, params={}):

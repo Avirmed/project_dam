@@ -1,0 +1,56 @@
+{# Public CCTV page (front design slides 4-7): station list on the left, the
+   selected station's camera snapshots on the right (static/js/modules/cctv.js) #}
+{% set T = StaticText.FrontPage.CCTV %}
+<div class="cctv-page" data-station="{{ contentid or '' }}">
+	<div class="row g-3">
+		<div class="col-lg-4 col-xl-3 cctv-sidebar">
+			<div class="card mb-0">
+				<div class="card-body">
+					<div class="dash-card-title">{{ T.Stations }} <span class="text-muted cctv-count"></span></div>
+					<div class="row g-2 mb-2">
+						<div class="col-12">
+							<div class="position-relative">
+								<input type="text" class="form-control form-control-sm cctv-search pe-4" placeholder="{{ T.Search }}">
+								<i class="ti ti-search position-absolute top-50 end-0 translate-middle-y me-2 text-muted"></i>
+							</div>
+						</div>
+						<div class="col-12">
+							<select class="form-select form-select-sm cctv-type">
+								<option value="" selected>{{ T.CameraType }}: -- {{ StaticText.All }} --</option>
+								{% for key, value in StaticText.CameraTypes.items() %}
+								<option value="{{ key }}">{{ value }}</option>
+								{% endfor %}
+							</select>
+						</div>
+					</div>
+					<div class="cctv-list list-group list-group-flush"></div>
+				</div>
+			</div>
+		</div>
+
+		<div class="col-lg-8 col-xl-9 cctv-main">
+			<div class="card mb-0 h-100">
+				<div class="card-body">
+					<div class="text-muted text-center py-5 cctv-empty">{{ T.SelectStation }}</div>
+					<div class="cctv-detail d-none">
+						<div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+							<div>
+								<div class="d-flex align-items-center gap-2">
+									<span class="status-dot cctv-status"></span>
+									<h5 class="mb-0 cctv-title"></h5>
+								</div>
+								<small class="text-muted cctv-subtitle"></small>
+							</div>
+							<div class="d-flex gap-2 cctv-actions">
+								<a class="btn btn-sm btn-outline-secondary cctv-station-link">{{ StaticText.FrontPage.Popup.More }}</a>
+								<button type="button" class="btn btn-sm btn-outline-secondary cctv-print">{{ StaticText.Icon.Print | safe }} {{ T.PrintReport }}</button>
+							</div>
+						</div>
+						<div class="row g-3 cctv-cameras"></div>
+						<div class="text-muted text-center py-4 cctv-nocameras d-none">{{ T.NoCameras }}</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>

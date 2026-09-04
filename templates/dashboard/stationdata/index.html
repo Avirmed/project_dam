@@ -1,0 +1,64 @@
+{# Station Data - every payload received by the REST API server (tbl_station_data),
+   read-only. Filters + summary tiles + chart of one parameter + grid (stationdata.js) #}
+{% set F = StaticText.StationDataField %}
+<div class="tabulator-container">
+	{% include "dashboard/{}/filter.html".format(Module) ignore missing %}
+
+	{# summary tiles for the current filters (/api/stationdata/summary) #}
+	<div class="row g-2 mb-3 stationdata-summary">
+		<div class="col-6 col-md-3">
+			<div class="border rounded p-2 text-center">
+				<small class="text-muted">{{ F.Total }}</small>
+				<h5 class="mb-0" data-summary="total">0</h5>
+			</div>
+		</div>
+		<div class="col-6 col-md-3">
+			<div class="border rounded p-2 text-center">
+				<small class="text-muted">{{ F.Stations }}</small>
+				<h5 class="mb-0" data-summary="stations">0</h5>
+			</div>
+		</div>
+		<div class="col-6 col-md-3">
+			<div class="border rounded p-2 text-center">
+				<small class="text-muted">{{ F.FirstRecord }}</small>
+				<h6 class="mb-0" data-summary="first">-</h6>
+			</div>
+		</div>
+		<div class="col-6 col-md-3">
+			<div class="border rounded p-2 text-center">
+				<small class="text-muted">{{ F.LastRecord }}</small>
+				<h6 class="mb-0" data-summary="last">-</h6>
+			</div>
+		</div>
+	</div>
+
+	{# chart of the selected parameter for one station (/api/stationdata/series) #}
+	<div class="border rounded p-2 mb-3 stationdata-chart-card">
+		<div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-1">
+			<div class="small fw-semibold stationdata-chart-info"></div>
+			<div class="d-flex align-items-center gap-2">
+				<label class="small mb-0" for="BucketSelect">{{ F.Bucket }}</label>
+				<select class="form-select form-select-sm w-auto" id="BucketSelect">
+					{% for key, value in StaticText.StationDataBuckets.items() %}
+					<option value="{{ key }}">{{ value }}</option>
+					{% endfor %}
+				</select>
+			</div>
+		</div>
+		<div class="stationdata-chart" style="height: 320px;"></div>
+		<div class="small text-muted text-center py-4 stationdata-chart-empty">{{ F.SelectStation }}</div>
+	</div>
+
+	{% include "addons/tabulator-export.html" ignore missing %}
+	<div
+		id="stationdataTable"
+		class="app-tabulator-table mt-0 mb-4"
+
+		cfg-ajax-url="/api/stationdata/list"
+		cfg-index="ID"
+		cfg-minHeight="480"
+		cfg-pagination
+		cfg-numberic
+		data-name="stationdata"
+	></div>
+</div>

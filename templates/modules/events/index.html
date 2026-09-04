@@ -1,80 +1,24 @@
+{% from "dashboard/main/filter_field.html" import filter_select, filter_input, filter_period, filter_dates, filter_param_range with context %}
 {# Public "Event Log": security camera events with approve / reject (design slide 10) #}
-<div class="tabulator-container">
-	<div class="tabulator-filters mb-3">
-		<div class="row">
-			<div class="col-xl-3 col-lg-4 col-md-6">
-				<div class="row align-items-center mb-3">
-					<div class="col-auto">
-						<label class="small" for="ProjectIDFilter">{{ StaticText.ProjectField.ProjectName }}</label>
-					</div>
-					<div class="col">
-						<select class="form-control form-control-sm select2" id="ProjectIDFilter" name="ProjectID" data-url="/api/projects/list?status=1">
-							<option value="" selected>-- {{ StaticText.All }} --</option>
-						</select>
-					</div>
-				</div>
-			</div>
-			<div class="col-xl-3 col-lg-4 col-md-6">
-				<div class="row align-items-center mb-3">
-					<div class="col-auto">
-						<label class="small" for="RiverBasinIDFilter">{{ StaticText.RiverBasinField.WatershedName }}</label>
-					</div>
-					<div class="col">
-						<select class="form-control form-control-sm select2" id="RiverBasinIDFilter" name="RiverBasinID" data-url="/api/riverbasins/list?status=1">
-							<option value="" selected>-- {{ StaticText.All }} --</option>
-						</select>
-					</div>
-				</div>
-			</div>
-			<div class="col-xl-3 col-lg-4 col-md-6">
-				<div class="row align-items-center mb-3">
-					<div class="col-auto">
-						<label class="small" for="StatusFilter">{{ StaticText.EventLogField.Status }}</label>
-					</div>
-					<div class="col">
-						<select class="form-control form-control-sm select2" id="StatusFilter" name="Status">
-							<option value="" selected>-- {{ StaticText.All }} --</option>
-							{% for key, value in StaticText.EventLogStatuses.items() %}
-							<option value="{{ key }}">{{ value.text }}</option>
-							{% endfor %}
-						</select>
-					</div>
-				</div>
-			</div>
-		</div>
-		<div class="row">
-			<div class="col-xl-3 col-lg-4 col-md-6">
-				<div class="row align-items-center mb-3">
-					<div class="col-auto">
-						<label class="small" for="DateFromFilter">{{ StaticText.EventLogField.DateFrom }}</label>
-					</div>
-					<div class="col">
-						<input type="text" class="form-control form-control-sm datepicker" id="DateFromFilter" name="DateFrom" autocomplete="off">
-					</div>
-				</div>
-			</div>
-			<div class="col-xl-3 col-lg-4 col-md-6">
-				<div class="row align-items-center mb-3">
-					<div class="col-auto">
-						<label class="small" for="DateToFilter">{{ StaticText.EventLogField.DateTo }}</label>
-					</div>
-					<div class="col">
-						<input type="text" class="form-control form-control-sm datepicker" id="DateToFilter" name="DateTo" autocomplete="off">
-					</div>
-				</div>
-			</div>
-		</div>
+<div class="tabulator-container events-page">
+	<h5 class="page-title">{{ StaticText.EventLogField.Title }}</h5>
+<div class="tabulator-filters app-filters">
+	<div class="row">
+		{{ filter_select("ProjectIDFilter", "ProjectID", StaticText.FilterLabels.Project, url="/api/projects/list?status=1", first=StaticText.All) }}
+		{{ filter_select("RiverBasinIDFilter", "RiverBasinID", StaticText.FilterLabels.Watershed, url="/api/riverbasins/list?status=1", first=StaticText.All) }}
+		{{ filter_select("StatusFilter", "Status", StaticText.FilterLabels.Status, options=StaticText.EventLogStatuses, first=StaticText.All) }}
+		{{ filter_dates() }}
 	</div>
+</div>
 
-	<h4 class="mb-3">{{ StaticText.EventLogField.Title }}</h4>
 
 	{# Approve / Reject totals for the current filters (events.js) #}
-	<div class="row mb-3 eventlog-counters">
+	<div class="row g-2 mb-3 justify-content-center eventlog-counters">
 		{% for key, value in StaticText.EventLogStatuses.items() %}
-		<div class="col-md-4 mb-2">
-			<div class="border rounded p-3 text-center">
-				<h5 class="mb-1">{{ value.text }}</h5>
-				<h2 class="mb-0 fw-bold" data-status="{{ key }}">0</h2>
+		<div class="col-4 col-md-3 col-xl-2">
+			<div class="stat-tile stat-tile-{{ key }}">
+				<div class="stat-tile-label">{{ value.text }}</div>
+				<div class="stat-tile-value" data-status="{{ key }}">0</div>
 			</div>
 		</div>
 		{% endfor %}

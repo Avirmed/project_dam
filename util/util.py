@@ -103,6 +103,10 @@ APP_DASHBOARD_MENU = {
                         "name": "CSV Logger",
                         "url": "/dashboard/csvlogger",
                     },
+                    {
+                        "name": "Station Data",
+                        "url": "/dashboard/stationdata",
+                    },
                 ],
             },
         ],

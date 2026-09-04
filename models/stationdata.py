@@ -3,9 +3,8 @@ import logging
 from datetime import datetime, timedelta
 
 from database import db
-from sqlalchemy import text, func
+from sqlalchemy import text, func, cast, case, Float
 from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy.orm import contains_eager
 from sqlalchemy.dialects.postgresql import JSONB
 
 from util import statictext, util as Util, hydro
@@ -18,8 +17,9 @@ class StationData(db.Model):
 
     __tablename__ = "tbl_station_data"
 
+    # newest payload first (composite index StationID + RecordTime)
     sort = [
-        {"column": "ID", "field": "ID", "dir": "desc"},
+        {"column": "RecordTime", "field": "RecordTime", "dir": "desc"},
     ]
 
     searchFields = ["DeviceID"]
@@ -56,6 +56,7 @@ class StationData(db.Model):
         }
 
         data["SiteName"] = self.station.SiteName if self.station else None
+        data["SiteCode"] = self.station.SiteCode if self.station else None
 
         return data
 
@@ -208,6 +209,68 @@ class StationData(db.Model):
             return False
 
     @classmethod
+    def rain_accumulation(cls, station_id, days=1, now=None):
+        """Rain (statictext.StationDataKeys["Rainfall"], per-payload amount)
+        accumulated over `days` hydrological days ending at the last 07:00
+        boundary (design front slide 8: "07:00 08/10 - 07:00 09/10").
+        Returns {"days", "from", "to", "value"} (value None when no numeric rows)."""
+        now = now or datetime.now()
+        boundary = now.replace(hour=7, minute=0, second=0, microsecond=0)
+        if now < boundary:
+            boundary -= timedelta(days=1)
+        start = boundary - timedelta(days=days)
+        expr = cls.value_expr(statictext.StationDataKeys["Rainfall"])
+        total = (
+            db.session.query(func.sum(expr))
+            .filter(
+                cls.StationID == station_id,
+                cls.RecordTime >= start,
+                cls.RecordTime < boundary,
+            )
+            .scalar()
+        )
+        return {
+            "days": days,
+            "from": start,
+            "to": boundary,
+            "value": round(float(total), 2) if total is not None else None,
+        }
+
+    @classmethod
+    def latest_rainfall(cls, station_id):
+        """Time of the newest payload whose rain amount is > 0 (None when never)."""
+        expr = cls.value_expr(statictext.StationDataKeys["Rainfall"])
+        return (
+            db.session.query(func.max(cls.RecordTime))
+            .filter(cls.StationID == station_id, expr > 0)
+            .scalar()
+        )
+
+    @classmethod
+    def series_multi(cls, params, keys):
+        """series() for several Data columns at once (Station Data chart):
+        {"series": {key: {bucket, count, points}}, "bucket": <bucket of the
+        first non-empty series>}. Every series uses the same requested bucket,
+        so aggregated points line up on the time axis."""
+        params = dict(params or {})
+        filters = dict(params.get("filters") or {})
+        bucket = str(params.get("bucket") or "auto").lower()
+        out, common = {}, None
+        for key in keys:
+            filters["Parameter"] = key
+            params["filters"] = filters
+            if common is not None:
+                params["bucket"] = common
+            res = cls.series(params)
+            if res["points"] and common is None and bucket == "auto":
+                common = res["bucket"]  # lock the auto-chosen resolution for the rest
+            out[key] = res
+        return {
+            "series": out,
+            "bucket": common or (bucket if bucket != "auto" else None),
+        }
+
+    @classmethod
     def latest_by_station(cls, station_ids):
         """Newest payload per station -> {StationID: StationData}. One query:
         max(RecordTime) per station joined back to the rows."""
@@ -272,81 +335,129 @@ class StationData(db.Model):
 
         return level, water_data
 
+    MAX_RAW_POINTS = 3000  # chart: raw values up to this many rows, else aggregated
+
+    @classmethod
+    def _parse_datetime(cls, value):
+        """'YYYY-MM-DD' or 'YYYY-MM-DD HH:MM[:SS]' -> datetime, None when invalid."""
+        if isinstance(value, datetime):
+            return value
+        value = str(value or "").strip()
+        for fmt in ("%Y-%m-%d %H:%M:%S", "%Y-%m-%d %H:%M", "%Y-%m-%d"):
+            try:
+                return datetime.strptime(value, fmt)
+            except ValueError:
+                continue
+        return None
+
+    @classmethod
+    def time_range(cls, filters):
+        """(from, to_exclusive) from the quick Range (statictext.StationDataRanges)
+        or the DateFrom / DateTo filters; a date-only DateTo covers the whole day."""
+        rng = str(filters.get("Range") or "").strip()
+        seconds = (statictext.StationDataRanges.get(rng) or {}).get("seconds") or 0
+        if seconds > 0:
+            return datetime.now() - timedelta(seconds=seconds), None
+        date_from = (
+            cls._parse_datetime(filters.get("DateFrom"))
+            if filters.get("DateFrom")
+            else None
+        )
+        date_to = (
+            cls._parse_datetime(filters.get("DateTo"))
+            if filters.get("DateTo")
+            else None
+        )
+        if date_to is not None and len(str(filters.get("DateTo")).strip()) <= 10:
+            date_to = date_to + timedelta(days=1)
+        return date_from, date_to
+
+    @classmethod
+    def value_expr(cls, key):
+        """SQL expression for Data->>key as a float; NULL when the text is not
+        numeric (device payloads may carry "-", "NaN" or empty strings)."""
+        text_value = cls.Data[key].astext
+        return case(
+            (text_value.op("~")(r"^-?[0-9]+(\.[0-9]+)?$"), cast(text_value, Float)),
+            else_=None,
+        )
+
+    @classmethod
+    def _filtered_query(cls, params):
+        """Shared filtering for list() / summary() / series(): StationID, DeviceID,
+        ProjectID / RiverBasinID (via the station), the period (Range or
+        DateFrom / DateTo on RecordTime), a numeric Parameter Min / Max window and
+        the free-text search."""
+        from models.station import Station
+
+        query = cls.query
+        filters = params.get("filters") or {}
+        search = params.get("search")
+
+        if search:
+            query = query.filter(
+                db.or_(
+                    *[getattr(cls, f).ilike(f"%{search}%") for f in cls.searchFields]
+                )
+            )
+
+        if isinstance(filters, dict):
+            for key in ("StationID", "DeviceID"):
+                value = filters.get(key)
+                if value in (None, "", []):
+                    continue
+                col = getattr(cls, key)
+                query = query.filter(
+                    col.in_(value) if isinstance(value, list) else col == value
+                )
+
+            if filters.get("ProjectID") or filters.get("RiverBasinID"):
+                query = query.join(Station, Station.StationID == cls.StationID)
+                if filters.get("ProjectID"):
+                    query = query.filter(Station.ProjectID == filters.get("ProjectID"))
+                if filters.get("RiverBasinID"):
+                    query = query.filter(
+                        Station.RiverBasinID == filters.get("RiverBasinID")
+                    )
+
+            date_from, date_to = cls.time_range(filters)
+            if date_from:
+                query = query.filter(cls.RecordTime >= date_from)
+            if date_to:
+                query = query.filter(cls.RecordTime < date_to)
+
+            key = str(filters.get("Parameter") or "").strip()
+            low, high = Util.safe_float(filters.get("Min")), Util.safe_float(
+                filters.get("Max")
+            )
+            if key and (low is not None or high is not None):
+                expr = cls.value_expr(key)
+                if low is not None:
+                    query = query.filter(expr >= low)
+                if high is not None:
+                    query = query.filter(expr <= high)
+
+        return query
+
     @classmethod
     def list(cls, params={}):
-        arrayObj = []
-        query = cls.query
-        total = query.count()
+        query = cls._filtered_query(params)
 
         page = params.get("page", None)
         size = params.get("size", None)
-        sort = params.get("sort", [])
-        search = params.get("search", None)
-        filters = params.get("filters", {})
-        joined_relations = set()
-
-        if search:
-            search_conditions = [
-                getattr(cls, field).ilike(f"%{search}%")
-                for field in cls.searchFields
-                if hasattr(cls, field)
-            ]
-            if search_conditions:
-                query = query.filter(db.or_(*search_conditions))
-
-        if filters and isinstance(filters, dict):
-            for key, value in filters.items():
-                if hasattr(cls, key) and value not in [None, ""]:
-                    col = getattr(cls, key)
-
-                    if isinstance(value, list):
-                        query = query.filter(col.in_(value))
-                    else:
-                        query = query.filter(col == value)
+        sort = params.get("sort", []) or cls.sort
 
         filtered = query.count()
 
-        if not sort:
-            sort = cls.sort
-
-        if sort:
-            order_clauses = []
-            for s in sort:
-                field = s.get("field")
-                direction = s.get("dir", "asc").lower()
-
-                if not field:
-                    continue
-
-                if "__" in field:
-                    parts = field.split("__")
-                    rel_name = parts[0]
-                    col_name = parts[1]
-
-                    if hasattr(cls, rel_name.lower()):
-                        rel_attr = getattr(cls, rel_name.lower())
-
-                        if rel_name not in joined_relations:
-                            query = query.outerjoin(rel_attr).options(
-                                contains_eager(rel_attr)
-                            )
-                            joined_relations.add(rel_name)
-
-                        target_model = rel_attr.property.mapper.class_
-                        if hasattr(target_model, col_name):
-                            col = getattr(target_model, col_name)
-                            order_clauses.append(
-                                col.asc() if direction == "asc" else col.desc()
-                            )
-
-                elif hasattr(cls, field):
-                    col = getattr(cls, field)
-                    order_clauses.append(
-                        col.asc() if direction == "asc" else col.desc()
-                    )
-
-            if order_clauses:
-                query = query.order_by(*order_clauses)
+        order_clauses = []
+        for s in sort:
+            field = s.get("field")
+            direction = str(s.get("dir", "asc")).lower()
+            if field and hasattr(cls, field):
+                col = getattr(cls, field)
+                order_clauses.append(col.asc() if direction == "asc" else col.desc())
+        if order_clauses:
+            query = query.order_by(*order_clauses)
 
         if size is None:
             arrayObj = query.all()
@@ -355,17 +466,92 @@ class StationData(db.Model):
                 page = 1
             arrayObj = query.offset((page - 1) * size).limit(size).all()
 
-        result = {
-            "data": [],
+        return {
+            "data": [row.serialize() for row in arrayObj],
             "sort": sort,
-            "last_row": total,
-            "last_page": math.ceil(total / size) if size is not None else 1,
+            "last_row": filtered,
+            "last_page": math.ceil(filtered / size) if size else 1,
             "filtered": filtered,
         }
 
-        for object in arrayObj:
-            result["data"].append(object.serialize())
+    @classmethod
+    def summary(cls, params={}):
+        """Tiles of the Station Data page for the current filters."""
+        row = (
+            cls._filtered_query(params)
+            .with_entities(
+                func.count(cls.ID),
+                func.count(func.distinct(cls.StationID)),
+                func.min(cls.RecordTime),
+                func.max(cls.RecordTime),
+            )
+            .first()
+        )
+        return {
+            "total": row[0] or 0,
+            "stations": row[1] or 0,
+            "first": row[2],
+            "last": row[3],
+        }
 
+    @classmethod
+    def series(cls, params={}):
+        """Time series of one Data column for the chart: {parameter, bucket,
+        count, points}. bucket = auto | raw | hour | day; auto keeps raw values
+        up to MAX_RAW_POINTS rows, then hourly, then daily averages (with
+        min / max / n per bucket). Needs a single StationID filter."""
+        filters = params.get("filters") or {}
+        key = str(
+            filters.get("Parameter") or statictext.StationDataKeys["WaterLevel"]
+        ).strip()
+        bucket = str(params.get("bucket") or "auto").lower()
+        station = filters.get("StationID")
+        if isinstance(station, list):
+            station = station[0] if len(station) == 1 else None
+        result = {"parameter": key, "bucket": None, "count": 0, "points": []}
+        if station in (None, "", -1):
+            return result
+
+        query = cls._filtered_query(params)
+        expr = cls.value_expr(key)
+        count = query.filter(expr.isnot(None)).count()
+        result["count"] = count
+        if bucket not in statictext.StationDataBuckets or bucket == "auto":
+            bucket = (
+                "raw"
+                if count <= cls.MAX_RAW_POINTS
+                else ("hour" if count <= cls.MAX_RAW_POINTS * 24 else "day")
+            )
+        result["bucket"] = bucket
+
+        if bucket == "raw":
+            rows = (
+                query.with_entities(cls.RecordTime, expr)
+                .filter(expr.isnot(None))
+                .order_by(cls.RecordTime.asc())
+                .limit(cls.MAX_RAW_POINTS)
+                .all()
+            )
+            result["points"] = [{"t": t, "v": v} for t, v in rows]
+        else:
+            slot = func.date_trunc(bucket, cls.RecordTime).label("slot")
+            rows = (
+                query.with_entities(
+                    slot,
+                    func.avg(expr),
+                    func.min(expr),
+                    func.max(expr),
+                    func.count(expr),
+                )
+                .filter(expr.isnot(None))
+                .group_by(slot)
+                .order_by(slot.asc())
+                .all()
+            )
+            result["points"] = [
+                {"t": t, "v": round(float(avg), 4), "min": lo, "max": hi, "n": n}
+                for t, avg, lo, hi, n in rows
+            ]
         return result
 
     @classmethod
