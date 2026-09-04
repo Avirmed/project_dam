@@ -13,6 +13,7 @@ velocity). The legacy folder itself is gone; its models were imported into
 | `detect.py` | CLI: one water-level detection job as JSON (file or stdin) → one JSON result on stdout (stage 2: level, velocity/direction/colour/rain, annotated gif). |
 | `animation.py` | Pictures → animated GIF (Pillow), used by `grab.py`; importable from the web app as `ai.animation`. |
 | `velocity.py` | Port of the legacy `detect_movement()`: Farneback optical flow inside the velocity region → m/s (scaled by the region length and real frame spacing), direction, dominant colour (OpenCV k-means), rain flag. |
+| `doctor.py` | Step-by-step runtime check for a new server (imports, CPU capability, CPU/CUDA conv test, model load, blank detection); shows where a native crash happens. |
 | `detector.py` | Loads a YOLOv5 checkpoint (cached per process) and finds the waterline on a frame: the box touching the water (smallest `y2`), its bottom row is the waterline. |
 | `calibration.py` | Sampling rows `{x: pixel row, y: level m}` → cubic spline → level, extrapolated at both ends like the legacy code. Pure numpy/scipy. |
 | `capture.py` | Frame sources: image file, one RTSP frame (`grab_frame`), RTSP burst (`grab_burst`, for the future velocity job), ISAPI snapshot (`fetch_snapshot`, Basic then Digest auth). |
@@ -36,7 +37,7 @@ and parses the last stdout line (`services/ai_worker.py::run_script`, also used 
 calls would stall the gevent web server). torch, ultralytics and friends are therefore
 loaded only in that short-lived interpreter. `detector.prepare_runtime()` also
 restores `torch.load(weights_only=False)` (torch ≥ 2.6 rejects the old
-checkpoints otherwise) and aliases `pathlib.PosixPath` on Windows. `detector.load_model()` warms the model up on the chosen device and falls back to the CPU when the CUDA build cannot run on the installed GPU ("no kernel image is available" on cards older than the torch wheel supports); `AI_DEVICE=cpu` in `.env` forces the CPU.
+checkpoints otherwise) and aliases `pathlib.PosixPath` on Windows. `detector.load_model()` warms the model up on the chosen device and falls back to the CPU when the CUDA build cannot run on the installed GPU ("no kernel image is available" on cards older than the torch wheel supports); `AI_DEVICE=cpu` in `.env` forces the CPU; `AI_NO_MKLDNN=1` disables the oneDNN CPU kernels (access-violation crashes on old CPUs / VMs) and `AI_TORCH_THREADS=n` caps the CPU threads.
 
 ## Job / result
 

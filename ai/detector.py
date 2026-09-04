@@ -61,6 +61,15 @@ def prepare_runtime():
     if os.name == "nt":
         pathlib.PosixPath = pathlib.WindowsPath
 
+    # AI_NO_MKLDNN=1 (.env): skip the oneDNN CPU kernels - on some older CPUs /
+    # virtual machines they die with an access violation (exit 0xC0000005)
+    # instead of raising; the plain kernels are slower but always run.
+    if str(os.getenv("AI_NO_MKLDNN", "")).strip().lower() in ("1", "true", "yes"):
+        torch.backends.mkldnn.enabled = False
+    threads = os.getenv("AI_TORCH_THREADS")
+    if threads and threads.isdigit():
+        torch.set_num_threads(int(threads))
+
 
 def resolve_weights(weights):
     """Absolute path of a weights file: as given, or by name under trained_models/."""

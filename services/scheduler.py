@@ -14,11 +14,13 @@ is a cooperative greenlet; blocking I/O (urllib, ftplib) yields to web requests.
 """
 
 import logging
+import re
 import threading
 import time
 from datetime import datetime, timedelta
 
 from database import db
+from util import statictext, util as Util
 
 logger = logging.getLogger("worker")
 
@@ -113,8 +115,26 @@ def _loop(app):
     logger.info("Worker stopped.")
 
 
+def _schedule_text(name, settings):
+    """Human schedule of a job (statictext.WorkerSchedules) with the Settings
+    values filled in; "off" when a referenced interval is 0."""
+    template = statictext.WorkerSchedules.get(name)
+    if not template:
+        return ""
+    values = {}
+    for key in re.findall(r"{([A-Z_]+)}", template):
+        value = Util.safe_int(settings.get(key), getattr(statictext, key, 0))
+        if value <= 0:
+            return statictext.WorkerScheduleOff
+        values[key] = value
+    return template.format(**values)
+
+
 def status():
     """Worker + per-job state for the dashboard (services/sysinfo is separate)."""
+    from models import Settings
+
+    settings = Settings.load_settings()
     now_mono = time.monotonic()
     now = datetime.now()
     jobs = []
@@ -130,6 +150,7 @@ def status():
             {
                 "name": name,
                 "interval": interval,
+                "schedule": _schedule_text(name, settings),
                 "last_run": s.get("last_run"),
                 "duration": s.get("duration"),
                 "result": s.get("result"),

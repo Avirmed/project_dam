@@ -311,6 +311,7 @@ mapMonitor(mapContainerID);
                 <tr class="fade-in" data-job="${job.name}">
                     <td class="text-nowrap"><span class="status-dot me-2" style="background:${job.runs ? (ok ? "#198754" : "#dc3545") : "#adb5bd"}"></span>${escapeHtml(name)}</td>
                     <td class="text-end text-muted small">${fmtDuration(job.interval)}</td>
+                    <td class="small text-muted">${escapeHtml(job.schedule || "")}</td>
                     <td class="small text-nowrap" title="${job.last_run || ""}">${job.last_run ? fmtAgo(job.last_run) : T.NeverRun}</td>
                     <td class="small text-nowrap"><span class="dash-next" data-next="${job.next_in === null ? "" : job.next_in}">${job.next_in === null ? "-" : fmtDuration(job.next_in)}</span></td>
                     <td class="text-end small text-muted">${job.duration === null || job.duration === undefined ? "-" : `${(job.duration * 1000).toFixed(0)} ms`}</td>

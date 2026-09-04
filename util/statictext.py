@@ -759,7 +759,8 @@ DashboardSummary = {
     "WorkerStopped": "Stopped",
     "WorkerDisabled": "Off",
     "Job": "Job",
-    "Interval": "Every",
+    "Interval": "Check",  # how often the worker calls the job (it decides itself whether work is due)
+    "Schedule": "Schedule",  # when the job really does its work (Settings)
     "LastRun": "Last",
     "NextRun": "Next",
     "Duration": "Time",
@@ -802,6 +803,21 @@ DashboardSummary = {
 }
 
 # Worker job names shown on the dashboard (keys = services/scheduler.py register()).
+# Real work schedule of each worker job for the dashboard "Schedule" column
+# (services/scheduler.status()): {name} placeholders are Settings rows, "off"
+# is shown when such a row is 0 (WorkerScheduleOff).
+WorkerSchedules = {
+    "http_sender": "on new data (queue)",
+    "csv_logger": "per logger interval, clock-aligned",
+    "event_watcher": "every check",
+    "image_uploader": "every check",
+    "snapshot": "every {SNAPSHOT_INTERVAL_MINUTES} min per camera",
+    "sysinfo": "every check; folder sizes every 5 min",
+    "retention": "once a day",
+    "ai_worker": "every {AI_WORKER_INTERVAL_MINUTES} min per camera",
+}
+WorkerScheduleOff = "off"
+
 WorkerJobs = {
     "http_sender": "HTTP sender",
     "csv_logger": "CSV logger",
