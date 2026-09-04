@@ -289,16 +289,89 @@ def _native_crash(result):
     )
 
 
+EXPORT_SCRIPT = os.path.join(AI_DIR, "export_onnx.py")
+EXPORT_TIMEOUT = 300  # seconds for one .pt -> .onnx export
+EXPORT_RETRY_SECONDS = 3600  # after a failed export leave the model alone for an hour
+_export_failed = {}  # weights path -> time.monotonic() of the last failed export
+
+
+def current_backend():
+    """Backend the worker will use: the sticky switch after a crash, else AI_BACKEND."""
+    return (
+        _backend["name"] or str(os.getenv("AI_BACKEND") or "").strip().lower() or None
+    )
+
+
+def ensure_onnx(camera):
+    """When the onnx backend is in use, create the missing <model>.onnx by
+    running ai/export_onnx.py (needs a working torch, so this succeeds on
+    machines where torch runs and AI_BACKEND=onnx was chosen by hand; on a
+    server whose torch crashes it fails and the message says to export on a PC).
+    Returns (path or None, message)."""
+    import time
+
+    weights = camera.model_file()
+    if not weights:
+        return None, "no model"
+    onnx = os.path.splitext(weights)[0] + ".onnx"
+    if os.path.isfile(onnx):
+        return onnx, None
+    last = _export_failed.get(weights)
+    if last is not None and time.monotonic() - last < EXPORT_RETRY_SECONDS:
+        return (
+            None,
+            f"ONNX model missing ({os.path.basename(onnx)}); last export failed, retry later",
+        )
+    args = [python_exe(), EXPORT_SCRIPT, os.path.basename(weights)]
+    size = Util.safe_int(camera.configs().get("ModelImageSize"), 0)
+    if size:
+        args += ["--imgsz", str(size)]
+    logger.info("AI worker: exporting %s to ONNX ...", os.path.basename(weights))
+    try:
+        proc = subprocess.run(
+            args,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            cwd=statictext.APP_DIRECTORY,
+            timeout=EXPORT_TIMEOUT,
+        )
+        detail = (proc.stderr or proc.stdout or "").strip().splitlines()
+        detail = detail[-1] if detail else f"exit {proc.returncode}"
+    except subprocess.TimeoutExpired:
+        proc, detail = None, f"timeout after {EXPORT_TIMEOUT}s"
+    except OSError as e:
+        proc, detail = None, f"{type(e).__name__}: {e}"
+    if os.path.isfile(onnx):
+        logger.info("AI worker: %s created", os.path.basename(onnx))
+        return onnx, None
+    _export_failed[weights] = time.monotonic()
+    return None, (
+        f"ONNX export failed ({detail}) - torch cannot run on this machine: run "
+        f"ai/export_onnx.py on a PC where it works and copy {os.path.basename(onnx)} next to the model"
+    )
+
+
 def detect(camera, ctx, grab):
     """Stage 2: water level (+ velocity) on the clip frames, annotated pictures.
-    Falls back to the onnx backend (and keeps it) when torch crashes natively."""
-    result = _detect(camera, ctx, grab, _backend["name"])
-    if _backend["name"] != "onnx" and _native_crash(result):
+    Falls back to the onnx backend (and keeps it) when torch crashes natively;
+    with the onnx backend a missing .onnx is exported first (ensure_onnx)."""
+    backend = current_backend()
+    if backend == "onnx":
+        onnx, message = ensure_onnx(camera)
+        if onnx is None:
+            return {"ok": False, "error": message}
+    result = _detect(camera, ctx, grab, backend)
+    if backend != "onnx" and _native_crash(result):
         logger.warning(
             "AI worker: torch backend crashed (%s) - switching to the ONNX backend (OpenCV DNN)",
             result.get("error"),
         )
         _backend["name"] = "onnx"
+        onnx, message = ensure_onnx(camera)
+        if onnx is None:
+            return {"ok": False, "error": message}
         result = _detect(camera, ctx, grab, "onnx")
     return result
 
