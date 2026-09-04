@@ -2113,6 +2113,8 @@ function mapMonitor(mapContainerID) {
             if (Math.hypot(event.x - prev.x, event.y - prev.y) < TOUCH_MOVE_THRESHOLD) return;
         });
 
+        let mapServerClock = null; // {server: generated_at of /api/stations/sites, at: Date.now()}
+
         function buildPopupContent(e) {
             const data = e.graphic.attributes;
             const content = $(`<div class="map-popup-info" />`);
@@ -2135,7 +2137,8 @@ function mapMonitor(mapContainerID) {
                     <div class="v">${num(key, digits)} <span class="u">${esc(unit(key))}</span></div>
                 </div>`;
             const canOpen = !!LOCAL_VARIABLES.Authorization;
-            const ago = wd.RecordTime ? moment(wd.RecordTime).fromNow() : "";
+            const nowRef = mapServerClock ? moment(mapServerClock.server).add(Date.now() - mapServerClock.at, "ms") : moment();
+            const ago = wd.RecordTime ? moment(wd.RecordTime).from(nowRef) : "";
 
             content.html(`
                 <div class="map-popup-hero">
@@ -2228,6 +2231,11 @@ function mapMonitor(mapContainerID) {
                     lockFormInputs(mapContainer.find(".stations-filters"), false);
                 },
                 success: (jsonData) => {
+                    // server clock of this response: popup "x ago" values are
+                    // computed against it, not the browser clock (other time zone)
+                    if (jsonData.generated_at) {
+                        mapServerClock = { server: jsonData.generated_at, at: Date.now() };
+                    }
                     view.closePopup();
                     view.graphics.removeAll();
 

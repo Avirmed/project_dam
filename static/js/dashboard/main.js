@@ -28,6 +28,11 @@ mapMonitor(mapContainerID);
 
     let charts = {};
     let lastFetched = null;
+    // Server clock at the last /main/summary (generated_at) and the browser time
+    // it arrived: every "x ago" is computed against the server clock, so the
+    // dashboard stays right when the browser sits in another time zone than the
+    // server (all timestamps are server-local, without a zone).
+    let serverClock = null;
     let workerJobs = [];
     let uptimeBase = null;
 
@@ -62,9 +67,13 @@ mapMonitor(mapContainerID);
         if (!d) parts.push(`${s}${T.Seconds || "s"}`);
         return parts.join(" ");
     }
-    function fmtAgo(value) {
+    // "now" on the server: generated_at plus the time elapsed since it arrived
+    function serverNow() {
+        return serverClock ? moment(serverClock.server).add(Date.now() - serverClock.at, "ms") : moment();
+    }
+    function fmtAgo(value, reference = null) {
         if (!value) return "-";
-        const diff = Math.max(0, moment().diff(moment(value), "seconds"));
+        const diff = Math.max(0, (reference || serverNow()).diff(moment(value), "seconds"));
         if (diff < 5) return T.JustNow;
         return `${fmtDuration(diff)} ${T.Ago}`;
     }
@@ -392,6 +401,9 @@ mapMonitor(mapContainerID);
         $.getJSON("/main/summary")
             .done((data) => {
                 lastFetched = Date.now();
+                if (data.generated_at) {
+                    serverClock = { server: data.generated_at, at: lastFetched };
+                }
                 root.find("[data-kpi='timeout']").text(data.timeout_minutes);
                 renderStations(data.stations);
                 renderPayloads(data.payloads);
@@ -413,7 +425,7 @@ mapMonitor(mapContainerID);
 
     // 1 s ticker: "updated x ago", next-run countdowns, uptime
     function tick() {
-        root.find(".dash-updated-text").text(lastFetched ? `${T.Updated} ${fmtAgo(lastFetched)}` : "");
+        root.find(".dash-updated-text").text(lastFetched ? `${T.Updated} ${fmtAgo(lastFetched, moment())}` : "");
         root.find(".dash-next").each(function () {
             const el = $(this);
             const raw = el.attr("data-next");

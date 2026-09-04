@@ -4,6 +4,7 @@ import time
 import shutil
 import hashlib
 import json
+from datetime import datetime
 
 from flask_login import current_user
 
@@ -154,6 +155,8 @@ class Station(db.Model):
             # The map is public: never ship the station configuration (REST API
             # credentials, FTP settings) to the browser - thresholds are applied here.
             row.pop("Meta", None)
+        # server clock: the browser computes "x ago" against it (time zones differ)
+        jsonResult["generated_at"] = datetime.now()
         return jsonResult
 
     @classmethod
