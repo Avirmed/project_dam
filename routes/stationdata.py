@@ -32,10 +32,20 @@ def _request_data():
     return requestData
 
 
+def _grid_keys():
+    """Data keys shown as grid columns: every StationDataKeys value unless its
+    StationDataParameters entry says "grid": False (camera-analysis extras)."""
+    return [
+        key
+        for key in statictext.StationDataKeys.values()
+        if statictext.StationDataParameters.get(key, {}).get("grid", True)
+    ]
+
+
 def _value_columns():
     """One grid column per agreed Data column (statictext.StationDataKeys)."""
     columns = []
-    for key in statictext.StationDataKeys.values():
+    for key in _grid_keys():
         meta = statictext.StationDataParameters.get(key, {})
         title = meta.get("text", key)
         if meta.get("unit"):
@@ -100,7 +110,7 @@ def list():
     detail_title = statictext.StationDataField["Detail"]
     for row in jsonResult.get("data", []):
         data = row.get("Data") if isinstance(row.get("Data"), dict) else {}
-        for key in statictext.StationDataKeys.values():
+        for key in _grid_keys():
             row[f"V_{key}"] = data.get(key)
         for key in ("Data", "Raw"):
             if isinstance(row.get(key), (dict, list)):

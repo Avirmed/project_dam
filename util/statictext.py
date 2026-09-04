@@ -682,7 +682,8 @@ StationDataKeys = {
 }
 
 # Labels / units of the StationData.Data columns shown as grid columns and
-# chart parameters (keys = StationDataKeys values).
+# chart parameters (keys = StationDataKeys values); "grid": False keeps a key
+# out of the Station Data / Report grid (still stored and exported in Data).
 StationDataParameters = {
     StationDataKeys["WaterLevel"]: {"text": "Water Level", "unit": "m"},
     StationDataKeys["WaterLevel2"]: {"text": "Water Level 2", "unit": "m"},
@@ -690,9 +691,10 @@ StationDataParameters = {
     StationDataKeys["Velocity"]: {"text": "Velocity", "unit": "m/s"},
     StationDataKeys["Flow"]: {"text": "Flow rate", "unit": "m³/s"},
     StationDataKeys["Area"]: {"text": "Wetted area", "unit": "m²"},
-    StationDataKeys["Direction"]: {"text": "Flow direction", "unit": ""},
-    StationDataKeys["WaterColor"]: {"text": "Water colour", "unit": ""},
-    StationDataKeys["RainFlag"]: {"text": "Rain detected", "unit": ""},
+    # camera-analysis extras: kept in Data / exports, not shown as grid columns
+    StationDataKeys["Direction"]: {"text": "Flow direction", "unit": "", "grid": False},
+    StationDataKeys["WaterColor"]: {"text": "Water colour", "unit": "", "grid": False},
+    StationDataKeys["RainFlag"]: {"text": "Rain detected", "unit": "", "grid": False},
 }
 
 # Settings rows rendered as an on/off switch on the dashboard Settings page
