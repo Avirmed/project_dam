@@ -4,9 +4,8 @@ This project runs a web application using Flask.
 
 ## Required Software
 
-- Download PostgreSQL and the Python source: https://drive.google.com/file/d/1B-51yfms0YcM3Hi4IpTOz6C8wYWc0Zho/view
+- Download Python source: https://drive.google.com/file/d/17Wp3WNPx6hBwVlwLVZ207FC-4nG2G6rj/view
 - Python 3.13 (in this project, Python may be located in the `python313\python.exe` folder)
-- PostgreSQL (in this project, the server files are inside `pgsql\`)
 - The libraries listed in `requirements.txt`
 
 ## Project Files
