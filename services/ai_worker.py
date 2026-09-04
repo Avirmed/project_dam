@@ -56,6 +56,19 @@ STREAM_TIMEOUT = 15  # seconds the capture waits for frames
 
 _slots = {}  # camera ID -> last interval slot processed (success or failure)
 STATUS = {}  # camera ID -> {"at", "ok", "message"}
+# Detection backend handed to ai/detect.py: None = AI_BACKEND / torch. When the
+# torch backend dies with a native crash (the interpreter exits with one of the
+# Windows codes below instead of raising - unsupported CPU / GPU), the worker
+# switches to "onnx" (OpenCV DNN, ai/backend_dnn.py) for the rest of its life.
+_backend = {"name": None}
+NATIVE_CRASH_CODES = {
+    "3221225477",
+    "3221225501",
+    "3221226505",
+    "-1073741819",
+    "-1073741795",
+    "-1073740791",
+}
 
 
 def python_exe():
@@ -268,10 +281,32 @@ def capture(camera):
     return run_script(GRAB_SCRIPT, job)
 
 
+def _native_crash(result):
+    """True when a script died with an access violation-type exit code."""
+    error = str(result.get("error") or "")
+    return (
+        error.startswith("exit ") and error.split()[1].rstrip(":") in NATIVE_CRASH_CODES
+    )
+
+
 def detect(camera, ctx, grab):
-    """Stage 2: water level (+ velocity) on the clip frames, annotated pictures."""
+    """Stage 2: water level (+ velocity) on the clip frames, annotated pictures.
+    Falls back to the onnx backend (and keeps it) when torch crashes natively."""
+    result = _detect(camera, ctx, grab, _backend["name"])
+    if _backend["name"] != "onnx" and _native_crash(result):
+        logger.warning(
+            "AI worker: torch backend crashed (%s) - switching to the ONNX backend (OpenCV DNN)",
+            result.get("error"),
+        )
+        _backend["name"] = "onnx"
+        result = _detect(camera, ctx, grab, "onnx")
+    return result
+
+
+def _detect(camera, ctx, grab, backend):
     public = camera.public_folder()
     job = {
+        "backend": backend,
         "weights": camera.model_file(),
         "imgsz": Util.safe_int(camera.configs().get("ModelImageSize"), 0) or None,
         "frames": grab.get("frames") or [],
@@ -405,7 +440,7 @@ def process(camera):
             f"v {velocity.get('velocity')} m/s {velocity.get('direction')}, {velocity.get('color_name')}"
         )
     parts.append(
-        f"row {row.ID}, {result.get('device')}, {grab.get('elapsed_ms', 0) + result.get('elapsed_ms', 0)} ms"
+        f"row {row.ID}, {result.get('backend')} {result.get('device')}, {grab.get('elapsed_ms', 0) + result.get('elapsed_ms', 0)} ms"
     )
     return True, "; ".join(parts)
 

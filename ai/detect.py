@@ -12,6 +12,7 @@ Job (all keys optional except `weights` and one picture source):
     weights      : path or file name under ai/trained_models/
     imgsz        : inference size, 640 (default) or 1024
     device       : "" (auto: CUDA when available, else CPU), "cpu", "0"
+    backend      : "torch" (default, AI_BACKEND) or "onnx" (OpenCV DNN on <model>.onnx, no torch)
     frames       : clip frames, oldest first (images_temp/1..N.jpg); frames[0] is analysed
     frame_times  : seconds of each frame from the clip start (raw.json)
     image_path   : single picture instead of `frames`
@@ -108,7 +109,7 @@ def run(job):
     import detector
     from animation import build_animation_from_arrays
 
-    model_tuple = detector.load_model(job["weights"], job.get("device") or "")
+    model_tuple = detector.load_model(job["weights"], job.get("device") or "", job.get("backend"))
     result = detector.detect_waterline(
         model_tuple,
         frames[0],
@@ -124,6 +125,7 @@ def run(job):
         "frame": [int(frames[0].shape[1]), int(frames[0].shape[0])],
         "frame_count": len(frames),
         "device": str(model_tuple[3]),
+        "backend": model_tuple[4],
         "detected": result is not None,
         "level": None,
         "in_range": False,

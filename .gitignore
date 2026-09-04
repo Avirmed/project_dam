@@ -186,6 +186,7 @@ cython_debug/
 /python313
 # Uploaded YOLO weights (dashboard camera form) - large binaries, per install
 /ai/trained_models/*.pt
+/ai/trained_models/*.onnx
 # /static/data
 
 # migrations/ is committed (schema is versioned; entrypoint runs `flask db upgrade`)

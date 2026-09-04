@@ -166,7 +166,31 @@ class Camera(db.Model):
         self.UpdateUserID = current_user.UserID
         self.UpdateDate = db.func.now()
         db.session.commit()
+        self.export_onnx(filename)
         return filename
+
+    def export_onnx(self, filename):
+        """Start `ai/export_onnx.py <file>` in the background so the ONNX twin
+        (OpenCV DNN fallback backend of the AI worker) appears next to the
+        weights; needs a working torch, so failures are silently ignored
+        (the export can be run on another PC and the .onnx copied over)."""
+        import subprocess
+        import sys
+
+        script = os.path.join(statictext.APP_DIRECTORY, "ai", "export_onnx.py")
+        size = str(Util.safe_int(self.configs().get("ModelImageSize"), 0) or "")
+        args = [os.getenv("AI_PYTHON") or sys.executable, script, filename]
+        if size:
+            args += ["--imgsz", size]
+        try:
+            subprocess.Popen(
+                args,
+                cwd=statictext.APP_DIRECTORY,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+        except OSError:
+            pass
 
     def remove_model(self):
         """Delete the stored weights file(s) and clear the Meta reference."""

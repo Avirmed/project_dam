@@ -5,8 +5,9 @@
 Each step prints before it runs, so when the interpreter dies with a native
 crash (Windows exit code 3221225477 = 0xC0000005 access violation - usually a
 CPU without AVX2 or an oneDNN kernel the CPU cannot execute) the last line
-shows where. Try again with AI_NO_MKLDNN=1 (and AI_DEVICE=cpu) in .env when
-step 5 or 6 crashes.
+shows where. Step 3 checks the torch-free onnx backend (OpenCV DNN): when the
+torch steps crash but step 3 passes, set AI_BACKEND=onnx in .env (the worker
+also switches by itself after a crash).
 """
 
 import os
@@ -39,6 +40,33 @@ def main():
 
     step(3, f"numpy {numpy.__version__}, opencv {cv2.__version__} imported")
 
+    import detector
+
+    onnx_names = (
+        sorted(n for n in os.listdir(detector.MODEL_DIR) if n.endswith(".onnx"))
+        if os.path.isdir(detector.MODEL_DIR)
+        else []
+    )
+    if onnx_names:
+        step("3b", f"OpenCV DNN (onnx backend, no torch): loading {onnx_names[0]} ...")
+        import backend_dnn
+
+        net = backend_dnn.load(os.path.join(detector.MODEL_DIR, onnx_names[0]))
+        t = time.perf_counter()
+        boxes = backend_dnn.detect(
+            net, numpy.zeros((360, 640, 3), dtype=numpy.uint8), 640, 0.25, 0.45
+        )
+        print(
+            f"    ok, {len(boxes)} boxes on a blank picture in {time.perf_counter() - t:.1f}s"
+            " - the onnx backend works here (AI_BACKEND=onnx or automatic fallback)",
+            flush=True,
+        )
+    else:
+        step(
+            3,
+            "no .onnx model under ai/trained_models (run ai/export_onnx.py on a PC with torch)",
+        )
+
     import torch
 
     cap = getattr(torch.backends.cpu, "get_cpu_capability", lambda: "?")()
@@ -55,8 +83,6 @@ def main():
             )
         except Exception as e:
             print(f"    gpu query failed: {e}", flush=True)
-
-    import detector
 
     detector.prepare_runtime()
     step(5, f"cpu conv2d test (mkldnn enabled={torch.backends.mkldnn.enabled}) ...")

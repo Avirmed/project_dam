@@ -14,6 +14,8 @@ velocity). The legacy folder itself is gone; its models were imported into
 | `animation.py` | Pictures → animated GIF (Pillow), used by `grab.py`; importable from the web app as `ai.animation`. |
 | `velocity.py` | Port of the legacy `detect_movement()`: Farneback optical flow inside the velocity region → m/s (scaled by the region length and real frame spacing), direction, dominant colour (OpenCV k-means), rain flag. |
 | `doctor.py` | Step-by-step runtime check for a new server (imports, CPU capability, CPU/CUDA conv test, model load, blank detection); shows where a native crash happens. |
+| `backend_dnn.py` | torch-free inference: OpenCV DNN on the `<model>.onnx` twin (letterbox, decode, NMS). Used when `AI_BACKEND=onnx` or after the torch backend crashed. |
+| `export_onnx.py` | Exports the uploaded `.pt` models to `.onnx` (opset 12, static input); run automatically after a model upload, or by hand on a PC where torch works. |
 | `detector.py` | Loads a YOLOv5 checkpoint (cached per process) and finds the waterline on a frame: the box touching the water (smallest `y2`), its bottom row is the waterline. |
 | `calibration.py` | Sampling rows `{x: pixel row, y: level m}` → cubic spline → level, extrapolated at both ends like the legacy code. Pure numpy/scipy. |
 | `capture.py` | Frame sources: image file, one RTSP frame (`grab_frame`), RTSP burst (`grab_burst`, for the future velocity job), ISAPI snapshot (`fetch_snapshot`, Basic then Digest auth). |
@@ -37,7 +39,7 @@ and parses the last stdout line (`services/ai_worker.py::run_script`, also used 
 calls would stall the gevent web server). torch, ultralytics and friends are therefore
 loaded only in that short-lived interpreter. `detector.prepare_runtime()` also
 restores `torch.load(weights_only=False)` (torch ≥ 2.6 rejects the old
-checkpoints otherwise) and aliases `pathlib.PosixPath` on Windows. `detector.load_model()` warms the model up on the chosen device and falls back to the CPU when the CUDA build cannot run on the installed GPU ("no kernel image is available" on cards older than the torch wheel supports); `AI_DEVICE=cpu` in `.env` forces the CPU; `AI_NO_MKLDNN=1` disables the oneDNN CPU kernels (access-violation crashes on old CPUs / VMs) and `AI_TORCH_THREADS=n` caps the CPU threads.
+checkpoints otherwise) and aliases `pathlib.PosixPath` on Windows. `detector.load_model()` warms the model up on the chosen device and falls back to the CPU when the CUDA build cannot run on the installed GPU ("no kernel image is available" on cards older than the torch wheel supports); `AI_DEVICE=cpu` in `.env` forces the CPU; `AI_NO_MKLDNN=1` disables the oneDNN CPU kernels and `AI_TORCH_THREADS=n` caps the CPU threads. When the torch build cannot run at all (the interpreter dies with exit 0xC0000005 on an old CPU / VM), `services/ai_worker.py` switches to the **onnx backend** (`ai/backend_dnn.py`, OpenCV DNN on the exported `.onnx`, ~0.3 s per frame on a CPU) and stays there; `AI_BACKEND=onnx` selects it from the start. The `.onnx` files are produced by `ai/export_onnx.py` (automatically after an upload where torch works; otherwise export on a PC and copy the file next to the `.pt`).
 
 ## Job / result
 
