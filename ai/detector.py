@@ -74,22 +74,49 @@ def resolve_weights(weights):
     return os.path.abspath(path)
 
 
-def load_model(weights, device=""):
-    """Load (and cache) a YOLOv5 checkpoint. Returns (model, stride, names, device)."""
-    prepare_runtime()
+def _build(path, device):
+    """DetectMultiBackend on `device` plus one warm-up forward, so a GPU whose
+    architecture the installed torch build does not support ("no kernel image
+    is available") fails here, not in the middle of a detection."""
+    import torch
     from models.common import DetectMultiBackend
     from utils.torch_utils import select_device
+
+    torch_device = select_device(device, newline=False)
+    model = DetectMultiBackend(
+        path, device=torch_device, dnn=False, data=None, fp16=False
+    )
+    with torch.no_grad():
+        model(torch.zeros(1, 3, 64, 64, device=torch_device))
+    return model, torch_device
+
+
+def load_model(weights, device=""):
+    """Load (and cache) a YOLOv5 checkpoint. Returns (model, stride, names, device).
+
+    device: "" = AI_DEVICE from the environment, else auto (CUDA when usable,
+    else CPU). When the CUDA build cannot run on the installed GPU (older card
+    than the torch wheel supports, driver problems) the model is loaded again
+    on the CPU, so a server never needs manual configuration for that."""
+    prepare_runtime()
 
     path = resolve_weights(weights)
     if not path or not os.path.isfile(path):
         raise FileNotFoundError(f"weights not found: {weights}")
 
+    device = str(device or os.getenv("AI_DEVICE") or "").strip().lower()
     key = (path, device)
     if key not in _models:
-        torch_device = select_device(device, newline=False)
-        model = DetectMultiBackend(
-            path, device=torch_device, dnn=False, data=None, fp16=False
-        )
+        try:
+            model, torch_device = _build(path, device)
+        except Exception as e:
+            if device == "cpu":
+                raise
+            print(
+                f"CUDA unusable ({type(e).__name__}: {str(e).splitlines()[0]}), falling back to CPU",
+                file=sys.stderr,
+            )
+            model, torch_device = _build(path, "cpu")
         _models[key] = (model, int(model.stride), model.names, torch_device)
     return _models[key]
 

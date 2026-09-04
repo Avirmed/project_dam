@@ -36,7 +36,7 @@ and parses the last stdout line (`services/ai_worker.py::run_script`, also used 
 calls would stall the gevent web server). torch, ultralytics and friends are therefore
 loaded only in that short-lived interpreter. `detector.prepare_runtime()` also
 restores `torch.load(weights_only=False)` (torch ≥ 2.6 rejects the old
-checkpoints otherwise) and aliases `pathlib.PosixPath` on Windows.
+checkpoints otherwise) and aliases `pathlib.PosixPath` on Windows. `detector.load_model()` warms the model up on the chosen device and falls back to the CPU when the CUDA build cannot run on the installed GPU ("no kernel image is available" on cards older than the torch wheel supports); `AI_DEVICE=cpu` in `.env` forces the CPU.
 
 ## Job / result
 
